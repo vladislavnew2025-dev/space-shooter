@@ -4,24 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
-    <title>Space Shooter Pro</title>
+    <title>Space Shooter Stable</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; overflow: hidden; 
             font-family: 'Segoe UI', sans-serif; color: #fff;
-            touch-action: none; /* Блокує стандартні жести браузера */
+            touch-action: none;
         }
         canvas { display: block; width: 100vw; height: 100vh; }
 
-        #top-bar {
-            width: 100%; height: 40px; background: #111; 
-            display: flex; align-items: center; justify-content: center;
-            border-bottom: 1px solid #333; z-index: 20; font-size: 14px; color: #555;
+        /* Верхня плашка в меню */
+        #top-header {
+            width: 100%; padding: 15px 0; background: #000;
+            text-align: center; border-bottom: 1px solid #111;
         }
-
-        #game-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
 
         #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; }
         #timer { position: absolute; top: 15px; right: 15px; color: #ff0; font-size: 18px; font-weight: bold; pointer-events: none; z-index: 5; }
@@ -34,65 +32,65 @@
 
         #wave-list {
             display: flex; flex-wrap: wrap; justify-content: center; 
-            max-height: 55vh; overflow-y: auto; width: 95%; padding: 10px;
+            max-height: 50vh; overflow-y: auto; width: 95%; padding: 10px;
         }
 
         .wave-card {
             background: #0a0a0a; border: 2px solid #0ff; padding: 15px; margin: 8px;
-            width: 170px; text-align: center; cursor: pointer; border-radius: 15px;
+            width: 180px; text-align: center; cursor: pointer; border-radius: 15px; transition: 0.2s;
         }
+        .wave-card:hover { transform: scale(1.05); box-shadow: 0 0 10px #0ff; }
         
         button { 
             padding: 12px 30px; font-size: 18px; background: transparent; 
             border: 2px solid #0ff; color: #0ff; cursor: pointer; border-radius: 30px;
             text-transform: uppercase;
         }
+        button:hover { background: #0ff; color: #000; }
 
-        #rotate-screen { display: none; background: #000; z-index: 100; text-align: center; }
-        .hint { color: #555; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .hint { color: #444; font-size: 12px; margin-top: 15px; letter-spacing: 1px; }
         .locked { opacity: 0.3; filter: grayscale(1); }
     </style>
 </head>
 <body>
 
-    <div id="top-bar">OFFLINE MODE READY</div>
+    <div id="ui">KILLS: <span id="kills">0</span>/10</div>
+    <div id="timer">0.00s</div>
 
-    <div id="game-container">
-        <div id="rotate-screen" class="screen">
-            <div style="font-size: 50px;">📱🔄</div>
-            <h2>ПОВЕРНІТЬ ТЕЛЕФОН</h2>
+    <!-- ГОЛОВНЕ МЕНЮ -->
+    <div id="menu-screen" class="screen">
+        <div id="top-header">
+            <h1 style="color:#0ff; margin:0; font-size: 35px; letter-spacing: 5px;">GALAXY MISSIONS</h1>
+            <p style="color:#f0f; margin:5px 0 0 0; font-size:12px; letter-spacing: 2px;">EXTREME SPEED</p>
         </div>
-
-        <div id="ui">KILLS: <span id="kills">0</span>/10</div>
-        <div id="timer">0.00s</div>
-
-        <div id="menu-screen" class="screen">
-            <h1 style="color:#0ff; font-size: 40px; margin: 0;">START GAME</h1>
-            <div style="color: gold; margin: 10px 0; font-size: 20px;">💰: <span id="coins-display">0</span></div>
-            <div id="wave-list"></div>
-            <div class="hint">Виберіть доступну хвилю для початку</div>
-        </div>
-
-        <div id="win-screen" class="screen">
-            <h1 style="color:gold;">MISSION COMPLETE</h1>
-            <div id="win-stars" style="font-size: 40px; color: gold; margin-bottom: 20px;"></div>
-            <button onclick="backToMenu()">ПРОДОВЖИТИ</button>
-        </div>
-
-        <div id="fail-screen" class="screen">
-            <h1 style="color:#f00; font-size: 40px;">MISSION FAILED</h1>
-            <button onclick="backToMenu()" style="border-color:#f00; color:#f00;">СПРОБУВАТИ ЗНОВУ</button>
-        </div>
-
-        <canvas id="game"></canvas>
+        
+        <h2 style="color:#fff; font-size: 30px; margin: 20px 0 10px 0;">START GAME</h2>
+        <div style="color: gold; margin-bottom: 10px; font-size: 20px;">💰: <span id="coins-display">0</span></div>
+        
+        <div id="wave-list"></div>
+        <div class="hint">ВИБЕРІТЬ ДОСТУПНУ ХВИЛЮ, ЩОБ ЗАПУСТИТИ МІСІЮ</div>
     </div>
+
+    <!-- ЕКРАН ПЕРЕМОГИ -->
+    <div id="win-screen" class="screen" style="display:none;">
+        <h1 style="color:gold; font-size: 35px;">MISSION COMPLETE</h1>
+        <div id="win-stars" style="font-size: 50px; color: gold; margin-bottom: 20px;"></div>
+        <p id="win-info" style="font-size: 20px; color: #0ff; margin-bottom: 20px;"></p>
+        <button onclick="backToMenu()">ПРОДОВЖИТИ</button>
+    </div>
+
+    <!-- ЕКРАН ПРОГРАШУ -->
+    <div id="fail-screen" class="screen" style="display:none;">
+        <h1 style="color:#f00; font-size: 45px;">MISSION FAILED</h1>
+        <button onclick="backToMenu()" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
+    </div>
+
+    <canvas id="game"></canvas>
 
 <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const container = document.documentElement; 
-    const rotateScreen = document.getElementById('rotate-screen');
-    const topBar = document.getElementById('top-bar');
+    const container = document.documentElement;
 
     let coins = Number(localStorage.getItem('coins')) || 0;
     let waveData = JSON.parse(localStorage.getItem('waveData')) || [
@@ -105,18 +103,6 @@
     let player = { x: 0, y: 0, targetX: 0 };
     let bullets = [], enemies = [], starsBg = [];
     let audioCtx, shootBuf, crashBuf;
-
-    function checkOrientation() {
-        if (window.innerHeight > window.innerWidth) {
-            rotateScreen.style.display = 'flex';
-            topBar.style.display = 'flex';
-        } else {
-            rotateScreen.style.display = 'none';
-            topBar.style.display = 'none';
-        }
-    }
-    window.addEventListener('resize', checkOrientation);
-    checkOrientation();
 
     function initAudio() {
         if (!audioCtx) {
@@ -140,12 +126,11 @@
             card.className = `wave-card ${w.unlocked ? '' : 'locked'}`;
             card.innerHTML = `
                 <h3 style="margin:0; color:#0ff;">WAVE ${w.id}</h3>
-                <div style="color:gold; letter-spacing:2px;">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
-                <button style="font-size:10px; padding:5px 10px; margin-top:8px;">СТАРТ</button>
+                <div style="color:gold; font-size:20px;">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
+                <button style="font-size:10px; padding:5px 12px; margin-top:8px;">ЗАПУСТИТИ</button>
             `;
-            if(w.unlocked) card.onclick = (e) => {
-                e.stopPropagation();
-                if (container.requestFullscreen) container.requestFullscreen();
+            if(w.unlocked) card.onclick = () => {
+                if (container.requestFullscreen) container.requestFullscreen().catch(()=>{});
                 startMission(w);
             };
             list.appendChild(card);
@@ -175,15 +160,9 @@
         for(let i=0; i<30; i++) starsBg.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2});
     }
 
-    // Керування: плавне слідування за пальцем/мишкою
-    const handleMove = (e) => {
-        if (!gameActive) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        player.targetX = clientX;
-    };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchstart', handleMove, { passive: false });
+    window.addEventListener('pointermove', (e) => {
+        if(gameActive) player.targetX = e.clientX;
+    });
 
     function endMission() {
         gameActive = false;
@@ -195,8 +174,9 @@
         localStorage.setItem('coins', coins);
         localStorage.setItem('waveData', JSON.stringify(waveData));
         document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
+        document.getElementById('win-info').innerText = `TIME: ${timeTaken.toFixed(2)}s | GOAL: ${currentWave.targetTime}s`;
         document.getElementById('win-screen').style.display = 'flex';
-        if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+        // Авто-вихід з Fullscreen прибрано
     }
 
     function backToMenu() {
@@ -215,27 +195,25 @@
 
     function update() {
         if(!gameActive) return;
-        
-        // Плавний рух корабля (згладжування)
         player.x += (player.targetX - player.x) * 0.2;
-
         let now = (Date.now() - startTime) / 1000;
         document.getElementById('timer').innerText = now.toFixed(2) + 's';
-        
         starsBg.forEach(s => { s.y += 3; if(s.y > canvas.height) s.y = 0; });
         for(let i=bullets.length-1; i>=0; i--) {
             bullets[i].y -= 18;
             if(bullets[i].y < 0) bullets.splice(i,1);
         }
-
-        if(Math.random() < 0.06) enemies.push({x: Math.random()*canvas.width, y: -50, r: 20, s: 40, i: '👾'});
-        
-        for (let i = enemies.length - 1; i >= 0; i--) {
+        let spawnRate = (currentWave.id === 3) ? 0.09 : 0.06;
+        if(Math.random() < spawnRate) {
+            let size = currentWave.id === 3 ? 65 : 40;
+            enemies.push({x: Math.random()*canvas.width, y: -50, r: size/2, s: size});
+        }
+        for(let i=enemies.length-1; i>=0; i--) {
             let e = enemies[i]; e.y += 5 + (currentWave.id === 2 ? 3 : 0);
-            for (let j = bullets.length - 1; j >= 0; j--) {
-                if (Math.hypot(e.x - bullets[j].x, e.y - bullets[j].y) < 35) {
+            for(let j=bullets.length-1; j>=0; j--) {
+                if(Math.hypot(e.x-bullets[j].x, e.y-bullets[j].y) < 35) {
                     if(audioCtx) { const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start(); }
-                    enemies.splice(i, 1); bullets.splice(j, 1);
+                    enemies.splice(i,1); bullets.splice(j,1);
                     kills++; document.getElementById('kills').innerText = kills;
                     if(kills >= 10) { endMission(); return; }
                     break;
@@ -244,7 +222,6 @@
             if(e && Math.hypot(e.x-player.x, e.y-player.y) < 40) {
                 gameActive = false;
                 document.getElementById('fail-screen').style.display = 'flex';
-                if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
             }
             if(e && e.y > canvas.height + 50) { enemies.splice(i,1); missed++; }
         }
@@ -255,13 +232,14 @@
         ctx.fillStyle = '#666'; starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
         ctx.textAlign = 'center'; ctx.font = '50px Arial';
         ctx.fillText('🚀', player.x, player.y + 15);
-        enemies.forEach(e => { ctx.font = '40px Arial'; ctx.fillText(e.i, e.x, e.y + 15); });
+        enemies.forEach(e => { ctx.font = e.s + 'px Arial'; ctx.fillText('👾', e.x, e.y + 15); });
         ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 20));
     }
 
     function animate() { update(); draw(); if(gameActive) requestAnimationFrame(animate); }
 
     renderMenu();
+    window.addEventListener('resize', init);
 </script>
 </body>
 </html>
