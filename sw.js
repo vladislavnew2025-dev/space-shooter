@@ -1,4 +1,4 @@
-const CACHE_NAME = 'space-shooter-v1';
+const CACHE_NAME = 'space-shooter-v4';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (e) => {
