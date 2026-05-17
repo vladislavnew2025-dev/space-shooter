@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <title>Space Shooter Offline</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Courier New', monospace; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; color: #0ff; font-size: 20px; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="ui">SCORE: <span id="score">0</span></div>
+    <canvas id="game"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        let player = { x: 0, y: 0, size: 30 };
+        let bullets = [];
+        let enemies = [];
+        let gameActive = true;
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 80;
+        }
+
+        // Керування: рух пальцем/мишкою та автострільба
+        window.addEventListener('pointermove', (e) => {
+            player.x = e.clientX;
+        });
+
+        // Стрільба кожні 200мс
+        setInterval(() => {
+            if(gameActive) bullets.push({ x: player.x, y: player.y, r: 4 });
+        }, 200);
+
+        function spawnEnemy() {
+            if(Math.random() < 0.05) {
+                enemies.push({ x: Math.random() * canvas.width, y: -50, size: 20 + Math.random() * 30 });
+            }
+        }
+
+        function update() {
+            if(!gameActive) return;
+
+            bullets.forEach((b, i) => {
+                b.y -= 10;
+                if(b.y < 0) bullets.splice(i, 1);
+            });
+
+            enemies.forEach((e, ei) => {
+                e.y += 3;
+                // Перевірка влучання
+                bullets.forEach((b, bi) => {
+                    let dist = Math.hypot(e.x - b.x, e.y - b.y);
+                    if(dist < e.size) {
+                        enemies.splice(ei, 1);
+                        bullets.splice(bi, 1);
+                        score += 100;
+                        document.getElementById('score').innerText = score;
+                    }
+                });
+                // Програш
+                if(e.y > canvas.height) { gameActive = false; alert("GAME OVER! Score: " + score); location.reload(); }
+            });
+            spawnEnemy();
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 20, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Корабель
+            ctx.fillStyle = '#0ff';
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(player.x - 20, player.y + 30);
+            ctx.lineTo(player.x + 20, player.y + 30);
+            ctx.fill();
+
+            // Кулі
+            ctx.fillStyle = '#ff0';
+            bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 10));
+
+            // Вороги (астероїди)
+            ctx.fillStyle = '#f0f';
+            enemies.forEach(e => {
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.size/2, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(() => { update(); draw(); });
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        draw();
+
+        // РЕЄСТРАЦІЯ ОФЛАЙН РЕЖИМУ
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
