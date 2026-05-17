@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <title>Space Shooter</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Segoe UI', sans-serif; color: #fff; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; text-shadow: 0 0 5px #000; }
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10;
+        }
+        #menu-coins { font-size: 24px; color: gold; margin-bottom: 20px; text-shadow: 0 0 10px gold; }
+        .wave-card {
+            background: #0a0a0a; border: 2px solid #0ff; padding: 20px; margin: 10px;
+            width: 220px; text-align: center; cursor: pointer; transition: 0.2s; border-radius: 15px;
+        }
+        .wave-card:hover { transform: scale(1.05); box-shadow: 0 0 15px #0ff; }
+        .stars { color: gold; font-size: 24px; margin: 5px 0; }
+        button { 
+            padding: 15px 40px; font-size: 22px; background: transparent; 
+            border: 2px solid #0ff; color: #0ff; cursor: pointer; border-radius: 30px;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        button:hover { background: #0ff; color: #000; }
+        #win-screen, #fail-screen { display: none; }
+        .locked { opacity: 0.3; cursor: default; border-color: #333; }
+        #timer { position: absolute; top: 15px; right: 15px; color: #ff0; font-size: 20px; font-family: monospace; font-weight: bold; }
+        .hint { color: #555; font-size: 14px; margin-top: 20px; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        KILLS: <span id="kills">0</span>/10
+    </div>
+    <div id="timer">0.00s</div>
+
+    <!-- ГОЛОВНЕ МЕНЮ -->
+    <div id="menu-screen" class="screen">
+        <h1 style="color:#0ff; font-size: 45px; margin-bottom: 10px; letter-spacing: 5px;">START GAME</h1>
+        <div id="menu-coins">💰 COINS: <span id="coins-display">0</span></div>
+        <div id="wave-list" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+        <div class="hint">ВИБЕРІТЬ ДОСТУПНУ ХВИЛЮ, ЩОБ ПОЧАТИ МІСІЮ</div>
+    </div>
+
+    <!-- ЕКРАН ПЕРЕМОГИ -->
+    <div id="win-screen" class="screen">
+        <h1 style="color:gold; font-size: 35px;">MISSION COMPLETE</h1>
+        <div id="win-stars" class="stars" style="font-size: 50px;"></div>
+        <p id="win-info" style="font-size: 20px; color: #0ff;"></p>
+        <p id="win-reward" style="font-size: 24px; color: gold; margin-bottom: 20px;"></p>
+        <button onclick="backToMenu()">CONTINUE</button>
+    </div>
+
+    <!-- ЕКРАН ПРОГРАШУ -->
+    <div id="fail-screen" class="screen">
+        <h1 style="color:#f00; font-size: 45px; text-shadow: 0 0 20px #f00;">MISSION FAILED</h1>
+        <p style="font-size: 20px; color: #fff; margin-bottom: 30px;">КОРАБЕЛЬ ЗНИЩЕНО!</p>
+        <button onclick="backToMenu()" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
+    </div>
+
+    <canvas id="game"></canvas>
+
+<script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const menuScreen = document.getElementById('menu-screen');
+    const winScreen = document.getElementById('win-screen');
+    const failScreen = document.getElementById('fail-screen');
+    const waveList = document.getElementById('wave-list');
+    const timerElement = document.getElementById('timer');
+    const coinsDisplay = document.getElementById('coins-display');
+
+    let coins = Number(localStorage.getItem('coins')) || 0;
+    let waveData = JSON.parse(localStorage.getItem('waveData')) || [
+        { id: 1, reward: 50, stars: 0, unlocked: true, targetTime: 7 },
+        { id: 2, reward: 100, stars: 0, unlocked: false, targetTime: 8 },
+        { id: 3, reward: 120, stars: 0, unlocked: false, targetTime: 4.5 }
+    ];
+
+    let gameActive = false, currentWave = null, startTime, kills = 0, missed = 0;
+    let player = { x: 0, y: 0 }, bullets = [], enemies = [], starsBg = [];
+    let audioCtx, shootBuf, crashBuf;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const rate = audioCtx.sampleRate;
+            shootBuf = audioCtx.createBuffer(1, rate * 0.1, rate);
+            let s = shootBuf.getChannelData(0);
+            for(let i=0; i<s.length; i++) s[i] = Math.sin(2*Math.PI*(1100*Math.exp(-35*(i/rate)))) * (1-i/s.length) * 0.08;
+            crashBuf = audioCtx.createBuffer(1, rate * 0.2, rate);
+            let c = crashBuf.getChannelData(0);
+            for(let i=0; i<c.length; i++) c[i] = (Math.random()*2-1) * (1-i/c.length) * 0.08;
+        }
+    }
+
+    function renderMenu() {
+        coinsDisplay.innerText = coins;
+        waveList.innerHTML = '';
+        waveData.forEach(w => {
+            const card = document.createElement('div');
+            card.className = `wave-card ${w.unlocked ? '' : 'locked'}`;
+            card.innerHTML = `
+                <h2 style="margin:0; color:#0ff;">WAVE ${w.id}</h2>
+                <div class="stars">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
+                <p style="color:#ff0; margin:5px 0;">Goal: ${w.targetTime}s</p>
+                <button style="font-size:12px; padding:5px 15px; margin-top:5px;">ЗАПУСТИТИ МІСІЮ</button>
+            `;
+            if(w.unlocked) card.onclick = () => startMission(w);
+            waveList.appendChild(card);
+        });
+    }
+
+    function startMission(w) {
+        initAudio();
+        currentWave = w;
+        gameActive = true;
+        menuScreen.style.display = 'none';
+        winScreen.style.display = 'none';
+        failScreen.style.display = 'none';
+        kills = 0; missed = 0; bullets = []; enemies = [];
+        startTime = Date.now();
+        init();
+        animate();
+    }
+
+    function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.x = canvas.width / 2;
+        player.y = canvas.height - 100;
+        starsBg = [];
+        for(let i=0; i<30; i++) starsBg.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2});
+    }
+
+    function endMission() {
+        gameActive = false;
+        let timeTaken = (Date.now() - startTime) / 1000;
+        let starCount = 1;
+        if (timeTaken <= currentWave.targetTime && missed === 0) starCount = 3;
+        else if (timeTaken <= currentWave.targetTime + 2 || missed <= 2) starCount = 2;
+        if(starCount > currentWave.stars) currentWave.stars = starCount;
+        coins += currentWave.reward;
+        if(currentWave.id < 3) waveData[currentWave.id].unlocked = true;
+        localStorage.setItem('coins', coins);
+        localStorage.setItem('waveData', JSON.stringify(waveData));
+        document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
+        document.getElementById('win-info').innerText = `TIME: ${timeTaken.toFixed(2)}s | GOAL: ${currentWave.targetTime}s`;
+        document.getElementById('win-reward').innerText = `REWARD: +${currentWave.reward} COINS`;
+        winScreen.style.display = 'flex';
+    }
+
+    function backToMenu() {
+        winScreen.style.display = 'none';
+        failScreen.style.display = 'none';
+        menuScreen.style.display = 'flex';
+        renderMenu();
+    }
+
+    window.addEventListener('pointermove', (e) => { if(gameActive) player.x = e.clientX; });
+
+    setInterval(() => {
+        if(gameActive) {
+            bullets.push({x: player.x, y: player.y-20});
+            if(audioCtx) { const s = audioCtx.createBufferSource(); s.buffer = shootBuf; s.connect(audioCtx.destination); s.start(); }
+        }
+    }, 280);
+
+    function update() {
+        if(!gameActive) return;
+        let now = (Date.now() - startTime) / 1000;
+        timerElement.innerText = now.toFixed(2) + 's';
+        starsBg.forEach(s => { s.y += 3; if(s.y > canvas.height) s.y = 0; });
+        for(let i=bullets.length-1; i>=0; i--) {
+            bullets[i].y -= 18;
+            if(bullets[i].y < 0) bullets.splice(i,1);
+        }
+        let spawnRate = currentWave.id === 3 ? 0.09 : 0.06; 
+        if(Math.random() < spawnRate) {
+            let size = currentWave.id === 3 ? 65 : 40; 
+            enemies.push({x: Math.random()*canvas.width, y: -50, r: size/2, s: size});
+        }
+        for(let i=enemies.length-1; i>=0; i--) {
+            let e = enemies[i];
+            let speed = 5 + (currentWave.id === 2 ? 3 : 0);
+            e.y += speed;
+            for(let j=bullets.length-1; j>=0; j--) {
+                let b = bullets[j];
+                if(Math.hypot(e.x-b.x, e.y-b.y) < e.r + 15) {
+                    if(audioCtx) { const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start(); }
+                    enemies.splice(i,1); bullets.splice(j,1);
+                    kills++;
+                    document.getElementById('kills').innerText = kills;
+                    if(kills >= 10) { endMission(); return; }
+                    break;
+                }
+            }
+            if(e && Math.hypot(e.x-player.x, e.y-player.y) < e.r + 20) {
+                gameActive = false;
+                failScreen.style.display = 'flex'; // ЕКРАН ПРОГРАШУ
+            }
+            if(e && e.y > canvas.height + 50) { enemies.splice(i,1); missed++; }
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000510';
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.fillStyle = '#888';
+        starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
+        ctx.textAlign = 'center';
+        ctx.font = '50px Arial';
+        ctx.fillText('🚀', player.x, player.y + 15);
+        enemies.forEach(e => {
+            ctx.font = e.s + 'px Arial';
+            ctx.fillText('👾', e.x, e.y + 15);
+        });
+        ctx.fillStyle = '#0ff';
+        bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 20));
+    }
+
+    function animate() {
+        update(); draw();
+        if(gameActive) requestAnimationFrame(animate);
+    }
+
+    renderMenu();
+    window.addEventListener('resize', init);
+</script>
+</body>
+</html>
