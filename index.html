@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
-    <title>Space Shooter</title>
+    <title>Space Shooter Fullscreen</title>
     <style>
-        /* Блокуємо прокрутку всього сайту */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
@@ -15,93 +14,88 @@
         }
         canvas { display: block; width: 100vw; height: 100vh; }
 
+        /* Верхня плашка (видно тільки у вертикальному режимі або коли не в повномі екрані) */
+        #top-bar {
+            width: 100%; height: 50px; background: #111; 
+            display: flex; align-items: center; justify-content: center;
+            border-bottom: 1px solid #333; z-index: 20;
+        }
+
+        /* Контейнер для гри */
+        #game-container { position: relative; width: 100%; height: 100%; flex-grow: 1; overflow: hidden; }
+
         #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; }
 
-        /* Екрани меню */
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 10;
         }
 
-        /* Список хвиль з можливістю гортання */
         #wave-list {
             display: flex; flex-wrap: wrap; justify-content: center; 
-            max-height: 60vh; overflow-y: auto; width: 90%; padding: 10px;
-            scrollbar-width: none; /* Для Firefox */
+            max-height: 50vh; overflow-y: auto; width: 90%; padding: 10px;
         }
-        #wave-list::-webkit-scrollbar { display: none; } /* Для Chrome/Safari */
-
-        #menu-coins { font-size: 24px; color: gold; margin-bottom: 10px; text-shadow: 0 0 10px gold; }
 
         .wave-card {
             background: #0a0a0a; border: 2px solid #0ff; padding: 15px; margin: 8px;
-            width: 180px; text-align: center; cursor: pointer; border-radius: 15px; flex-shrink: 0;
+            width: 160px; text-align: center; cursor: pointer; border-radius: 15px;
         }
-        .stars { color: gold; font-size: 20px; margin: 5px 0; }
         
         button { 
             padding: 12px 30px; font-size: 18px; background: transparent; 
             border: 2px solid #0ff; color: #0ff; cursor: pointer; border-radius: 30px;
-            text-transform: uppercase;
         }
 
-        /* Екран повороту телефону */
+        /* Екран повороту */
         #rotate-screen {
-            display: none; background: #000; color: #fff; text-align: center;
-            flex-direction: column; justify-content: center; align-items: center; z-index: 100;
+            display: none; background: #000; z-index: 100;
         }
 
-        #win-screen, #fail-screen { display: none; }
-        .locked { opacity: 0.3; cursor: default; border-color: #333; }
-        #timer { position: absolute; top: 15px; right: 15px; color: #ff0; font-size: 18px; font-family: monospace; font-weight: bold; }
-        .hint { color: #555; font-size: 12px; margin-top: 15px; text-align: center; }
+        #timer { position: absolute; top: 15px; right: 15px; color: #ff0; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- Екран повороту -->
-    <div id="rotate-screen" class="screen">
-        <div style="font-size: 50px;">📱🔄</div>
-        <h2>БУДЬ ЛАСКА, ПОВЕРНІТЬ ТЕЛЕФОН</h2>
-        <p>Для гри потрібен альбомний режим</p>
+    <div id="top-bar">🚀 SPACE SHOOTER ONLINE</div>
+
+    <div id="game-container">
+        <!-- Екран повороту -->
+        <div id="rotate-screen" class="screen">
+            <div style="font-size: 50px;">📱🔄</div>
+            <h2>ПОВЕРНІТЬ ТЕЛЕФОН</h2>
+            <p>Для активації повного екрана</p>
+        </div>
+
+        <div id="ui">KILLS: <span id="kills">0</span>/10</div>
+        <div id="timer">0.00s</div>
+
+        <div id="menu-screen" class="screen">
+            <h1 style="color:#0ff; font-size: 35px; margin-bottom: 5px;">START GAME</h1>
+            <div style="color: gold; margin-bottom: 10px;">💰 COINS: <span id="coins-display">0</span></div>
+            <div id="wave-list"></div>
+        </div>
+
+        <div id="win-screen" class="screen">
+            <h1 style="color:gold;">MISSION COMPLETE</h1>
+            <div id="win-stars" style="font-size: 40px; color: gold;"></div>
+            <button onclick="backToMenu()">CONTINUE</button>
+        </div>
+
+        <div id="fail-screen" class="screen">
+            <h1 style="color:#f00;">MISSION FAILED</h1>
+            <button onclick="backToMenu()" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
+        </div>
+
+        <canvas id="game"></canvas>
     </div>
-
-    <div id="ui">KILLS: <span id="kills">0</span>/10</div>
-    <div id="timer">0.00s</div>
-
-    <div id="menu-screen" class="screen">
-        <h1 style="color:#0ff; font-size: 35px; margin-bottom: 5px;">START GAME</h1>
-        <div id="menu-coins">💰 COINS: <span id="coins-display">0</span></div>
-        <div id="wave-list"></div>
-        <div class="hint">ВИБЕРІТЬ ДОСТУПНУ ХВИЛЮ (ГОРТАЙТЕ ВНИЗ)</div>
-    </div>
-
-    <div id="win-screen" class="screen">
-        <h1 style="color:gold; font-size: 30px;">MISSION COMPLETE</h1>
-        <div id="win-stars" class="stars" style="font-size: 40px;"></div>
-        <p id="win-info" style="color: #0ff;"></p>
-        <p id="win-reward" style="color: gold; font-size: 22px; margin-bottom: 15px;"></p>
-        <button onclick="backToMenu()">CONTINUE</button>
-    </div>
-
-    <div id="fail-screen" class="screen">
-        <h1 style="color:#f00; font-size: 40px;">MISSION FAILED</h1>
-        <button onclick="backToMenu()" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
-    </div>
-
-    <canvas id="game"></canvas>
 
 <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+    const container = document.body; // Будемо розгортати весь body
     const rotateScreen = document.getElementById('rotate-screen');
-    const menuScreen = document.getElementById('menu-screen');
-    const winScreen = document.getElementById('win-screen');
-    const failScreen = document.getElementById('fail-screen');
-    const waveList = document.getElementById('wave-list');
-    const timerElement = document.getElementById('timer');
-    const coinsDisplay = document.getElementById('coins-display');
+    const topBar = document.getElementById('top-bar');
 
     let coins = Number(localStorage.getItem('coins')) || 0;
     let waveData = JSON.parse(localStorage.getItem('waveData')) || [
@@ -114,16 +108,28 @@
     let player = { x: 0, y: 0 }, bullets = [], enemies = [], starsBg = [];
     let audioCtx, shootBuf, crashBuf;
 
-    // Перевірка орієнтації
+    // Перевірка орієнтації та Fullscreen
     function checkOrientation() {
         if (window.innerHeight > window.innerWidth) {
             rotateScreen.style.display = 'flex';
+            topBar.style.display = 'flex';
+            if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
         } else {
             rotateScreen.style.display = 'none';
+            topBar.style.display = 'none';
         }
     }
     window.addEventListener('resize', checkOrientation);
     checkOrientation();
+
+    // Запит на повний екран
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+                console.log(`Помилка Fullscreen: ${err.message}`);
+            });
+        }
+    }
 
     function initAudio() {
         if (!audioCtx) {
@@ -139,17 +145,21 @@
     }
 
     function renderMenu() {
-        coinsDisplay.innerText = coins;
+        document.getElementById('coins-display').innerText = coins;
+        const waveList = document.getElementById('wave-list');
         waveList.innerHTML = '';
         waveData.forEach(w => {
             const card = document.createElement('div');
             card.className = `wave-card ${w.unlocked ? '' : 'locked'}`;
             card.innerHTML = `
                 <h3 style="margin:0; color:#0ff;">WAVE ${w.id}</h3>
-                <div class="stars">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
-                <button style="font-size:10px; padding:5px 10px; margin-top:5px;">ЗАПУСТИТИ</button>
+                <div style="color:gold;">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
+                <button style="font-size:10px; padding:5px 10px; margin-top:5px;">СТАРТ</button>
             `;
-            if(w.unlocked) card.onclick = () => startMission(w);
+            if(w.unlocked) card.onclick = () => {
+                toggleFullscreen(); // Розгортаємо при кліку
+                startMission(w);
+            };
             waveList.appendChild(card);
         });
     }
@@ -158,9 +168,9 @@
         initAudio();
         currentWave = w;
         gameActive = true;
-        menuScreen.style.display = 'none';
-        winScreen.style.display = 'none';
-        failScreen.style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('win-screen').style.display = 'none';
+        document.getElementById('fail-screen').style.display = 'none';
         kills = 0; missed = 0; bullets = []; enemies = [];
         startTime = Date.now();
         init();
@@ -179,24 +189,20 @@
     function endMission() {
         gameActive = false;
         let timeTaken = (Date.now() - startTime) / 1000;
-        let starCount = 1;
-        if (timeTaken <= currentWave.targetTime && missed === 0) starCount = 3;
-        else if (timeTaken <= currentWave.targetTime + 2 || missed <= 2) starCount = 2;
+        let starCount = timeTaken <= currentWave.targetTime && missed === 0 ? 3 : (timeTaken <= currentWave.targetTime + 2 ? 2 : 1);
         if(starCount > currentWave.stars) currentWave.stars = starCount;
         coins += currentWave.reward;
         if(currentWave.id < waveData.length) waveData[currentWave.id].unlocked = true;
         localStorage.setItem('coins', coins);
         localStorage.setItem('waveData', JSON.stringify(waveData));
         document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
-        document.getElementById('win-info').innerText = `TIME: ${timeTaken.toFixed(2)}s | GOAL: ${currentWave.targetTime}s`;
-        document.getElementById('win-reward').innerText = `+${currentWave.reward} COINS`;
-        winScreen.style.display = 'flex';
+        document.getElementById('win-screen').style.display = 'flex';
     }
 
     function backToMenu() {
-        winScreen.style.display = 'none';
-        failScreen.style.display = 'none';
-        menuScreen.style.display = 'flex';
+        document.getElementById('win-screen').style.display = 'none';
+        document.getElementById('fail-screen').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
         renderMenu();
     }
 
@@ -212,59 +218,41 @@
     function update() {
         if(!gameActive) return;
         let now = (Date.now() - startTime) / 1000;
-        timerElement.innerText = now.toFixed(2) + 's';
+        document.getElementById('timer').innerText = now.toFixed(2) + 's';
         starsBg.forEach(s => { s.y += 3; if(s.y > canvas.height) s.y = 0; });
         for(let i=bullets.length-1; i>=0; i--) {
             bullets[i].y -= 18;
             if(bullets[i].y < 0) bullets.splice(i,1);
         }
-        let spawnRate = currentWave.id === 3 ? 0.09 : 0.06; 
-        if(Math.random() < spawnRate) {
-            let size = currentWave.id === 3 ? 60 : 40; 
-            enemies.push({x: Math.random()*canvas.width, y: -50, r: size/2, s: size});
-        }
-        for(let i=enemies.length-1; i>=0; i--) {
-            let e = enemies[i];
-            e.y += 5 + (currentWave.id === 2 ? 3 : 0);
-            for(let j=bullets.length-1; j>=0; j--) {
-                let b = bullets[j];
-                if(Math.hypot(e.x-b.x, e.y-b.y) < e.r + 15) {
+        if(Math.random() < 0.06) enemies.push({x: Math.random()*canvas.width, y: -50, r: 20, s: 40, i: '👾'});
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i]; e.y += 5;
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                if (Math.hypot(e.x - bullets[j].x, e.y - bullets[j].y) < 30) {
                     if(audioCtx) { const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start(); }
-                    enemies.splice(i,1); bullets.splice(j,1);
-                    kills++;
-                    document.getElementById('kills').innerText = kills;
+                    enemies.splice(i, 1); bullets.splice(j, 1);
+                    kills++; document.getElementById('kills').innerText = kills;
                     if(kills >= 10) { endMission(); return; }
                     break;
                 }
             }
-            if(e && Math.hypot(e.x-player.x, e.y-player.y) < e.r + 20) {
-                gameActive = false;
-                failScreen.style.display = 'flex';
+            if(e && Math.hypot(e.x-player.x, e.y-player.y) < 40) {
+                gameActive = false; document.getElementById('fail-screen').style.display = 'flex';
             }
             if(e && e.y > canvas.height + 50) { enemies.splice(i,1); missed++; }
         }
     }
 
     function draw() {
-        ctx.fillStyle = '#000510';
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-        ctx.fillStyle = '#888';
-        starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
-        ctx.textAlign = 'center';
-        ctx.font = '50px Arial';
+        ctx.fillStyle = '#000510'; ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.fillStyle = '#888'; starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
+        ctx.textAlign = 'center'; ctx.font = '50px Arial';
         ctx.fillText('🚀', player.x, player.y + 15);
-        enemies.forEach(e => {
-            ctx.font = e.s + 'px Arial';
-            ctx.fillText('👾', e.x, e.y + 15);
-        });
-        ctx.fillStyle = '#0ff';
-        bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 20));
+        enemies.forEach(e => { ctx.font = '40px Arial'; ctx.fillText(e.i, e.x, e.y + 15); });
+        ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 20));
     }
 
-    function animate() {
-        update(); draw();
-        if(gameActive) requestAnimationFrame(animate);
-    }
+    function animate() { update(); draw(); if(gameActive) requestAnimationFrame(animate); }
 
     renderMenu();
     window.addEventListener('resize', init);
