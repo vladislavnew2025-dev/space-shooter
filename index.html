@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <title>Space Shooter Stable</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 20px; pointer-events: none; text-shadow: 0 0 5px #000; }
+    </style>
+</head>
+<body>
+    <div id="ui">SCORE: <span id="score">0</span></div>
+    <canvas id="game"></canvas>
+
+<script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    let score = 0, gameActive = true;
+    let player = { x: 0, y: 0, r: 15 };
+    let bullets = [], enemies = [], stars = [];
+
+    // Покращений звук: короткий "пік", що не перевантажує динаміки
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playLaser() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle'; // Більш стабільний звук
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.x = canvas.width / 2;
+        player.y = canvas.height - 80;
+        stars = [];
+        for(let i=0; i<30; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2});
+    }
+
+    window.addEventListener('pointermove', (e) => { player.x = e.clientX; });
+
+    // Стрільба (раз на 300мс для стабільності звуку)
+    setInterval(() => {
+        if(gameActive) {
+            bullets.push({ x: player.x, y: player.y - 10 });
+            playLaser();
+        }
+    }, 300);
+
+    function update() {
+        if(!gameActive) return;
+
+        stars.forEach(s => { s.y += 2; if(s.y > canvas.height) s.y = 0; });
+
+        // Кулі
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            bullets[i].y -= 10;
+            if(bullets[i].y < 0) bullets.splice(i, 1);
+        }
+
+        // Вороги
+        if(Math.random() < 0.03) {
+            enemies.push({ x: Math.random()*canvas.width, y: -30, r: 15 + Math.random()*15 });
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.y += 3.5;
+
+            // Перевірка на кулі
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                let b = bullets[j];
+                let dist = Math.sqrt((e.x - b.x)**2 + (e.y - b.y)**2);
+                if(dist < e.r) {
+                    enemies.splice(i, 1);
+                    bullets.splice(j, 1);
+                    score += 100;
+                    document.getElementById('score').innerText = score;
+                    return; // Зупиняємо цикл для цього ворога
+                }
+            }
+
+            // Перевірка на гравця
+            let distPlayer = Math.sqrt((e.x - player.x)**2 + (e.y - player.y)**2);
+            if(distPlayer < e.r + player.r) {
+                gameActive = false;
+                alert("GAME OVER! SCORE: " + score);
+                location.reload();
+            }
+
+            // Просто видаляємо, якщо вилетів знизу (гра НЕ заканчується)
+            if(e.y > canvas.height + 50) enemies.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000'; // Чистий чорний без шлейфів (щоб не лагало)
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+
+        ctx.fillStyle = '#444';
+        stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
+
+        ctx.fillStyle = '#0ff';
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(player.x-15, player.y+20);
+        ctx.lineTo(player.x+15, player.y+20);
+        ctx.fill();
+
+        ctx.fillStyle = '#f0f';
+        enemies.forEach(e => {
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = '#ff0';
+        bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 10));
+
+        requestAnimationFrame(() => { update(); draw(); });
+    }
+
+    init(); draw();
+    window.addEventListener('resize', init);
+</script>
+</body>
+</html>
