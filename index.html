@@ -1,243 +1,221 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
     <title>Space Shooter: Modular Pro</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Segoe UI', sans-serif; color: #0ff; }
         canvas { display: block; }
         
-        /* Інтерфейс */
-        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; }
-        #shop-btn { position: absolute; top: 10px; right: 10px; padding: 10px; background: #004444; border: 2px solid #0ff; color: #0ff; cursor: pointer; }
-        
-        /* Магазин */
-        #shop-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center;
+        /* Главное меню */
+        #main-menu {
+            position: fixed; inset: 0; background: radial-gradient(circle, #001, #000);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
         }
-        .grid-container { display: grid; grid-template-columns: repeat(4, 50px); gap: 5px; margin: 20px; border: 1px solid #333; padding: 10px; }
-        .cell { width: 50px; height: 50px; border: 1px solid #0ff; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #001111; }
-        .cell.locked { border-color: #333; background: #050505; color: #333; }
-        .inventory { display: flex; gap: 10px; margin-top: 20px; min-height: 60px; border-top: 1px solid #0ff; padding-top: 20px; }
-        .item { width: 40px; height: 40px; background: #ff0; border: 1px solid #fff; cursor: pointer; color: #000; font-weight: bold; font-size: 10px; text-align: center; }
+
+        /* Интерфейс игры */
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; display: none; }
+        #shop-btn { position: absolute; top: 10px; right: 10px; padding: 12px; background: #004; border: 2px solid #0ff; color: #0ff; cursor: pointer; display: none; }
+
+        /* Окно магазина */
+        #shop-overlay { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,10,0.95); 
+            z-index: 100; flex-direction: column; align-items: center; justify-content: center; 
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(4, 55px); gap: 5px; margin: 20px; background: rgba(0,255,255,0.05); padding: 10px; border: 1px solid #044; }
+        .cell { width: 55px; height: 55px; border: 1px solid #0ff; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+        .cell.locked { border-color: #222; color: #222; background: #050505; }
         
-        .controls { margin-top: 20px; }
-        button { padding: 10px; background: #0ff; border: none; color: #000; font-weight: bold; cursor: pointer; margin: 5px; }
+        .inv { display: flex; gap: 10px; margin: 20px; min-height: 50px; border: 1px dashed #0ff; padding: 10px; }
+        .gun-item { width: 45px; height: 45px; background: #ff0; color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
+        
+        button { padding: 15px 30px; margin: 5px; background: #0ff; border: none; color: #000; font-weight: bold; cursor: pointer; font-size: 18px; text-transform: uppercase; }
+        button:hover { background: #fff; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        SCORE: <span id="score">0</span><br>
-        MONEY: $<span id="money">0</span><br>
-        WAVE: <span id="wave">1</span>
+<!-- Главное меню -->
+<div id="main-menu">
+    <h1 style="font-size: 50px; text-shadow: 0 0 20px #0ff;">SPACE SHOOTER</h1>
+    <button onclick="startGame()">ЗАПУСТИТЬ ДВИГАТЕЛИ</button>
+    <p style="color: #555;">Управление: Мышь / Тач</p>
+</div>
+
+<!-- Игровой интерфейс -->
+<div id="ui">
+    СЧЕТ: <span id="score">0</span> | $: <span id="money">0</span><br>
+    ВОЛНА: <span id="wave">1</span>
+</div>
+<button id="shop-btn" onclick="toggleShop()">АПГРЕЙД КОРАБЛЯ</button>
+
+<!-- Магазин -->
+<div id="shop-overlay">
+    <h2>КОНСТРУКТОР КОРАБЛЯ</h2>
+    <div id="ship-grid" class="grid"></div>
+    <div class="inv" id="inventory"></div>
+    <div>
+        <button onclick="buyCannon()">ПУШКА ($1500)</button>
+        <button onclick="buyCell()">ОТСЕК ($3000)</button>
     </div>
+    <button onclick="toggleShop()" style="margin-top:30px; background:#f0f; color:#fff;">ВЫЙТИ В КОСМОС</button>
+</div>
 
-    <button id="shop-btn" onclick="toggleShop()">SHOP / UPGRADES</button>
+<canvas id="game"></canvas>
 
-    <div id="shop-overlay">
-        <h2>SHIP UPGRADES</h2>
-        <p>Клікай на пушку в інвентарі, потім на клітинку корабля</p>
-        
-        <div id="ship-grid" class="grid-container">
-            <!-- Клітинки генеруються скриптом -->
-        </div>
+<script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    
+    let score = 0, money = 0, wave = 1, gameActive = false, shopOpen = false;
+    let ship = {
+        grid: Array(16).fill(null).map((_, i) => i < 4 ? 0 : null),
+        x: window.innerWidth / 2,
+        unlockedCount: 4
+    };
+    let inventory = [1]; // Даем одну пушку сразу
+    let selectedGunIdx = null, enemies = [], bullets = [];
 
-        <div class="inventory" id="inventory">
-            <!-- Куплені пушки -->
-        </div>
+    function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        renderShop();
+    }
 
-        <div class="controls">
-            <button onclick="buyCannon()">BUY CANNON ($1500)</button>
-            <button onclick="buyCell()">BUY SHIP CELL ($3000)</button>
-            <button onclick="toggleShop()" style="background: #f0f;">BACK TO SPACE</button>
-        </div>
-    </div>
+    function startGame() {
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('ui').style.display = 'block';
+        document.getElementById('shop-btn').style.display = 'block';
+        gameActive = true;
+        animate();
+    }
 
-    <canvas id="game"></canvas>
+    function toggleShop() {
+        shopOpen = !shopOpen;
+        document.getElementById('shop-overlay').style.display = shopOpen ? 'flex' : 'none';
+        renderShop();
+    }
 
-    <script>
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        
-        let score = 0;
-        let money = 0;
-        let wave = 1;
-        let gameActive = true;
-        let shopOpen = false;
+    function renderShop() {
+        const gridDiv = document.getElementById('ship-grid');
+        gridDiv.innerHTML = '';
+        ship.grid.forEach((state, i) => {
+            const div = document.createElement('div');
+            div.className = 'cell' + (state === null ? ' locked' : '');
+            div.innerHTML = state === 1 ? '🔫' : (state === null ? '🔒' : '');
+            div.onclick = () => {
+                if (state === null) return;
+                if (selectedGunIdx !== null && state === 0) {
+                    ship.grid[i] = 1; inventory.splice(selectedGunIdx, 1); selectedGunIdx = null;
+                } else if (state === 1) {
+                    ship.grid[i] = 0; inventory.push(1);
+                }
+                renderShop();
+            };
+            gridDiv.appendChild(div);
+        });
 
-        // Корабель тепер складається з сітки
-        // 0 - пусто, 1 - пушка, null - заблоковано
-        let shipData = {
-            cells: [1, 0, 0, 0], // початкові 4 клітинки горизонтально
-            gridWidth: 4,
-            unlocked: 4
-        };
+        const invDiv = document.getElementById('inventory');
+        invDiv.innerHTML = '';
+        inventory.forEach((_, i) => {
+            const div = document.createElement('div');
+            div.className = 'gun-item';
+            div.innerHTML = 'GUN';
+            if (selectedGunIdx === i) div.style.boxShadow = '0 0 10px #fff';
+            div.onclick = () => { selectedGunIdx = i; renderShop(); };
+            invDiv.appendChild(div);
+        });
+        document.getElementById('money').innerText = money;
+        document.getElementById('score').innerText = score;
+    }
 
-        let inventory = []; // Не встановлені пушки
-        let selectedFromInv = null;
-
-        let playerX = window.innerWidth / 2;
-        let bullets = [];
-        let enemies = [];
-
-        function init() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            renderShop();
+    function buyCannon() { if(money >= 1500) { money -= 1500; inventory.push(1); renderShop(); } }
+    function buyCell() {
+        if(money >= 3000 && ship.unlockedCount < 16) {
+            money -= 3000; ship.grid[ship.unlockedCount] = 0; ship.unlockedCount++; renderShop();
         }
+    }
 
-        function toggleShop() {
-            shopOpen = !shopOpen;
-            document.getElementById('shop-overlay').style.display = shopOpen ? 'flex' : 'none';
-        }
+    window.addEventListener('pointermove', (e) => { if(gameActive && !shopOpen) ship.x = e.clientX; });
 
-        function renderShop() {
-            const gridDiv = document.getElementById('ship-grid');
-            gridDiv.innerHTML = '';
-            shipData.cells.forEach((cell, i) => {
-                const div = document.createElement('div');
-                div.className = 'cell';
-                div.innerHTML = cell === 1 ? '🔫' : '';
-                div.onclick = () => handleCellClick(i);
-                gridDiv.appendChild(div);
+    setInterval(() => {
+        if(!gameActive || shopOpen) return;
+        ship.grid.forEach((type, i) => {
+            if(type === 1) {
+                let row = Math.floor(i / 4), col = i % 4;
+                let dir = row < 2 ? -1 : 1;
+                bullets.push({ x: ship.x + (col-1.5)*55, y: canvas.height - 100 + row*55, d: dir });
+            }
+        });
+    }, 250);
+
+    function update() {
+        if(!gameActive || shopOpen) return;
+        wave = Math.floor(score / 2000) + 1;
+        document.getElementById('wave').innerText = wave;
+
+        bullets.forEach((b, i) => {
+            b.y += b.d * 12;
+            if(b.y < 0 || b.y > canvas.height) bullets.splice(i, 1);
+        });
+
+        enemies.forEach((e, ei) => {
+            e.y += (2 + wave * 0.4);
+            bullets.forEach((b, bi) => {
+                if(Math.hypot(e.x - b.x, e.y - b.y) < e.r) {
+                    enemies.splice(ei, 1); bullets.splice(bi, 1);
+                    score += 100; money += 50;
+                }
             });
+            if(e.y > canvas.height - 50) { gameActive = false; alert("ПРОИГРЫШ! ВОЛНА: " + wave); location.reload(); }
+        });
 
-            const invDiv = document.getElementById('inventory');
-            invDiv.innerHTML = '';
-            inventory.forEach((item, i) => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerHTML = 'GUN';
-                div.onclick = () => { selectedFromInv = i; alert("Пушка вибрана! Тепер тицяй у клітинку корабля."); };
-                invDiv.appendChild(div);
-            });
+        if(Math.random() < 0.02 + wave*0.01) enemies.push({ x: Math.random()*canvas.width, y: -50, r: 15+Math.random()*20 });
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Рисуем КОРАБЛЬ
+        ship.grid.forEach((state, i) => {
+            if(state === null) return;
+            let row = Math.floor(i / 4), col = i % 4;
+            let rx = ship.x + (col-1.5)*55 - 25, ry = canvas.height - 100 + row*55;
             
-            document.getElementById('money').innerText = money;
-            document.getElementById('score').innerText = score;
-            document.getElementById('wave').innerText = wave;
-        }
+            // Корпус клетки
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(rx, ry, 50, 50);
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.fillRect(rx, ry, 50, 50);
 
-        function handleCellClick(index) {
-            if (selectedFromInv !== null) {
-                // Ставимо пушку з інвентаря
-                if (shipData.cells[index] === 0) {
-                    shipData.cells[index] = 1;
-                    inventory.splice(selectedFromInv, 1);
-                    selectedFromInv = null;
-                }
-            } else if (shipData.cells[index] === 1) {
-                // Знімаємо пушку в інвентар
-                shipData.cells[index] = 0;
-                inventory.push(1);
+            if(state === 1) {
+                ctx.fillStyle = '#ff0'; // Пушка
+                ctx.fillRect(rx+15, ry+(row<2?-10:20), 20, 40);
             }
-            renderShop();
-        }
+        });
 
-        function buyCannon() {
-            if (money >= 1500) {
-                money -= 1500;
-                inventory.push(1);
-                renderShop();
-            } else { alert("Бракує грошей!"); }
-        }
+        ctx.fillStyle = '#fff';
+        bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 15));
+        
+        ctx.fillStyle = '#f0f';
+        enemies.forEach(e => {
+            ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.stroke();
+        });
+    }
 
-        function buyCell() {
-            if (money >= 3000) {
-                money -= 3000;
-                shipData.cells.push(0); // Додаємо нову клітинку (корабель росте)
-                renderShop();
-            } else { alert("Бракує грошей!"); }
-        }
-
-        window.addEventListener('pointermove', (e) => { if(!shopOpen) playerX = e.clientX; });
-
-        // Автострільба з усіх пушок
-        setInterval(() => {
-            if(gameActive && !shopOpen) {
-                shipData.cells.forEach((type, i) => {
-                    if (type === 1) {
-                        let offsetX = (i - (shipData.cells.length-1)/2) * 55;
-                        // Якщо пушка в лівій частині - стріляє вгору, якщо клітинок багато - задні (умовно) вниз
-                        // Для спрощення: перші 4 стріляють вгору, наступні - вниз (як ти просив)
-                        let direction = (i < 4) ? -1 : 1; 
-                        bullets.push({ 
-                            x: playerX + offsetX, 
-                            y: direction === -1 ? canvas.height - 100 : canvas.height - 70, 
-                            dir: direction 
-                        });
-                    }
-                });
-            }
-        }, 300);
-
-        function update() {
-            if(!gameActive || shopOpen) return;
-
-            // Хвилі
-            wave = Math.floor(score / 2000) + 1;
-
-            bullets.forEach((b, i) => {
-                b.y += b.dir * 8;
-                if(b.y < 0 || b.y > canvas.height) bullets.splice(i, 1);
-            });
-
-            enemies.forEach((e, ei) => {
-                e.y += (2 + wave * 0.5); // Вороги швидшають з кожною хвилею
-                
-                bullets.forEach((b, bi) => {
-                    let dist = Math.hypot(e.x - b.x, e.y - b.y);
-                    if(dist < e.size) {
-                        enemies.splice(ei, 1);
-                        bullets.splice(bi, 1);
-                        score += 100;
-                        money += 50; // Гроші за вбивство
-                        document.getElementById('money').innerText = money;
-                        document.getElementById('score').innerText = score;
-                    }
-                });
-
-                if(e.y > canvas.height) { gameActive = false; alert("GAME OVER! Wave: " + wave); location.reload(); }
-            });
-
-            if(Math.random() < 0.02 + (wave * 0.01)) {
-                enemies.push({ x: Math.random() * canvas.width, y: -50, size: 20 + Math.random() * 20 });
-            }
-        }
-
-        function draw() {
-            ctx.fillStyle = '#000510';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Малюємо модульний корабель
-            shipData.cells.forEach((type, i) => {
-                let offsetX = (i - (shipData.cells.length-1)/2) * 55;
-                ctx.strokeStyle = '#0ff';
-                ctx.strokeRect(playerX + offsetX - 25, canvas.height - 100, 50, 50);
-                if (type === 1) {
-                    ctx.fillStyle = '#ff0';
-                    ctx.fillRect(playerX + offsetX - 10, canvas.height - 110, 20, 30);
-                }
-            });
-
-            ctx.fillStyle = '#fff';
-            bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 10));
-
-            ctx.fillStyle = '#f0f';
-            enemies.forEach(e => {
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, e.size/2, 0, Math.PI*2);
-                ctx.fill();
-            });
-
-            requestAnimationFrame(() => { update(); draw(); });
-        }
-
-        init();
+    function animate() {
+        update();
         draw();
-    </script>
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', init);
+    init();
+</script>
 </body>
 </html>
