@@ -11,7 +11,7 @@
         canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
         #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; }
-        #timer { position: absolute; top: 15px; right: 15px; color: #ff0; font-size: 18px; font-weight: bold; z-index: 5; }
+        #hp-display { position: absolute; top: 15px; right: 15px; color: #ff3366; font-size: 20px; font-weight: bold; z-index: 5; pointer-events: none; }
 
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
 
@@ -66,7 +66,7 @@
 <body>
 
     <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div>
-    <div id="timer" style="display:none;">0.00s</div>
+    <div id="hp-display" style="display:none;">❤️❤️❤️</div>
 
     <div id="main-menu" class="screen">
         <h1 style="color:#0ff; font-size: 45px; margin-bottom: 20px;">SPACE GAME</h1>
@@ -123,12 +123,12 @@
             reward: 50, 
             stars: 0, 
             unlocked: true, 
-            targetTime: 12,        
             spawnCount: 8,         
             spawnTypes: ['normal'],
             hasBoss: true,         
             bossHp: 5,             
-            bossCooldown: 1200     
+            bossCooldown: 1200,
+            bossSkin: '👾'
         },
         { 
             id: 2, 
@@ -136,12 +136,12 @@
             reward: 80, 
             stars: 0, 
             unlocked: false, 
-            targetTime: 15, 
             spawnCount: 12, 
             spawnTypes: ['normal', 'fast'], 
             hasBoss: true, 
             bossHp: 8, 
-            bossCooldown: 1000 
+            bossCooldown: 1000,
+            bossSkin: '🛸'
         },
         { 
             id: 3, 
@@ -149,21 +149,20 @@
             reward: 120, 
             stars: 0, 
             unlocked: false, 
-            targetTime: 20, 
             spawnCount: 20, 
             spawnTypes: ['normal', 'fast', 'heavy'], 
             hasBoss: true, 
             bossHp: 25,            
-            bossCooldown: 600      
+            bossCooldown: 600,
+            bossSkin: '👺'
         }
     ];
 
-    // Примусова очистка, якщо структура збережених хвиль застаріла
     let savedWaves = localStorage.getItem('waveData');
     if (savedWaves) {
         try {
             let parsed = JSON.parse(savedWaves);
-            if (!parsed[0] || parsed[0].spawnCount === undefined) {
+            if (!parsed[0] || parsed[0].bossSkin === undefined) {
                 localStorage.removeItem('waveData');
             }
         } catch(e) {
@@ -186,7 +185,7 @@
     let currentRightTab = 'inv_guns';
     let selectedGunIdx = null;
 
-    let gameActive = false, currentWave = null, startTime, kills = 0, missed = 0, spawnedThisWave = 0;
+    let gameActive = false, currentWave = null, playerHp = 3, kills = 0, missed = 0, spawnedThisWave = 0;
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
     let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
     let bossInstance = null;
@@ -201,6 +200,10 @@
     function updateCoinsUI() {
         document.getElementById('main-coins').innerText = coins;
         document.getElementById('shop-coins').innerText = coins;
+    }
+
+    function updateHpUI() {
+        document.getElementById('hp-display').innerText = '❤️'.repeat(playerHp) + '🖤'.repeat(3 - playerHp);
     }
 
     function initAudio() {
@@ -347,20 +350,21 @@
     }
 
     function startMission(w) {
-        initAudio(); currentWave = w; gameActive = true;
+        initAudio(); currentWave = w; gameActive = true; playerHp = 3;
         document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
         document.getElementById('ui').style.display = 'block';
-        document.getElementById('timer').style.display = 'block';
+        document.getElementById('hp-display').style.display = 'block';
         
         let totalTargets = w.spawnCount + (w.hasBoss ? 1 : 0);
         document.getElementById('kills').innerText = '0';
         document.getElementById('required-kills').innerText = totalTargets;
         
         kills = 0; missed = 0; spawnedThisWave = 0;
-        bullets = []; enemyBullets = []; enemies = []; startTime = Date.now();
+        bullets = []; enemyBullets = []; enemies = [];
         bossInstance = null;
         
         init();
+        updateHpUI();
         
         if (shootInterval) clearInterval(shootInterval);
         shootInterval = setInterval(() => {
@@ -427,7 +431,11 @@
             speedX: 3,
             lastShot: 0,
             shootCooldown: currentWave.bossCooldown,
-            i: '👺' 
+            lastCircleShot: 0,
+            circleCooldown: 4000, 
+            ultCount: 0,         
+            isUlting: false,     
+            i: currentWave.bossSkin
         };
     }
 
@@ -440,6 +448,20 @@
     window.addEventListener('pointermove', (e) => { if(gameActive) player.targetX = e.clientX; });
     window.addEventListener('touchmove', (e) => { if(gameActive && e.touches.length > 0) player.targetX = e.touches[0].clientX; });
 
+    function takeDamage(reasonText) {
+        playerHp--;
+        updateHpUI();
+        const s = audioCtx.createBufferSource(); s.buffer = hurtBuf; s.connect(audioCtx.destination); s.start();
+        
+        if (playerHp <= 0) {
+            gameActive = false;
+            document.getElementById('fail-title').innerText = reasonText;
+            document.getElementById('fail-screen').style.display = 'flex';
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('hp-display').style.display = 'none';
+        }
+    }
+
     function gameLoop() {
         if(!gameActive) return;
         update();
@@ -449,9 +471,6 @@
 
     function update() {
         player.x += (player.targetX - player.x) * 0.2;
-        let now = (Date.now() - startTime) / 1000;
-        document.getElementById('timer').innerText = now.toFixed(2) + 's';
-        
         starsBg.forEach(s => { s.y += 3; if(s.y > canvas.height) s.y = 0; });
         
         for(let i=bullets.length-1; i>=0; i--) { 
@@ -459,15 +478,18 @@
         }
 
         for(let i=enemyBullets.length-1; i>=0; i--) {
-            enemyBullets[i].y += 7.5;
-            if(enemyBullets[i].y > canvas.height) { enemyBullets.splice(i, 1); continue; }
+            enemyBullets[i].x += enemyBullets[i].vx || 0;
+            enemyBullets[i].y += enemyBullets[i].vy || 7.5;
+            
+            if(enemyBullets[i].y > canvas.height || enemyBullets[i].y < -50 || enemyBullets[i].x < -50 || enemyBullets[i].x > canvas.width + 50) { 
+                enemyBullets.splice(i, 1); 
+                continue; 
+            }
             
             if(Math.hypot(enemyBullets[i].x - player.x, enemyBullets[i].y - player.y) < 28) {
-                gameActive = false;
-                const s = audioCtx.createBufferSource(); s.buffer = hurtBuf; s.connect(audioCtx.destination); s.start();
-                document.getElementById('fail-title').innerText = "ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!";
-                document.getElementById('fail-screen').style.display = 'flex';
-                return;
+                enemyBullets.splice(i, 1);
+                takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");
+                if(!gameActive) return;
             }
         }
 
@@ -480,12 +502,45 @@
             }
 
             let timestamp = Date.now();
-            if (timestamp - bossInstance.lastShot > bossInstance.shootCooldown && bossInstance.y >= bossInstance.targetY) {
-                enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20 });
-                enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20 });
+            
+            if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > bossInstance.shootCooldown && bossInstance.y >= bossInstance.targetY) {
+                enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
+                enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 
                 const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
                 bossInstance.lastShot = timestamp;
+            }
+
+            if (currentWave.id === 3 && !bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > bossInstance.circleCooldown && bossInstance.y >= bossInstance.targetY) {
+                bossInstance.isUlting = true;
+                bossInstance.ultCount = 0;
+                bossInstance.lastCircleShot = timestamp;
+            }
+
+            if (bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > 350) {
+                let numShots = 10; 
+                let speed = 4.8;   
+                
+                let angleOffset = (bossInstance.ultCount * Math.PI) / 10; 
+
+                for (let i = 0; i < numShots; i++) {
+                    let angle = ((i * 2 * Math.PI) / numShots) + angleOffset;
+                    enemyBullets.push({
+                        x: bossInstance.x,
+                        y: bossInstance.y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed
+                    });
+                }
+                
+                const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
+                bossInstance.ultCount++;
+                bossInstance.lastCircleShot = timestamp;
+
+                if (bossInstance.ultCount >= 2) { 
+                    bossInstance.isUlting = false;
+                    bossInstance.lastCircleShot = timestamp + 1000; 
+                }
             }
 
             for(let j=bullets.length-1; j>=0; j--) {
@@ -510,10 +565,9 @@
             }
 
             if (Math.hypot(bossInstance.x - player.x, bossInstance.y - player.y) < 55) {
-                gameActive = false;
-                document.getElementById('fail-title').innerText = "БОСС ПРОТАРАНИВ ВАС!";
-                document.getElementById('fail-screen').style.display = 'flex';
-                return;
+                takeDamage("БОСС ПРОТАРАНИВ ВАС!");
+                bossInstance.x = canvas.width / 2;
+                if(!gameActive) return;
             }
         }
 
@@ -539,14 +593,18 @@
             }
             
             if(e && Math.hypot(e.x-player.x, e.y-player.y) < (e.size / 2 + 18)) { 
-                gameActive = false; 
-                document.getElementById('fail-title').innerText = "ЗІТКНЕННЯ З ОРДОЮ!";
-                document.getElementById('fail-screen').style.display = 'flex'; 
+                enemies.splice(i, 1);
+                takeDamage("ЗІТКНЕННЯ З ОРДОЮ!");
+                if(!gameActive) return;
+                
+                if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
+                    gameActive = false; endMission(); return;
+                }
             }
             
             if(e && e.y > canvas.height + 50) { 
                 enemies.splice(i,1); 
-                missed++; 
+                missed++;
                 
                 if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
                     gameActive = false; endMission(); return;
@@ -570,65 +628,97 @@
         let cellW = 32, cellH = 25;
         let shipW = maxCols * cellW, shipH = maxRows * cellH;
 
+        ctx.beginPath();
         ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)'; ctx.lineWidth = 2;
         ctx.fillStyle = 'rgba(0, 255, 255, 0.05)';
         let shipLeft = player.x - shipW / 2, shipTop = player.y - shipH / 2;
-        ctx.beginPath(); ctx.roundRect(shipLeft, shipTop, shipW, shipH, 8); ctx.fill(); ctx.stroke();
+        ctx.roundRect(shipLeft, shipTop, shipW, shipH, 8); ctx.fill(); ctx.stroke();
 
         shipGrid.forEach((s, i) => {
             if(s === 1) {
                 let r = Math.floor(i / 4), c = i % 4;
                 let gunX = player.x + (c - 1.5) * cellW;
                 let gunY = player.y - shipH / 2 + (r * cellH) + 10;
+                ctx.beginPath();
                 ctx.fillStyle = '#ff0'; ctx.fillRect(gunX - 4, gunY - 12, 8, 16);
                 ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
             }
         });
         
-        ctx.textAlign = 'center'; ctx.font = '36px Arial';
-        ctx.fillText(activeSkin, player.x, player.y + 12);
+        // Малюємо твий корабель
+        ctx.beginPath();
+        ctx.save();
+        ctx.globalAlpha = 1.0; 
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '36px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(activeSkin, player.x, player.y);
+        ctx.restore();
         
+        // Малюємо ворогів (ІСПРАВЛЕНА ЦЕНТРИЗАЦІЯ І ВЕРТИКАЛЬНА БАЗА)
         enemies.forEach(e => { 
-            ctx.font = `${e.size}px Arial`; ctx.fillText(e.i, e.x, e.y + e.size/3); 
+            ctx.beginPath();
+            ctx.save();
+            ctx.globalAlpha = 1.0;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle'; // Текст рисуется СТРОГО вокруг математического центра e.y
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `${e.size}px Arial`; 
+            ctx.fillText(e.i, e.x, e.y); 
+            ctx.restore();
+
             if (e.maxHp > 1) {
                 let barW = e.size; let barH = 4;
-                let barX = e.x - barW / 2; let barY = e.y - e.size / 2 - 8;
+                // Полоска рисуется чуть выше смайлика, центрированная по горизонтали
+                let barX = e.x - barW / 2; let barY = e.y - e.size / 2 - 6;
                 ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barW, barH);
                 ctx.fillStyle = '#0f0'; ctx.fillRect(barX, barY, barW * (e.hp / e.maxHp), barH);
             }
         });
 
+        // Малюємо боса
         if (bossInstance) {
+            ctx.beginPath();
+            ctx.save();
+            ctx.globalAlpha = 1.0;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
             ctx.font = '75px Arial';
-            ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y + 20);
+            ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y);
+            ctx.restore();
             
             let bBarW = canvas.width * 0.6; let bBarH = 10;
             let bBarX = (canvas.width - bBarW) / 2; let bBarY = 60;
             
+            ctx.beginPath();
             ctx.fillStyle = 'rgba(255,255,255,0.1)';
             ctx.roundRect(bBarX, bBarY, bBarW, bBarH, 4); ctx.fill();
             
-            ctx.fillStyle = '#ff0055';
-            ctx.beginPath(); ctx.roundRect(bBarX, bBarY, bBarW * (bossInstance.hp / bossInstance.maxHp), bBarH, 4); ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = bossInstance.isUlting ? '#ffaa00' : '#ff0055'; 
+            ctx.roundRect(bBarX, bBarY, bBarW * (bossInstance.hp / bossInstance.maxHp), bBarH, 4); ctx.fill();
             
+            ctx.beginPath();
+            ctx.save();
+            ctx.textAlign = 'center'; 
             ctx.font = '12px Segoe UI'; ctx.fillStyle = '#fff';
-            ctx.fillText(`ГЕНЕРАЛ ОРДИ: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width/2, bBarY - 6);
+            let bossTitle = currentWave.id === 3 ? (bossInstance.isUlting ? "👺 БОСС: АКТИВАЦІЯ УЛЬТИ! 👺" : "ГЕНЕРАЛ ОРДИ (ULTRA)") : "КОСМІЧНИЙ ЗАГАРБНИК";
+            ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width / 2, bBarY - 6);
+            ctx.restore();
         }
         
-        ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 20));
-        ctx.fillStyle = '#f00'; enemyBullets.forEach(eb => ctx.fillRect(eb.x-3, eb.y, 6, 15));
+        ctx.beginPath(); ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 20));
+        ctx.beginPath(); ctx.fillStyle = '#f00'; enemyBullets.forEach(eb => ctx.fillRect(eb.x-4, eb.y-4, 8, 8));
     }
 
     function endMission() {
         if (shootInterval) clearInterval(shootInterval);
         if (enemySpawnInterval) clearInterval(enemySpawnInterval);
         
-        let timeTaken = (Date.now() - startTime) / 1000;
-        
         let starCount = 1;
-        if (timeTaken <= currentWave.targetTime && missed === 0) {
+        if (playerHp === 3 && missed === 0) {
             starCount = 3;
-        } else if (timeTaken <= currentWave.targetTime + 4 && missed <= 2) {
+        } else if (playerHp >= 2) {
             starCount = 2;
         }
         
@@ -646,7 +736,7 @@
         document.getElementById('win-reward-text').innerText = `+${currentWave.reward} COINS`;
         document.getElementById('win-screen').style.display = 'flex';
         document.getElementById('ui').style.display = 'none';
-        document.getElementById('timer').style.display = 'none';
+        document.getElementById('hp-display').style.display = 'none';
     }
 
     updateCoinsUI();
