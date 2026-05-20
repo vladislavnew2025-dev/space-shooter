@@ -26,40 +26,34 @@
         
         #wave-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 45vh; overflow-y: auto; padding: 10px; width: 95%; max-width: 500px; }
         .wave-card { background: #0a0a0a; border: 2px solid #0ff; padding: 10px; text-align: center; cursor: pointer; border-radius: 15px; }
+        .wave-card.boss-wave { border-color: #f00; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
         
         #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; }
         @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } }
 
-        .locked { opacity: 0.3; filter: grayscale(1); }
+        .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed !important; }
         .coins-display { color: gold; font-size: 24px; margin-bottom: 15px; }
 
-        /* Контейнер для конфигуратора корабля */
         .ship-config-container { display: flex; position: relative; width: 100%; height: 60vh; justify-content: center; align-items: center; overflow: visible; }
 
-        /* Выдвижные панели (Sidebars) */
         .sidebar { position: absolute; top: 0; width: 150px; height: 100%; background: rgba(5, 5, 5, 0.95); border: 1px solid #0ff; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 10px; border-radius: 10px; z-index: 15; }
         
-        /* Левая панель: Магазин пушек и ячеек */
         .sidebar-left { left: -30px; transform: translateX(-75%); }
         .sidebar-left:hover, .sidebar-left:focus-within { transform: translateX(35px); }
 
-        /* Правая панель: Инвентарь купленного */
         .sidebar-right { right: -30px; transform: translateX(75%); }
         .sidebar-right:hover, .sidebar-right:focus-within { transform: translateX(-35px); }
 
-        /* Ярлыки для наведения */
         .sidebar-handle { position: absolute; top: 50%; transform: translateY(-50%); background: #0ff; color: #000; padding: 15px 5px; font-size: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; writing-mode: vertical-lr; letter-spacing: 1px; }
         .sidebar-left .sidebar-handle { right: -23px; }
         .sidebar-right .sidebar-handle { left: -23px; }
 
-        /* Сетка внутри панелей */
         .side-tabs { display: flex; gap: 2px; margin-bottom: 10px; width: 100%; }
         .side-tab-btn { flex: 1; font-size: 9px; padding: 5px 2px; background: rgba(0,255,255,0.1); border: 1px solid #0ff; color: #fff; cursor: pointer; border-radius: 5px; text-transform: uppercase; text-align: center;}
         .side-tab-btn.active { background: #0ff; color: #000; }
 
         .side-list { flex: 1; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 
-        /* Стили для системы сетки корабля в центре */
         .grid-ui { display: grid; grid-template-columns: repeat(4, 45px); gap: 5px; background: #050505; padding: 10px; border: 2px solid #0ff; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,255,0.2); }
         .cell-ui { width: 45px; height: 45px; border: 1px solid #0ff; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(0,255,255,0.05); cursor: pointer; border-radius: 5px; transition: background 0.2s; }
         .cell-ui:not(.locked):hover { background: rgba(0,255,255,0.2); }
@@ -71,7 +65,7 @@
 </head>
 <body>
 
-    <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/10</div>
+    <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div>
     <div id="timer" style="display:none;">0.00s</div>
 
     <div id="main-menu" class="screen">
@@ -79,6 +73,7 @@
         <div class="coins-display">💰 COINS: <span id="main-coins">0</span></div>
         <button class="main-btn" onclick="showWaves()">Start Game</button>
         <button class="main-btn" onclick="showShop()">Shop</button>
+        <button class="main-btn" style="border-color: #ffaa00; color: #ffaa00; font-size: 13px; padding: 5px;" onclick="resetProgress()">WIPE PROGRESS 🔄</button>
         <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button>
         <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div>
     </div>
@@ -103,14 +98,14 @@
     </div>
 
     <div id="win-screen" class="screen" style="display:none;">
-        <h1 style="color:gold; font-size: 35px; margin:0;">MISSION COMPLETE</h1>
+        <h1 style="color:gold; font-size: 35px; margin:0;" id="win-title">MISSION COMPLETE</h1>
         <div id="win-stars" style="font-size: 50px; color: gold;"></div>
         <div id="win-reward-text" style="color:gold; font-size:24px;"></div>
         <button onclick="backToWaves()" class="main-btn" style="margin-top:20px;">CONTINUE</button>
     </div>
 
     <div id="fail-screen" class="screen" style="display:none;">
-        <h1 style="color:#f00; font-size: 40px;">MISSION FAILED</h1>
+        <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1>
         <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
     </div>
 
@@ -121,30 +116,87 @@
     const ctx = canvas.getContext('2d');
     const container = document.documentElement;
 
+    const defaultWaves = [
+        { 
+            id: 1, 
+            name: "ХВИЛЯ 1",
+            reward: 50, 
+            stars: 0, 
+            unlocked: true, 
+            targetTime: 12,        
+            spawnCount: 8,         
+            spawnTypes: ['normal'],
+            hasBoss: true,         
+            bossHp: 5,             
+            bossCooldown: 1200     
+        },
+        { 
+            id: 2, 
+            name: "ХВИЛЯ 2",
+            reward: 80, 
+            stars: 0, 
+            unlocked: false, 
+            targetTime: 15, 
+            spawnCount: 12, 
+            spawnTypes: ['normal', 'fast'], 
+            hasBoss: true, 
+            bossHp: 8, 
+            bossCooldown: 1000 
+        },
+        { 
+            id: 3, 
+            name: "ХВИЛЯ 3",
+            reward: 120, 
+            stars: 0, 
+            unlocked: false, 
+            targetTime: 20, 
+            spawnCount: 20, 
+            spawnTypes: ['normal', 'fast', 'heavy'], 
+            hasBoss: true, 
+            bossHp: 25,            
+            bossCooldown: 600      
+        }
+    ];
+
+    // Примусова очистка, якщо структура збережених хвиль застаріла
+    let savedWaves = localStorage.getItem('waveData');
+    if (savedWaves) {
+        try {
+            let parsed = JSON.parse(savedWaves);
+            if (!parsed[0] || parsed[0].spawnCount === undefined) {
+                localStorage.removeItem('waveData');
+            }
+        } catch(e) {
+            localStorage.removeItem('waveData');
+        }
+    }
+
     let coins = Number(localStorage.getItem('coins')) || 0;
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: false };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
     
-    // Конфигурация корабля
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [1]; 
     let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 4;
     
-    // Внутренние вкладки для боковых панелей меню конфигурации
-    let currentLeftTab = 'guns'; // 'guns' или 'cells'
-    let currentRightTab = 'inv_guns'; // пока только одна вкладка, но структура готова
+    let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
+
+    let currentLeftTab = 'guns';
+    let currentRightTab = 'inv_guns';
     let selectedGunIdx = null;
 
-    let waveData = JSON.parse(localStorage.getItem('waveData')) || [
-        { id: 1, reward: 50, stars: 0, unlocked: true, targetTime: 7 },
-        { id: 2, reward: 100, stars: 0, unlocked: false, targetTime: 8 },
-        { id: 3, reward: 120, stars: 0, unlocked: false, targetTime: 4.5 }
-    ];
+    let gameActive = false, currentWave = null, startTime, kills = 0, missed = 0, spawnedThisWave = 0;
+    let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
+    let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
+    let bossInstance = null;
 
-    let gameActive = false, currentWave = null, startTime, kills = 0, missed = 0;
-    let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemies = [], starsBg = [];
-    let audioCtx, shootBuf, crashBuf, shootInterval;
+    function resetProgress() {
+        if(confirm("Ви впевнені, що хочете скинути прогрес і перезапустити хвилі?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
 
     function updateCoinsUI() {
         document.getElementById('main-coins').innerText = coins;
@@ -161,6 +213,12 @@
             crashBuf = audioCtx.createBuffer(1, rate * 0.2, rate);
             let c = crashBuf.getChannelData(0);
             for(let i=0; i<c.length; i++) c[i] = (Math.random()*2-1) * (1-i/c.length) * 0.08;
+            hurtBuf = audioCtx.createBuffer(1, rate * 0.15, rate);
+            let h = hurtBuf.getChannelData(0);
+            for(let i=0; i<h.length; i++) h[i] = Math.sin(2*Math.PI*(120*Math.exp(-10*(i/rate)))) * (Math.random()*2-1) * (1-i/h.length) * 0.15;
+            bossBuf = audioCtx.createBuffer(1, rate * 0.25, rate);
+            let b = bossBuf.getChannelData(0);
+            for(let i=0; i<b.length; i++) b[i] = Math.sin(2*Math.PI*(400*Math.exp(-15*(i/rate)))) * (1-i/b.length) * 0.15;
         }
     }
 
@@ -172,11 +230,8 @@
     }
 
     function switchSideTab(side, tab) {
-        if(side === 'left') {
-            currentLeftTab = tab;
-        } else {
-            currentRightTab = tab;
-        }
+        if(side === 'left') currentLeftTab = tab;
+        else currentRightTab = tab;
         renderShopItems('ship');
     }
 
@@ -189,7 +244,6 @@
         } else if (tab === 'skins') {
             content.innerHTML = `<div class="shop-item"><div style="color:gold">🐥 PHOENIX</div><div style="font-size:11px;color:#555">Золотий скін</div><button class="main-btn" style="width:160px;font-size:12px" onclick="buySkin('phoenix', '🐥', 500)">${unlockedSkins.phoenix ? (activeSkin === '🐥' ? 'EQUIPPED' : 'EQUIP') : 'BUY 500💰'}</button></div><div class="shop-item"><div style="color:#fff">🚀 DEFAULT</div><button class="main-btn" style="width:160px;font-size:12px" onclick="useDefault()">USE</button></div>`;
         } else if (tab === 'ship') {
-            // Создаем структуру с выдвижными панелями и центральной сеткой корабля
             content.innerHTML = `
             <div class="ship-config-container">
                 <div class="sidebar sidebar-left">
@@ -200,9 +254,7 @@
                     </div>
                     <div class="side-list" id="left-side-list"></div>
                 </div>
-
                 <div class="grid-ui" id="g-ui"></div>
-
                 <div class="sidebar sidebar-right">
                     <div class="sidebar-handle">ITEMS 🎒</div>
                     <div class="side-tabs">
@@ -212,22 +264,13 @@
                 </div>
             </div>`;
             
-            // Заполняем Левую Панель (Магазин)
             const leftList = document.getElementById('left-side-list');
             if (currentLeftTab === 'guns') {
-                leftList.innerHTML = `
-                    <div style="font-size:10px; text-align:center; color:#ff0;">LASER GUN</div>
-                    <button onclick="buyShipItem('gun', 1500)" class="side-shop-btn">BUY<br>1500💰</button>
-                `;
+                leftList.innerHTML = `<div style="font-size:10px; text-align:center; color:#ff0;">LASER GUN</div><button onclick="buyShipItem('gun', 1500)" class="side-shop-btn">BUY<br>1500💰</button>`;
             } else {
-                leftList.innerHTML = `
-                    <div style="font-size:10px; text-align:center; color:#0ff;">SHIP CELL</div>
-                    <div style="font-size:9px; color:#666;">(${unlockedCells}/16 open)</div>
-                    <button onclick="buyShipItem('cell', 3000)" class="side-shop-btn" ${unlockedCells >= 16 ? 'disabled style="border-color:#333;color:#333;"' : ''}>${unlockedCells >= 16 ? 'MAX' : 'BUY<br>3000💰'}</button>
-                `;
+                leftList.innerHTML = `<div style="font-size:10px; text-align:center; color:#0ff;">SHIP CELL</div><div style="font-size:9px; color:#666;">(${unlockedCells}/16 open)</div><button onclick="buyShipItem('cell', 3000)" class="side-shop-btn" ${unlockedCells >= 16 ? 'disabled style="border-color:#333;color:#333;"' : ''}>${unlockedCells >= 16 ? 'MAX' : 'BUY<br>3000💰'}</button>`;
             }
 
-            // Заполняем Центральную сетку корабля
             const gDiv = document.getElementById('g-ui');
             shipGrid.forEach((s, i) => {
                 const c = document.createElement('div');
@@ -235,14 +278,11 @@
                 c.innerHTML = s===1?'🔫':(s===null?'🔒':'');
                 c.onclick = () => {
                     if(s===null) return;
-                    // Если выбрана пушка из инвентаря и ячейка пустая — устанавливаем её
                     if(selectedGunIdx!==null && s===0) { 
                         shipGrid[i]=1; 
                         shipInventory.splice(selectedGunIdx,1); 
                         selectedGunIdx=null; 
-                    }
-                    // Если кликнули по установленной пушке — снимаем в инвентарь
-                    else if(s===1) { 
+                    } else if(s===1) { 
                         shipGrid[i]=0; 
                         shipInventory.push(1); 
                     }
@@ -251,19 +291,13 @@
                 gDiv.appendChild(c);
             });
 
-            // Заполняем Правую Панель (Инвентарь купленного оружия)
             const rightList = document.getElementById('right-side-list');
-            if (shipInventory.length === 0) {
-                rightList.innerHTML = '<span style="color:#444; font-size:10px; text-align:center; margin-top:20px;">EMPTY</span>';
-            }
+            if (shipInventory.length === 0) rightList.innerHTML = '<span style="color:#444; font-size:10px; text-align:center; margin-top:20px;">EMPTY</span>';
             shipInventory.forEach((_, i) => {
                 const g = document.createElement('div');
                 g.className = 'gun-inv'; g.innerHTML = '<span style="font-size:14px;">🔫</span><span>GUN</span>';
                 if(selectedGunIdx===i) g.style.border = '2px solid #0ff';
-                g.onclick = () => { 
-                    selectedGunIdx = (selectedGunIdx === i) ? null : i; 
-                    renderShopItems('ship'); 
-                };
+                g.onclick = () => { selectedGunIdx = (selectedGunIdx === i) ? null : i; renderShopItems('ship'); };
                 rightList.appendChild(g);
             });
         }
@@ -271,14 +305,12 @@
 
     function buyUpgrade(type, price) { if (!unlockedUpgrades[type] && coins >= price) { coins -= price; unlockedUpgrades[type] = true; saveProgress(); switchTab('upgrades'); } }
     function buySkin(id, icon, price) { if (unlockedSkins[id]) { activeSkin = icon; saveProgress(); switchTab('skins'); } else if (coins >= price) { coins -= price; unlockedSkins[id] = true; activeSkin = icon; saveProgress(); switchTab('skins'); } }
-    
     function buyShipItem(type, price) {
         if(coins < price) return;
         if(type === 'gun') { coins -= price; shipInventory.push(1); }
         if(type === 'cell' && unlockedCells < 16) { coins -= price; shipGrid[unlockedCells] = 0; unlockedCells++; }
         saveProgress(); renderShopItems('ship');
     }
-    
     function useDefault() { activeSkin = '🚀'; saveProgress(); switchTab('skins'); }
     
     function saveProgress() { 
@@ -289,6 +321,7 @@
         localStorage.setItem('shipGrid', JSON.stringify(shipGrid));
         localStorage.setItem('shipInventory', JSON.stringify(shipInventory));
         localStorage.setItem('unlockedCells', unlockedCells);
+        localStorage.setItem('waveData', JSON.stringify(waveData));
         updateCoinsUI(); 
     }
 
@@ -301,8 +334,13 @@
     function renderWaves() {
         const list = document.getElementById('wave-list'); list.innerHTML = '';
         waveData.forEach(w => {
-            const card = document.createElement('div'); card.className = `wave-card ${w.unlocked ? '' : 'locked'}`;
-            card.innerHTML = `<h3 style="margin:0;color:#0ff">WAVE ${w.id}</h3><div style="color:gold">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div><button style="font-size:10px;border:1px solid #0ff;background:transparent;color:#0ff;margin-top:5px;padding:3px 10px;border-radius:10px">СТАРТ</button>`;
+            const card = document.createElement('div'); 
+            card.className = `wave-card ${w.unlocked ? '' : 'locked'} ${w.hasBoss ? 'boss-wave' : ''}`;
+            card.innerHTML = `<h3 style="margin:0;color:${w.hasBoss?'#f11':'#0ff'}">WAVE ${w.id}</h3>
+                              <div style="font-size:11px;color:#ff0;margin:3px 0;">${w.name}</div>
+                              <div style="color:gold">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
+                              <div style="font-size:10px;color:#666;margin-top:2px;">Reward: ${w.reward}💰</div>
+                              <button style="font-size:10px;border:1px solid #0ff;background:transparent;color:#0ff;margin-top:5px;padding:3px 10px;border-radius:10px">СТАРТ</button>`;
             if(w.unlocked) card.onclick = () => { if (container.requestFullscreen) container.requestFullscreen().catch(()=>{}); startMission(w); };
             list.appendChild(card);
         });
@@ -313,29 +351,84 @@
         document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
         document.getElementById('ui').style.display = 'block';
         document.getElementById('timer').style.display = 'block';
-        kills = 0; missed = 0; bullets = []; enemies = []; startTime = Date.now();
+        
+        let totalTargets = w.spawnCount + (w.hasBoss ? 1 : 0);
+        document.getElementById('kills').innerText = '0';
+        document.getElementById('required-kills').innerText = totalTargets;
+        
+        kills = 0; missed = 0; spawnedThisWave = 0;
+        bullets = []; enemyBullets = []; enemies = []; startTime = Date.now();
+        bossInstance = null;
+        
         init();
+        
         if (shootInterval) clearInterval(shootInterval);
         shootInterval = setInterval(() => {
             if(gameActive) {
                 let hasGuns = false;
-                
-                // Стрельба на основе конфигурации сетки
                 shipGrid.forEach((s, i) => {
                     if(s===1) {
-                        hasGuns = true;
-                        let r = Math.floor(i/4), c = i%4;
-                        // Смещение пули зависит от колонки (c) и ряда (r) в сетке под размер корабля
+                        hasGuns = true; let r = Math.floor(i/4), c = i%4;
                         bullets.push({x: player.x + (c - 1.5) * 32, y: player.y - 45 + r * 20});
                     }
                 });
-                
                 if (!hasGuns) bullets.push({x: player.x, y: player.y - 20});
-
                 const s = audioCtx.createBufferSource(); s.buffer = shootBuf; s.connect(audioCtx.destination); s.start();
             }
         }, unlockedUpgrades.fastFire ? 150 : 280);
+
+        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
+        enemySpawnInterval = setInterval(() => {
+            if (!gameActive) return;
+            
+            if (spawnedThisWave < currentWave.spawnCount) {
+                if (Math.random() < 0.6) {
+                    spawnEnemy();
+                }
+            } else {
+                if (enemies.length === 0) {
+                    if (currentWave.hasBoss && !bossInstance && kills < totalTargets) {
+                        spawnBoss();
+                    } 
+                    else if (!currentWave.hasBoss) {
+                        gameActive = false;
+                        endMission();
+                    }
+                }
+            }
+        }, 900);
+
         requestAnimationFrame(gameLoop);
+    }
+
+    function spawnEnemy() {
+        let types = currentWave.spawnTypes;
+        let chosenType = types[Math.floor(Math.random() * types.length)];
+        
+        if (chosenType === 'normal') {
+            enemies.push({x: Math.random()*canvas.width, y: -50, hp: 1, maxHp: 1, speed: 3.2, size: 35, i: '👾'});
+        } else if (chosenType === 'fast') {
+            enemies.push({x: Math.random()*canvas.width, y: -50, hp: 1, maxHp: 1, speed: 6.5, size: 30, i: '🚀'});
+        } else if (chosenType === 'heavy') {
+            enemies.push({x: Math.random()*canvas.width, y: -50, hp: 4, maxHp: 4, speed: 1.8, size: 50, i: '🛸'});
+        }
+        spawnedThisWave++;
+    }
+
+    function spawnBoss() {
+        bossInstance = {
+            x: canvas.width / 2,
+            y: -100,
+            targetY: 110,
+            w: 130,
+            h: 70,
+            hp: currentWave.bossHp,
+            maxHp: currentWave.bossHp,
+            speedX: 3,
+            lastShot: 0,
+            shootCooldown: currentWave.bossCooldown,
+            i: '👺' 
+        };
     }
 
     function init() {
@@ -345,6 +438,7 @@
     }
 
     window.addEventListener('pointermove', (e) => { if(gameActive) player.targetX = e.clientX; });
+    window.addEventListener('touchmove', (e) => { if(gameActive && e.touches.length > 0) player.targetX = e.touches[0].clientX; });
 
     function gameLoop() {
         if(!gameActive) return;
@@ -357,22 +451,107 @@
         player.x += (player.targetX - player.x) * 0.2;
         let now = (Date.now() - startTime) / 1000;
         document.getElementById('timer').innerText = now.toFixed(2) + 's';
+        
         starsBg.forEach(s => { s.y += 3; if(s.y > canvas.height) s.y = 0; });
-        for(let i=bullets.length-1; i>=0; i--) { bullets[i].y -= 18; if(bullets[i].y < 0) bullets.splice(i,1); }
-        if(Math.random() < 0.06) enemies.push({x: Math.random()*canvas.width, y: -50, r: 20, s: 40, i: '👾'});
-        for(let i=enemies.length-1; i>=0; i--) {
-            let e = enemies[i]; e.y += 5 + (currentWave.id === 2 ? 3 : 0);
+        
+        for(let i=bullets.length-1; i>=0; i--) { 
+            bullets[i].y -= 18; if(bullets[i].y < 0) bullets.splice(i,1); 
+        }
+
+        for(let i=enemyBullets.length-1; i>=0; i--) {
+            enemyBullets[i].y += 7.5;
+            if(enemyBullets[i].y > canvas.height) { enemyBullets.splice(i, 1); continue; }
+            
+            if(Math.hypot(enemyBullets[i].x - player.x, enemyBullets[i].y - player.y) < 28) {
+                gameActive = false;
+                const s = audioCtx.createBufferSource(); s.buffer = hurtBuf; s.connect(audioCtx.destination); s.start();
+                document.getElementById('fail-title').innerText = "ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!";
+                document.getElementById('fail-screen').style.display = 'flex';
+                return;
+            }
+        }
+
+        if (bossInstance) {
+            if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5;
+            
+            bossInstance.x += bossInstance.speedX;
+            if (bossInstance.x > canvas.width - bossInstance.w / 2 || bossInstance.x < bossInstance.w / 2) {
+                bossInstance.speedX *= -1;
+            }
+
+            let timestamp = Date.now();
+            if (timestamp - bossInstance.lastShot > bossInstance.shootCooldown && bossInstance.y >= bossInstance.targetY) {
+                enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20 });
+                enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20 });
+                
+                const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
+                bossInstance.lastShot = timestamp;
+            }
+
             for(let j=bullets.length-1; j>=0; j--) {
-                if(Math.hypot(e.x-bullets[j].x, e.y-bullets[j].y) < 35) {
+                if (bullets[j].x > bossInstance.x - bossInstance.w/2 && 
+                    bullets[j].x < bossInstance.x + bossInstance.w/2 && 
+                    bullets[j].y > bossInstance.y - bossInstance.h/2 && 
+                    bullets[j].y < bossInstance.y + bossInstance.h/2) {
+                    
+                    bullets.splice(j, 1);
+                    bossInstance.hp--;
                     const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
-                    enemies.splice(i,1); bullets.splice(j,1);
-                    kills++; document.getElementById('kills').innerText = kills;
-                    if(kills >= 10) { gameActive = false; endMission(); return; }
+
+                    if (bossInstance.hp <= 0) {
+                        bossInstance = null;
+                        kills++;
+                        document.getElementById('kills').innerText = kills;
+                        gameActive = false;
+                        endMission();
+                        return;
+                    }
+                }
+            }
+
+            if (Math.hypot(bossInstance.x - player.x, bossInstance.y - player.y) < 55) {
+                gameActive = false;
+                document.getElementById('fail-title').innerText = "БОСС ПРОТАРАНИВ ВАС!";
+                document.getElementById('fail-screen').style.display = 'flex';
+                return;
+            }
+        }
+
+        for(let i=enemies.length-1; i>=0; i--) {
+            let e = enemies[i]; e.y += e.speed;
+            
+            for(let j=bullets.length-1; j>=0; j--) {
+                if(Math.hypot(e.x-bullets[j].x, e.y-bullets[j].y) < (e.size / 2 + 15)) {
+                    bullets.splice(j,1);
+                    e.hp--;
+                    const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
+                    
+                    if(e.hp <= 0) {
+                        enemies.splice(i,1);
+                        kills++; document.getElementById('kills').innerText = kills;
+                        
+                        if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
+                            gameActive = false; endMission(); return;
+                        }
+                    }
                     break;
                 }
             }
-            if(e && Math.hypot(e.x-player.x, e.y-player.y) < 40) { gameActive = false; document.getElementById('fail-screen').style.display = 'flex'; }
-            if(e && e.y > canvas.height + 50) { enemies.splice(i,1); missed++; }
+            
+            if(e && Math.hypot(e.x-player.x, e.y-player.y) < (e.size / 2 + 18)) { 
+                gameActive = false; 
+                document.getElementById('fail-title').innerText = "ЗІТКНЕННЯ З ОРДОЮ!";
+                document.getElementById('fail-screen').style.display = 'flex'; 
+            }
+            
+            if(e && e.y > canvas.height + 50) { 
+                enemies.splice(i,1); 
+                missed++; 
+                
+                if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
+                    gameActive = false; endMission(); return;
+                }
+            }
         }
     }
 
@@ -380,71 +559,89 @@
         ctx.fillStyle = '#000510'; ctx.fillRect(0,0,canvas.width, canvas.height);
         ctx.fillStyle = '#666'; starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
         
-        // ВЫЧИСЛЕНИЕ РАЗМЕРА ДИНАМИЧЕСКОГО КОРАБЛЯ НА ОСНОВЕ СЕТКИ
-        // Считаем сколько колонок и рядов реально разблокировано (минимум 1х1, максимум 4х4)
         let maxCols = 1, maxRows = 1;
         shipGrid.forEach((cell, idx) => {
             if (cell !== null) {
-                let r = Math.floor(idx / 4) + 1;
-                let c = (idx % 4) + 1;
-                if (c > maxCols) maxCols = c;
-                if (r > maxRows) maxRows = r;
+                let r = Math.floor(idx / 4) + 1; let c = (idx % 4) + 1;
+                if (c > maxCols) maxCols = c; if (r > maxRows) maxRows = r;
             }
         });
 
         let cellW = 32, cellH = 25;
-        let shipW = maxCols * cellW;
-        let shipH = maxRows * cellH;
+        let shipW = maxCols * cellW, shipH = maxRows * cellH;
 
-        // Рисуем подложку корабля (энергетический щит/корпус под размер ячеек)
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)'; ctx.lineWidth = 2;
         ctx.fillStyle = 'rgba(0, 255, 255, 0.05)';
-        
-        // Корпус центрируется по координате player.x
-        let shipLeft = player.x - shipW / 2;
-        let shipTop = player.y - shipH / 2;
-        
-        ctx.beginPath();
-        ctx.roundRect(shipLeft, shipTop, shipW, shipH, 8);
-        ctx.fill();
-        ctx.stroke();
+        let shipLeft = player.x - shipW / 2, shipTop = player.y - shipH / 2;
+        ctx.beginPath(); ctx.roundRect(shipLeft, shipTop, shipW, shipH, 8); ctx.fill(); ctx.stroke();
 
-        // Отрисовка пушек на корпусе корабля, если они установлены
         shipGrid.forEach((s, i) => {
             if(s === 1) {
-                let r = Math.floor(i / 4);
-                let c = i % 4;
-                // Позиционируем пушку ровно в ту виртуальную ячейку, где она стоит
+                let r = Math.floor(i / 4), c = i % 4;
                 let gunX = player.x + (c - 1.5) * cellW;
                 let gunY = player.y - shipH / 2 + (r * cellH) + 10;
-                
-                ctx.fillStyle = '#ff0';
-                ctx.fillRect(gunX - 4, gunY - 12, 8, 16); // Дуло пушки
-                ctx.fillStyle = '#0ff';
-                ctx.fillRect(gunX - 6, gunY - 2, 12, 6);   // Основание пушки
+                ctx.fillStyle = '#ff0'; ctx.fillRect(gunX - 4, gunY - 12, 8, 16);
+                ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
             }
         });
         
-        // Центрируем и рисуем основной скин (эмодзи) поверх нашего расширяемого корпуса
-        ctx.textAlign = 'center'; 
-        ctx.font = '36px Arial';
+        ctx.textAlign = 'center'; ctx.font = '36px Arial';
         ctx.fillText(activeSkin, player.x, player.y + 12);
         
-        // Отрисовка врагов
-        enemies.forEach(e => { ctx.font = '40px Arial'; ctx.fillText(e.i, e.x, e.y + 15); });
+        enemies.forEach(e => { 
+            ctx.font = `${e.size}px Arial`; ctx.fillText(e.i, e.x, e.y + e.size/3); 
+            if (e.maxHp > 1) {
+                let barW = e.size; let barH = 4;
+                let barX = e.x - barW / 2; let barY = e.y - e.size / 2 - 8;
+                ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barW, barH);
+                ctx.fillStyle = '#0f0'; ctx.fillRect(barX, barY, barW * (e.hp / e.maxHp), barH);
+            }
+        });
+
+        if (bossInstance) {
+            ctx.font = '75px Arial';
+            ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y + 20);
+            
+            let bBarW = canvas.width * 0.6; let bBarH = 10;
+            let bBarX = (canvas.width - bBarW) / 2; let bBarY = 60;
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.roundRect(bBarX, bBarY, bBarW, bBarH, 4); ctx.fill();
+            
+            ctx.fillStyle = '#ff0055';
+            ctx.beginPath(); ctx.roundRect(bBarX, bBarY, bBarW * (bossInstance.hp / bossInstance.maxHp), bBarH, 4); ctx.fill();
+            
+            ctx.font = '12px Segoe UI'; ctx.fillStyle = '#fff';
+            ctx.fillText(`ГЕНЕРАЛ ОРДИ: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width/2, bBarY - 6);
+        }
         
-        // Отрисовка пуль
         ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 20));
+        ctx.fillStyle = '#f00'; enemyBullets.forEach(eb => ctx.fillRect(eb.x-3, eb.y, 6, 15));
     }
 
     function endMission() {
+        if (shootInterval) clearInterval(shootInterval);
+        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
+        
         let timeTaken = (Date.now() - startTime) / 1000;
-        let starCount = timeTaken <= currentWave.targetTime && missed === 0 ? 3 : (timeTaken <= currentWave.targetTime + 2 ? 2 : 1);
+        
+        let starCount = 1;
+        if (timeTaken <= currentWave.targetTime && missed === 0) {
+            starCount = 3;
+        } else if (timeTaken <= currentWave.targetTime + 4 && missed <= 2) {
+            starCount = 2;
+        }
+        
         if(starCount > currentWave.stars) currentWave.stars = starCount;
         coins += currentWave.reward;
-        if(currentWave.id < waveData.length) waveData[currentWave.id].unlocked = true;
-        localStorage.setItem('coins', coins); localStorage.setItem('waveData', JSON.stringify(waveData));
+        
+        if(currentWave.id < waveData.length) {
+            waveData[currentWave.id].unlocked = true;
+        }
+        
+        saveProgress();
+        
+        document.getElementById('win-title').innerText = currentWave.hasBoss ? "БОССА ЗНИЩЕНО!" : "МІСІЯ ВИКОНАНА";
         document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
         document.getElementById('win-reward-text').innerText = `+${currentWave.reward} COINS`;
         document.getElementById('win-screen').style.display = 'flex';
