@@ -116,8 +116,8 @@
             <h2 style="color:#0ff; margin-top:0;">⚙️ SETTINGS</h2>
             
             <div class="settings-row">
-                <span>🔊 Ігрові Ефекти (SFX)</span>
-                <input type="range" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;">
+                <span>🔊 Звук</span>
+                <input type="range" id="volume-control" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;" oninput="changeVolume(this.value)">
             </div>
 
             <div class="dungeon-group">
@@ -137,6 +137,14 @@
             <div id="admin-status-badge" style="font-size:13px; color:#0ff; font-weight:bold; margin-bottom:12px;">Статус: Авторизовано</div>
             
             <div class="admin-section">
+                <div style="font-weight:bold; color:#ffcc00; margin-bottom:5px;">🔥 ЧИТ-МЕНЮ (ДЛЯ ТЕСТЕРІВ ТА АДМІНІВ):</div>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:5px; flex-wrap:wrap;">
+                    <button class="admin-btn-action" id="godmode-btn" style="background:#444; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
+                    <button class="admin-btn-action" id="speed-btn" style="background:#444; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
+                </div>
+            </div>
+
+            <div class="admin-section">
                 <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 ВИДАЧА МОНЕТ:</div>
                 <div class="admin-grid-btns">
                     <button class="admin-btn-action" onclick="giveAdminCoins(1000)">+1k 💰</button>
@@ -150,7 +158,7 @@
                 <button class="admin-btn-action" style="width:100%; background:#00aaee;" onclick="unlockAllAdminWaves()">РОЗБЛОКУВАТИ ВСІ ХВИЛІ</button>
             </div>
 
-            <div class="admin-section" id="friend-section">
+            <div class="admin-section owner-only-element" id="friend-section" style="display:none;">
                 <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 КЕРУВАННЯ ВАЙТЛІСТОМ ДРУЗІВ:</div>
                 <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм вашого друга"><br>
                 <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;">
@@ -158,14 +166,14 @@
                     <button class="admin-btn-action" style="background:#444; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАЛИТИ</button>
                 </div>
                 <div style="font-size:11px; color:#aaa; margin-top:10px; text-align:left; background:rgba(0,0,0,0.4); padding:6px; border-radius:5px;">
-                    <strong>Дозволені тестери:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span>
+                    <strong>Дозволені тестири-читери:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span>
                 </div>
             </div>
 
-            <div class="admin-section id-owner-only-section" id="dungeon-zone-section" style="display:none;">
+            <div class="admin-section owner-only-element" id="dungeon-zone-section" style="display:none;">
                 <div style="background: rgba(0, 255, 255, 0.03); border: 2px dashed #0ff; border-radius: 12px; padding: 12px; margin-top: 10px;">
                     <div style="font-weight:bold; color:#0ff; margin-bottom:5px; font-size:13px;">🔄 ОНОВЛЕННЯ СЕРВЕРНОЇ СИСТЕМИ:</div>
-                    <div style="font-size:10px; color:#888; margin-bottom:10px;">Надсилає запит на завантаження нових файлів та manifest.json. Не впливає на баланс та інвентарі користувачів.</div>
+                    <div style="font-size:10px; color:#888; margin-bottom:10px;">Надсилає запит на завантаження нових файлів та manifest.json. Не впливає на баланс гравців.</div>
                     <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff; padding:10px; font-size:11px;" onclick="forceUpdateGame()">
                         ⚡ ДОДАТИ ОНОВЛЕННЯ (FORCE UPDATE)
                     </button>
@@ -247,8 +255,15 @@
     let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 4;
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
-    // ВАЙТЛІСТ
+    // ЧИТ-ЗМІННІ
+    let godModeActive = false;
+    let gameSpeedMultiplier = 1; // 1 = нормальна, 3 = швидка
+
+    // ВАЙТЛІСТ (Через КЛЮЧ, який завжди зберігається)
     let whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
+
+    // ГУЧНІСТЬ ЗВУКУ
+    let globalVolume = Number(localStorage.getItem('gameVolume')) || 80;
 
     let gameActive = false, currentWave = null, playerHp = 3, kills = 0, missed = 0, spawnedThisWave = 0;
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
@@ -264,10 +279,17 @@
 
     function fakeDotClick() {}
 
+    // ЗМІНА ГУЧНОСТІ
+    function changeVolume(val) {
+        globalVolume = val;
+        localStorage.setItem('gameVolume', val);
+    }
+
     // МЕНЮ НАЛАШТУВАНЬ
     function showSettings() {
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('settings-screen').style.display = 'flex';
+        document.getElementById('volume-control').value = globalVolume;
     }
 
     // ВІКНО ПІДТВЕРДЖЕННЯ ЗБИТТЯ ПРОГРЕСУ
@@ -289,7 +311,7 @@
         }
     }
 
-    // ВЕРИФІКАЦІЯ АДМІНКИ
+    // ВЕРИФІКАЦІЯ АДМІНКИ (ПРАВИЛЬНА ПЕРЕВІРКА ВАЙТЛІСТУ)
     function tryOpenAdminPanel() {
         if (localStorage.getItem('isMasterAdmin') === 'true') {
             openAdminPanelUI("👑 ГОЛОВНИЙ АДМІНІСТРАТОР (VLADIROBUS753)", true);
@@ -297,8 +319,11 @@
         }
 
         let savedFriendNick = localStorage.getItem('activeFriendNick');
+        // Оновлюємо масив перед перевіркою
+        whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
+        
         if (savedFriendNick && whitelistAdmins.includes(savedFriendNick)) {
-            openAdminPanelUI(`🕹️ ТЕСТЕР (${savedFriendNick})`, false);
+            openAdminPanelUI(`🕹️ ТЕСТИРИ-ЧИТЕРИ (${savedFriendNick})`, false);
             return;
         }
 
@@ -315,9 +340,9 @@
 
         if (whitelistAdmins.includes(cleanInput)) {
             localStorage.setItem('activeFriendNick', cleanInput);
-            openAdminPanelUI(`🕹️ ТЕСТЕР (${cleanInput})`, false);
+            openAdminPanelUI(`🕹️ ТЕСТИРИ-ЧИТЕРИ (${cleanInput})`, false);
         } else {
-            alert("Помилка доступу! Цього нікнейму немає у списку дозволених.");
+            alert("Помилка доступу! Такого користувача немає у списку читерів.");
         }
     }
 
@@ -326,12 +351,38 @@
         document.getElementById('admin-screen').style.display = 'flex';
         document.getElementById('admin-status-badge').innerText = `Статус: ${roleName}`;
         
-        let dungeonSection = document.getElementById('dungeon-zone-section');
+        // Оновлення кнопок читів відповідно до поточного стану
+        document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
+        document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
+        document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
+        document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
+
+        let ownerElements = document.querySelectorAll('.owner-only-element');
+        ownerElements.forEach(el => {
+            el.style.display = showOwnerSection ? 'block' : 'none';
+        });
+
         if (showOwnerSection) {
-            dungeonSection.style.display = 'block';
             refreshAdminListUI();
-        } else {
-            dungeonSection.style.display = 'none';
+        }
+    }
+
+    // ВКЛЮЧЕННЯ БЕЗСМЕРТЯ
+    function toggleGodMode() {
+        godModeActive = !godModeActive;
+        document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
+        document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
+    }
+
+    // ВКЛЮЧЕННЯ ШВИДКОСТІ ГРИ (ТУРБО)
+    function toggleGameSpeed() {
+        gameSpeedMultiplier = gameSpeedMultiplier === 1 ? 4 : 1; // x4 швидкість або х1 нормальна
+        document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
+        document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
+        
+        // Перезапускаємо цикли якщо гра зараз йде
+        if (gameActive) {
+            startIntervals();
         }
     }
 
@@ -350,45 +401,50 @@
     function addWhitelistAdmin() {
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
-        if (name && !whitelistAdmins.includes(name)) {
-            whitelistAdmins.push(name);
-            localStorage.setItem('security_whitelist', JSON.stringify(whitelistAdmins));
-            input.value = '';
-            refreshAdminListUI();
-            alert(`Користувача "${name}" додано!`);
+        if (name) {
+            whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
+            if (!whitelistAdmins.includes(name)) {
+                whitelistAdmins.push(name);
+                localStorage.setItem('security_whitelist', JSON.stringify(whitelistAdmins));
+                input.value = '';
+                refreshAdminListUI();
+                alert(`Читера "${name}" успішно додано до системи!`);
+            }
         }
     }
 
     function removeWhitelistAdmin() {
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
+        whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
         let idx = whitelistAdmins.indexOf(name);
         if (idx !== -1) {
             whitelistAdmins.splice(idx, 1);
             localStorage.setItem('security_whitelist', JSON.stringify(whitelistAdmins));
             input.value = '';
             refreshAdminListUI();
-            alert(`Користувача "${name}" видалено.`);
+            alert(`Читера "${name}" видалено.`);
         }
     }
 
     function refreshAdminListUI() {
+        whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
         let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає активних ніків';
         document.getElementById('admin-list-txt').innerText = listText;
     }
 
-    // КНОПКА ДОДАТИ ОНОВЛЕННЯ ГРИ (БЕЗ СТИРАННЯ РЕСУРСІВ ГРАВЦІВ)
+    // FORCE UPDATE ГРИ
     function forceUpdateGame() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) {
                     registration.update(); 
                 }
-                alert("🔄 Оновлення надіслано! Новий контент додано, гра успішно перезавантажиться без втрати збережень.");
+                alert("🔄 Оновлення надіслано без втрати збережень!");
                 location.reload(true); 
             });
         } else {
-            alert("Оновлення активовано локально! Нові файли успішно додані.");
+            alert("Оновлення активовано локально!");
             location.reload(true);
         }
     }
@@ -399,7 +455,21 @@
     }
 
     function updateHpUI() {
-        document.getElementById('hp-display').innerText = '❤️'.repeat(playerHp) + '🖤'.repeat(3 - playerHp);
+        document.getElementById('hp-display').innerText = godModeActive ? '🛡️ INFINITY' : ('❤️'.repeat(playerHp) + '🖤'.repeat(3 - playerHp));
+    }
+
+    // ВІДТВОРЕННЯ ЗВУКУ З РЕГУЛЮВАННЯМ ГУЧНОСТІ
+    function playSound(buffer) {
+        if (!audioCtx || !buffer) return;
+        try {
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = globalVolume / 100; // від 0 до 1
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            source.start();
+        } catch(e) {}
     }
 
     function initAudio() {
@@ -559,7 +629,19 @@
         bossInstance = null;
         init(); updateHpUI();
         
+        startIntervals();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ЗАПУСК СТРІЛЬБИ ТА СПАВНУ З УРАХУВАННЯМ ТУРБО-ШВИДКОСТІ ЧИТУ
+    function startIntervals() {
         if (shootInterval) clearInterval(shootInterval);
+        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
+
+        let fireRate = unlockedUpgrades.fastFire ? 150 : 280;
+        // Читерське пришвидшення стрільби
+        fireRate = fireRate / gameSpeedMultiplier; 
+
         shootInterval = setInterval(() => {
             if(gameActive) {
                 let hasGuns = false;
@@ -570,23 +652,22 @@
                     }
                 });
                 if (!hasGuns) bullets.push({x: player.x, y: player.y - 20});
-                const s = audioCtx.createBufferSource(); s.buffer = shootBuf; s.connect(audioCtx.destination); s.start();
+                playSound(shootBuf);
             }
-        }, unlockedUpgrades.fastFire ? 150 : 280);
+        }, fireRate);
 
-        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
+        let spawnRate = 900 / gameSpeedMultiplier; // пришвидшуємо появу ворогів
         enemySpawnInterval = setInterval(() => {
             if (!gameActive) return;
             if (spawnedThisWave < currentWave.spawnCount) {
                 if (Math.random() < 0.6) spawnEnemy();
             } else {
                 if (enemies.length === 0) {
-                    if (currentWave.hasBoss && !bossInstance && kills < totalTargets) spawnBoss();
+                    if (currentWave.hasBoss && !bossInstance && kills < (currentWave.spawnCount + 1)) spawnBoss();
                     else if (!currentWave.hasBoss) { gameActive = false; endMission(); }
                 }
             }
-        }, 900);
-        requestAnimationFrame(gameLoop);
+        }, spawnRate);
     }
 
     function spawnEnemy() {
@@ -617,8 +698,10 @@
     window.addEventListener('touchmove', (e) => { if(gameActive && e.touches.length > 0) player.targetX = e.touches[0].clientX; });
 
     function takeDamage(reasonText) {
+        if (godModeActive) return; // Читерське безсмертя ігнорує шкоду!
+
         playerHp--; updateHpUI();
-        const s = audioCtx.createBufferSource(); s.buffer = hurtBuf; s.connect(audioCtx.destination); s.start();
+        playSound(hurtBuf);
         if (playerHp <= 0) {
             gameActive = false;
             document.getElementById('fail-title').innerText = reasonText;
@@ -631,75 +714,99 @@
     function gameLoop() { if(!gameActive) return; update(); draw(); requestAnimationFrame(gameLoop); }
 
     function update() {
-        player.x += (player.targetX - player.x) * 0.2;
-        starsBg.forEach(s => { s.y += 3; if(s.y > canvas.height) s.y = 0; });
+        // Множимо всі швидкості рухів на швидкість гри з адмінки
+        let m = gameSpeedMultiplier;
+
+        player.x += (player.targetX - player.x) * 0.2 * m;
+        starsBg.forEach(s => { s.y += 3 * m; if(s.y > canvas.height) s.y = 0; });
         
-        for(let i=bullets.length-1; i>=0; i--) { bullets[i].y -= 18; if(bullets[i].y < 0) bullets.splice(i,1); }
+        for(let i=bullets.length-1; i>=0; i--) { bullets[i].y -= 18 * m; if(bullets[i].y < 0) bullets.splice(i,1); }
 
         for(let i=enemyBullets.length-1; i>=0; i--) {
-            enemyBullets[i].x += enemyBullets[i].vx || 0; enemyBullets[i].y += enemyBullets[i].vy || 7.5;
+            enemyBullets[i].x += (enemyBullets[i].vx || 0) * m; 
+            enemyBullets[i].y += (enemyBullets[i].vy || 7.5) * m;
             if(enemyBullets[i].y > canvas.height || enemyBullets[i].y < -50 || enemyBullets[i].x < -50 || enemyBullets[i].x > canvas.width + 50) { enemyBullets.splice(i, 1); continue; }
             if(Math.hypot(enemyBullets[i].x - player.x, enemyBullets[i].y - player.y) < 28) { enemyBullets.splice(i, 1); takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!"); if(!gameActive) return; }
         }
 
         if (bossInstance) {
-            if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5;
+            if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5 * m;
+            
+            // Рух боса вбік (для Хвиль 1, 2, 3, 4)
             if (!(currentWave.id === 4 && bossInstance.isUlting)) {
-                bossInstance.x += bossInstance.speedX;
+                bossInstance.x += bossInstance.speedX * m;
                 if (bossInstance.x > canvas.width - bossInstance.w / 2 || bossInstance.x < bossInstance.w / 2) bossInstance.speedX *= -1;
             }
 
             let timestamp = Date.now();
-            if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > bossInstance.shootCooldown && bossInstance.y >= bossInstance.targetY) {
+            
+            // Звичайна стрільба боса (Є у ВСІХ босів)
+            let currentCooldown = bossInstance.shootCooldown / m;
+            if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > currentCooldown && bossInstance.y >= bossInstance.targetY) {
                 enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
-                const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
+                playSound(bossBuf);
                 bossInstance.lastShot = timestamp;
             }
 
-            if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > bossInstance.circleCooldown && bossInstance.y >= bossInstance.targetY) {
-                bossInstance.isUlting = true; bossInstance.lastCircleShot = timestamp;
-                if (currentWave.id === 4) { bossInstance.laserTargetX = player.x; bossInstance.laserTimer = timestamp; const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start(); } 
-                else { bossInstance.ultCount = 0; }
-            }
-
-            if (bossInstance.isUlting) {
-                if (currentWave.id === 4) {
-                    let timePassed = timestamp - bossInstance.laserTimer;
-                    let totalLaserTime = bossInstance.laserWarmupDuration + bossInstance.laserFireDuration;
-                    if (timePassed > totalLaserTime) { bossInstance.isUlting = false; bossInstance.lastCircleShot = timestamp; } 
-                    else if (timePassed >= bossInstance.laserWarmupDuration) {
-                        if (timestamp % 7 === 0) { 
-                            if (player.x > (bossInstance.laserTargetX - 35) && player.x < (bossInstance.laserTargetX + 35) && player.y > bossInstance.y) { takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ БОССА!"); if (!gameActive) return; }
-                        }
-                    }
-                } else {
-                    if (timestamp - bossInstance.lastCircleShot > 350) {
-                        let numShots = 10; let speed = 4.8; let angleOffset = (bossInstance.ultCount * Math.PI) / 10; 
-                        for (let i = 0; i < numShots; i++) { let angle = ((i * 2 * Math.PI) / numShots) + angleOffset; enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }); }
-                        const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
-                        bossInstance.ultCount++; bossInstance.lastCircleShot = timestamp;
-                        if (bossInstance.ultCount >= 2) { bossInstance.isUlting = false; bossInstance.lastCircleShot = timestamp + 1000; }
+            // УЛЬТИМЕЙТ ЗДАТНОСТІ — ПРАВИЛЬНИЙ РОЗПОДІЛ МІЖ ХВИЛЯМИ (ФІКС БАГУ):
+            let currentCircleCooldown = bossInstance.circleCooldown / m;
+            if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > currentCircleCooldown && bossInstance.y >= bossInstance.targetY) {
+                // Хвилі 1 та 2 НЕ МАЮТЬ ульти кругових снарядів
+                if (currentWave.id === 3 || currentWave.id === 4) {
+                    bossInstance.isUlting = true; 
+                    bossInstance.lastCircleShot = timestamp;
+                    if (currentWave.id === 4) { 
+                        bossInstance.laserTargetX = player.x; 
+                        bossInstance.laserTimer = timestamp; 
+                        playSound(bossBuf); 
+                    } else { 
+                        bossInstance.ultCount = 0; 
                     }
                 }
             }
 
+            // ОБРОБКА АКТИВНОЇ УЛЬТИ (Тільки для Хвилі 3 та 4)
+            if (bossInstance.isUlting) {
+                if (currentWave.id === 4) { // Ульта 4 Хвилі — Гіпер-Лазер
+                    let timePassed = timestamp - bossInstance.laserTimer;
+                    let totalLaserTime = (bossInstance.laserWarmupDuration + bossInstance.laserFireDuration) / m;
+                    if (timePassed > totalLaserTime) { bossInstance.isUlting = false; bossInstance.lastCircleShot = timestamp; } 
+                    else if (timePassed >= (bossInstance.laserWarmupDuration / m)) {
+                        if (timestamp % 7 === 0) { 
+                            if (player.x > (bossInstance.laserTargetX - 35) && player.x < (bossInstance.laserTargetX + 35) && player.y > bossInstance.y) { takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ БОССА!"); if (!gameActive) return; }
+                        }
+                    }
+                } else if (currentWave.id === 3) { // Ульта 3 Хвилі — Спіраль/Коло снарядів
+                    let speedInterval = 350 / m;
+                    if (timestamp - bossInstance.lastCircleShot > speedInterval) {
+                        let numShots = 10; let speed = 4.8; let angleOffset = (bossInstance.ultCount * Math.PI) / 10; 
+                        for (let i = 0; i < numShots; i++) { let angle = ((i * 2 * Math.PI) / numShots) + angleOffset; enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }); }
+                        playSound(bossBuf);
+                        bossInstance.ultCount++; bossInstance.lastCircleShot = timestamp;
+                        if (bossInstance.ultCount >= 2) { bossInstance.isUlting = false; bossInstance.lastCircleShot = timestamp + (1000 / m); }
+                    }
+                }
+            }
+
+            // Зіткнення куль гравця з босом
             for(let j=bullets.length-1; j>=0; j--) {
                 if (bullets[j].x > bossInstance.x - bossInstance.w/2 && bullets[j].x < bossInstance.x + bossInstance.w/2 && bullets[j].y > bossInstance.y - bossInstance.h/2 && bullets[j].y < bossInstance.y + bossInstance.h/2) {
                     bullets.splice(j, 1); bossInstance.hp--;
-                    const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
+                    playSound(crashBuf);
                     if (bossInstance.hp <= 0) { bossInstance = null; kills++; document.getElementById('kills').innerText = kills; gameActive = false; endMission(); return; }
                 }
             }
             if (Math.hypot(bossInstance.x - player.x, bossInstance.y - player.y) < 55) { takeDamage("БОСС ПРОТАРАНИВ ВАС!"); bossInstance.x = canvas.width / 2; if(!gameActive) return; }
         }
 
+        // Рядові вороги
         for(let i=enemies.length-1; i>=0; i--) {
-            let e = enemies[i]; e.y += e.speed;
+            let e = enemies[i]; e.y += e.speed * m;
             for(let j=bullets.length-1; j>=0; j--) {
                 if(Math.hypot(e.x-bullets[j].x, e.y-bullets[j].y) < (e.size / 2 + 15)) {
                     bullets.splice(j,1); e.hp--;
-                    const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
+                    playSound(crashBuf);
                     if(e.hp <= 0) { enemies.splice(i,1); kills++; document.getElementById('kills').innerText = kills; if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; } }
                     break;
                 }
@@ -717,7 +824,7 @@
         shipGrid.forEach((cell, idx) => { if (cell !== null) { let r = Math.floor(idx / 4) + 1; let c = (idx % 4) + 1; if (c > maxCols) maxCols = c; if (r > maxRows) maxRows = r; } });
         let cellW = 32, cellH = 25, shipW = maxCols * cellW, shipH = maxRows * cellH;
 
-        ctx.beginPath(); ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(0, 255, 255, 0.05)';
+        ctx.beginPath(); ctx.strokeStyle = godModeActive ? '#00cc44' : 'rgba(0, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(0, 255, 255, 0.05)';
         let shipLeft = player.x - shipW / 2, shipTop = player.y - shipH / 2;
         ctx.roundRect(shipLeft, shipTop, shipW, shipH, 8); ctx.fill(); ctx.stroke();
 
@@ -741,10 +848,11 @@
         if (bossInstance) {
             if (currentWave.id === 4 && bossInstance.isUlting) {
                 ctx.save(); let laserAge = Date.now() - bossInstance.laserTimer;
-                if (laserAge < bossInstance.laserWarmupDuration) { ctx.strokeStyle = (Math.floor(laserAge / 100) % 2 === 0) ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.2)'; ctx.lineWidth = 4; ctx.setLineDash([10, 10]); } 
+                let warmup = bossInstance.laserWarmupDuration / gameSpeedMultiplier;
+                if (laserAge < warmup) { ctx.strokeStyle = (Math.floor(laserAge / 100) % 2 === 0) ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.2)'; ctx.lineWidth = 4; ctx.setLineDash([10, 10]); } 
                 else { ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 60; ctx.shadowBlur = 35; ctx.shadowColor = '#ff00a0'; }
                 ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y + 15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke();
-                if (laserAge >= bossInstance.laserWarmupDuration) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 18; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y + 15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke(); }
+                if (laserAge >= warmup) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 18; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y + 15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke(); }
                 ctx.restore();
             }
 
@@ -756,7 +864,7 @@
             ctx.beginPath(); ctx.save(); ctx.textAlign = 'center'; ctx.font = '12px Segoe UI'; ctx.fillStyle = '#fff';
             let bossTitle = "КОСМІЧНИЙ ЗАГАРБНИК";
             if (currentWave.id === 3) bossTitle = (bossInstance.isUlting ? "👺 БОСС: АКТИВАЦІЯ УЛЬТИ! 👺" : "ГЕНЕРАЛ ОРДИ (ULTRA)");
-            if (currentWave.id === 4) { let laserAge = Date.now() - bossInstance.laserTimer; bossTitle = bossInstance.isUlting ? ((laserAge < bossInstance.laserWarmupDuration) ? "⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!" : "🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥") : "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ"; }
+            if (currentWave.id === 4) { let laserAge = Date.now() - bossInstance.laserTimer; let warmup = bossInstance.laserWarmupDuration / gameSpeedMultiplier; bossTitle = bossInstance.isUlting ? ((laserAge < warmup) ? "⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!" : "🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥") : "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ"; }
             ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width / 2, bBarY - 6); ctx.restore();
         }
         
