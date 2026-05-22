@@ -31,6 +31,19 @@
         #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; }
         @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } }
 
+        /* Секретна кнопка розробника в кутку */
+        #dev-secret-trigger { position: absolute; bottom: 10px; right: 15px; color: #222; font-size: 14px; cursor: pointer; z-index: 12; user-select: none; }
+        #dev-secret-trigger:hover { color: #444; }
+
+        /* Стилі для панелі розробника */
+        .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #ff0055; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(255,0,85,0.3); color: #fff; text-align: center; }
+        .admin-section { border-bottom: 1px dashed #333; padding: 12px 0; }
+        .admin-section:last-child { border: none; }
+        .admin-grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
+        .admin-btn-action { background: #ff0055; border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .admin-btn-action:hover { background: #ff3377; }
+        .admin-input { background: #000; border: 1px solid #ff0055; color: #fff; padding: 8px; border-radius: 5px; width: 70%; text-align: center; margin-bottom: 8px; }
+
         .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed !important; }
         .coins-display { color: gold; font-size: 24px; margin-bottom: 15px; }
 
@@ -62,7 +75,6 @@
         .gun-inv { width: 42px; height: 42px; background: #ff0; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 9px; border-radius: 5px; flex-shrink: 0; cursor: pointer; border: 1px solid #fff; }
         .side-shop-btn { width: 100%; padding: 8px 2px; font-size: 9px; background: transparent; border: 1px solid #ff0; color: #ff0; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        /* Вікно титрів */
         .credits-box { text-align: center; border: 2px dashed #0ff; padding: 20px 40px; margin: 15px 0; background: rgba(0,255,255,0.03); border-radius: 15px; box-shadow: 0 0 20px rgba(0,255,255,0.1); }
         .credits-box h3 { margin: 8px 0 2px 0; font-size: 13px; color: #88ff88; letter-spacing: 1px; text-transform: uppercase; }
         .credits-box p { margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; }
@@ -81,6 +93,40 @@
         <button class="main-btn" style="border-color: #ffaa00; color: #ffaa00; font-size: 13px; padding: 5px;" onclick="resetProgress()">WIPE PROGRESS 🔄</button>
         <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button>
         <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div>
+        
+        <div id="dev-secret-trigger" onclick="tryOpenAdminPanel()">•</div>
+    </div>
+
+    <div id="admin-screen" class="screen" style="display:none;">
+        <div class="admin-panel-box">
+            <h2 style="color:#ff0055; margin:0 0 10px 0; font-size:24px; text-shadow: 0 0 10px #ff0055;">💻 DEV PANEL (VLADIROBUS)</h2>
+            
+            <div class="admin-section">
+                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 ВИДАЧА МОНЕТ:</div>
+                <div class="admin-grid-btns">
+                    <button class="admin-btn-action" onclick="giveAdminCoins(1000)">+1k 💰</button>
+                    <button class="admin-btn-action" onclick="giveAdminCoins(10000)">+10k 💰</button>
+                    <button class="admin-btn-action" onclick="giveAdminCoins(100000)">+100k 💰</button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div style="font-weight:bold; color:#0ff; margin-bottom:5px;">🔓 КЕРУВАННЯ МІСІЯМИ:</div>
+                <button class="admin-btn-action" style="width:100%; background:#00aaee;" onclick="unlockAllAdminWaves()">РОЗБЛОКУВАТИ ВСІ ХВИЛІ</button>
+            </div>
+
+            <div class="admin-section">
+                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 ПРИЗНАЧИТИ / ВИДАЛИТИ АДМІНА:</div>
+                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм гравця"><br>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button class="admin-btn-action" style="background:#00cc44; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button>
+                    <button class="admin-btn-action" style="background:#333; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАЛИТИ</button>
+                </div>
+                <div style="font-size:10px; color:#666; margin-top:8px;">Поточні адміни у вайтлісті: <span id="admin-list-txt" style="color:#aaa">немає</span></div>
+            </div>
+
+            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
+        </div>
     </div>
 
     <div id="wave-screen" class="screen" style="display:none;">
@@ -149,9 +195,7 @@
     if (savedWaves) {
         try {
             let parsed = JSON.parse(savedWaves);
-            if (!parsed[3]) {
-                localStorage.removeItem('waveData');
-            }
+            if (!parsed[3]) localStorage.removeItem('waveData');
         } catch(e) {
             localStorage.removeItem('waveData');
         }
@@ -168,6 +212,9 @@
     
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
+    // СИСТЕМА ВАЙТЛІСТУ АДМІНІВ
+    let whitelistAdmins = JSON.parse(localStorage.getItem('whitelistAdmins')) || [];
+
     let currentLeftTab = 'guns';
     let currentRightTab = 'inv_guns';
     let selectedGunIdx = null;
@@ -176,6 +223,66 @@
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
     let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
     let bossInstance = null;
+
+    // СЕКРЕТНІ ФУНКЦІЇ ДЛЯ АДМІН-ПАНЕЛІ
+    function tryOpenAdminPanel() {
+        let name = prompt("Введіть ваш нікнейм:");
+        if (!name) return;
+        
+        let cleanedName = name.trim();
+        
+        // Перевірка, чи це творець гри, чи адмін з вайтлісту, чи введено секретний пароль розробника
+        if (cleanedName === "VLADIROBUS753" || whitelistAdmins.includes(cleanedName) || cleanedName === "vlad_dev_2026") {
+            alert(`Доступ дозволено! Вітаємо, Адмін ${cleanedName}!`);
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('admin-screen').style.display = 'flex';
+            refreshAdminListUI();
+        } else {
+            alert("Помилка доступу! Ви не зареєстровані як розробник.");
+        }
+    }
+
+    function giveAdminCoins(amount) {
+        coins += amount;
+        saveProgress();
+        alert(`Успішно нараховано +${amount} монет!`);
+    }
+
+    function unlockAllAdminWaves() {
+        waveData.forEach(w => w.unlocked = true);
+        saveProgress();
+        alert("Всі місії та рівні розблоковано!");
+    }
+
+    function addWhitelistAdmin() {
+        let input = document.getElementById('admin-nick-input');
+        let name = input.value.trim();
+        if (name && !whitelistAdmins.includes(name) && name !== "VLADIROBUS753") {
+            whitelistAdmins.push(name);
+            localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins));
+            input.value = '';
+            refreshAdminListUI();
+            alert(`Гравець ${name} тепер призначений Адміном!`);
+        }
+    }
+
+    function removeWhitelistAdmin() {
+        let input = document.getElementById('admin-nick-input');
+        let name = input.value.trim();
+        let idx = whitelistAdmins.indexOf(name);
+        if (idx !== -1) {
+            whitelistAdmins.splice(idx, 1);
+            localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins));
+            input.value = '';
+            refreshAdminListUI();
+            alert(`Гравець ${name} успішно позбавлений прав адміна.`);
+        }
+    }
+
+    function refreshAdminListUI() {
+        let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає';
+        document.getElementById('admin-list-txt').innerText = listText;
+    }
 
     function resetProgress() {
         if(confirm("Ви впевнені, що хочете скинути прогрес і перезапустити хвилі?")) {
@@ -373,9 +480,7 @@
             if (!gameActive) return;
             
             if (spawnedThisWave < currentWave.spawnCount) {
-                if (Math.random() < 0.6) {
-                    spawnEnemy();
-                }
+                if (Math.random() < 0.6) spawnEnemy();
             } else {
                 if (enemies.length === 0) {
                     if (currentWave.hasBoss && !bossInstance && kills < totalTargets) {
@@ -423,10 +528,8 @@
             ultCount: 0,         
             isUlting: false,     
             i: currentWave.bossSkin,
-            
-            // Специфіка для лазера (4 рівень)
             laserTargetX: 0,
-            laserWarmupDuration: 1000, // Збільшено помітку до 1 секунди (1000мс)! Гравцеві легше зорієнтуватися.
+            laserWarmupDuration: 1000, 
             laserFireDuration: 2000,   
             laserTimer: 0
         };
@@ -502,18 +605,15 @@
             if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > bossInstance.shootCooldown && bossInstance.y >= bossInstance.targetY) {
                 enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
-                
                 const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
                 bossInstance.lastShot = timestamp;
             }
 
-            // АКТИВАЦІЯ УЛЬТИ
             if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > bossInstance.circleCooldown && bossInstance.y >= bossInstance.targetY) {
                 bossInstance.isUlting = true;
                 bossInstance.lastCircleShot = timestamp;
-                
                 if (currentWave.id === 4) {
-                    bossInstance.laserTargetX = player.x; // Фіксуємо позицію наведення мітки лазера
+                    bossInstance.laserTargetX = player.x; 
                     bossInstance.laserTimer = timestamp;
                     const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
                 } else {
@@ -521,17 +621,15 @@
                 }
             }
 
-            // ВИКОНАННЯ УЛЬТИ БОССА
             if (bossInstance.isUlting) {
                 if (currentWave.id === 4) {
                     let timePassed = timestamp - bossInstance.laserTimer;
-                    let totalLaserTime = bossInstance.laserWarmupDuration + bossInstance.laserFireDuration; // 1000мс + 2000мс = 3000мс
+                    let totalLaserTime = bossInstance.laserWarmupDuration + bossInstance.laserFireDuration;
                     
                     if (timePassed > totalLaserTime) {
                         bossInstance.isUlting = false;
                         bossInstance.lastCircleShot = timestamp; 
                     } else if (timePassed >= bossInstance.laserWarmupDuration) {
-                        // Лазер стріляє тільки після того, як пройшла 1 секунда попередження
                         if (timestamp % 7 === 0) { 
                             if (player.x > (bossInstance.laserTargetX - 35) && player.x < (bossInstance.laserTargetX + 35) && player.y > bossInstance.y) {
                                 takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ БОССА!");
@@ -540,17 +638,14 @@
                         }
                     }
                 } else {
-                    // КРУГОВИЙ ОБСТРЕЛ (ДЛЯ 3 УРОВНЯ)
                     if (timestamp - bossInstance.lastCircleShot > 350) {
-                        let numShots = 10; 
-                        let speed = 4.8;   
+                        let numShots = 10; let speed = 4.8;   
                         let angleOffset = (bossInstance.ultCount * Math.PI) / 10; 
 
                         for (let i = 0; i < numShots; i++) {
                             let angle = ((i * 2 * Math.PI) / numShots) + angleOffset;
                             enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed });
                         }
-                        
                         const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
                         bossInstance.ultCount++;
                         bossInstance.lastCircleShot = timestamp;
@@ -563,7 +658,6 @@
                 }
             }
 
-            // Попадання в босса
             for(let j=bullets.length-1; j>=0; j--) {
                 if (bullets[j].x > bossInstance.x - bossInstance.w/2 && bullets[j].x < bossInstance.x + bossInstance.w/2 && bullets[j].y > bossInstance.y - bossInstance.h/2 && bullets[j].y < bossInstance.y + bossInstance.h/2) {
                     bullets.splice(j, 1);
@@ -571,12 +665,9 @@
                     const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
 
                     if (bossInstance.hp <= 0) {
-                        bossInstance = null;
-                        kills++;
+                        bossInstance = null; kills++;
                         document.getElementById('kills').innerText = kills;
-                        gameActive = false;
-                        endMission();
-                        return;
+                        gameActive = false; endMission(); return;
                     }
                 }
             }
@@ -659,38 +750,20 @@
         });
 
         if (bossInstance) {
-            // ВІЗУАЛ ЛАЗЕРА НА 4 РІВНІ
             if (currentWave.id === 4 && bossInstance.isUlting) {
                 ctx.save();
                 let laserAge = Date.now() - bossInstance.laserTimer;
-                
                 if (laserAge < bossInstance.laserWarmupDuration) {
-                    // ЛАЗЕРНА ПОМІТКА (ПОПЕРЕДЖЕННЯ) — ТЕПЕР ТРИВАЄ 1 СЕКУНДУ!
-                    // Малюємо пунктирну або тонку миготливу червону лінію прицілу
                     ctx.strokeStyle = (Math.floor(laserAge / 100) % 2 === 0) ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.2)';
-                    ctx.lineWidth = 4;
-                    ctx.setLineDash([10, 10]); // Пунктир для ефекту наведення орудія
+                    ctx.lineWidth = 4; ctx.setLineDash([10, 10]);
                 } else {
-                    // САМ ПОСТРІЛ ГІПЕР-ЛАЗЕРА (Смертоносний товстий вогняний промінь)
-                    ctx.strokeStyle = '#ff0055';
-                    ctx.lineWidth = 60;
-                    ctx.shadowBlur = 35;
-                    ctx.shadowColor = '#ff00a0';
+                    ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 60; ctx.shadowBlur = 35; ctx.shadowColor = '#ff00a0';
                 }
-                ctx.beginPath();
-                ctx.moveTo(bossInstance.x, bossInstance.y + 15);
-                ctx.lineTo(bossInstance.laserTargetX, canvas.height);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y + 15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke();
                 
-                // Внутрішній білий яскравий сердечник променя під час пострілу
                 if (laserAge >= bossInstance.laserWarmupDuration) {
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 18;
-                    ctx.setLineDash([]); // Прибираємо пунктир під час вогню
-                    ctx.beginPath();
-                    ctx.moveTo(bossInstance.x, bossInstance.y + 15);
-                    ctx.lineTo(bossInstance.laserTargetX, canvas.height);
-                    ctx.stroke();
+                    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 18; ctx.setLineDash([]);
+                    ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y + 15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke();
                 }
                 ctx.restore();
             }
@@ -706,11 +779,7 @@
             if (currentWave.id === 3) bossTitle = (bossInstance.isUlting ? "👺 БОСС: АКТИВАЦІЯ УЛЬТИ! 👺" : "ГЕНЕРАЛ ОРДИ (ULTRA)");
             if (currentWave.id === 4) {
                 let laserAge = Date.now() - bossInstance.laserTimer;
-                if (bossInstance.isUlting) {
-                    bossTitle = (laserAge < bossInstance.laserWarmupDuration) ? "⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!" : "🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥";
-                } else {
-                    bossTitle = "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";
-                }
+                bossTitle = bossInstance.isUlting ? ((laserAge < bossInstance.laserWarmupDuration) ? "⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!" : "🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥") : "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";
             }
             ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width / 2, bBarY - 6); ctx.restore();
         }
@@ -728,21 +797,15 @@
         
         if(starCount > currentWave.stars) currentWave.stars = starCount;
         coins += currentWave.reward;
-        
-        if(currentWave.id < waveData.length) {
-            waveData[currentWave.id].unlocked = true;
-        }
+        if(currentWave.id < waveData.length) waveData[currentWave.id].unlocked = true;
         
         saveProgress();
-        
         document.getElementById('ui').style.display = 'none';
         document.getElementById('hp-display').style.display = 'none';
 
-        // ПЕРЕВІРКА: Якщо пройшли ОСТАННІЙ (4-й) рівень — запускаємо фінальні титри гри!
         if (currentWave.id === 4) {
             document.getElementById('final-credits-screen').style.display = 'flex';
         } else {
-            // Для звичайних рівнів (1, 2, 3) — стандартне віконце перемоги
             document.getElementById('win-title').innerText = currentWave.hasBoss ? "БОССА ЗНИЩЕНО!" : "МІСІЯ ВИКОНАНА";
             document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
             document.getElementById('win-reward-text').innerText = `+${currentWave.reward} COINS`;
