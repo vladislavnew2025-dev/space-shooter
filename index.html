@@ -39,14 +39,14 @@
         #dot-bl { bottom: 5px; left: 5px; }
         #dot-br { bottom: 5px; right: 5px; }
 
-        /* Панель розробника / Читерів */
-        .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #ff0055; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(255,0,85,0.3); color: #fff; text-align: center; max-height: 90vh; overflow-y: auto; }
+        /* Панель Читерів-Тестерів */
+        .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #00ffff; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(0,255,255,0.2); color: #fff; text-align: center; max-height: 90vh; overflow-y: auto; }
         .admin-section { border-bottom: 1px dashed #333; padding: 15px 0; margin-bottom: 5px; }
         .admin-section:last-child { border: none; }
         .admin-grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
-        .admin-btn-action { background: #ff0055; border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        .admin-btn-action:hover { background: #ff3377; }
-        .admin-input { background: #000; border: 1px solid #ff0055; color: #fff; padding: 8px; border-radius: 5px; width: 80%; text-align: center; margin-bottom: 8px; font-size: 14px; }
+        .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .admin-btn-action:hover { background: #80f5ff; }
+        .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 80%; text-align: center; margin-bottom: 8px; font-size: 14px; }
 
         .cheat-menu-title { font-weight: bold; color: #ffcc00; margin-bottom: 15px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,204,0,0.2); padding-bottom: 5px; }
 
@@ -135,14 +135,14 @@
 
     <div id="admin-screen" class="screen" style="display:none;">
         <div class="admin-panel-box">
-            <h2 id="admin-panel-main-title" style="color:#ff0055; margin:0 0 10px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">💻 ПАНЕЛЬ ТЕСТЕРІВ-ЧИТЕРІВ</h2>
-            <div id="admin-status-badge" style="font-size:13px; color:#0ff; font-weight:bold; margin-bottom:15px;">Доступ активовано</div>
+            <h2 id="admin-panel-main-title" style="color:#00ffff; margin:0 0 10px 0; font-size:22px; text-shadow: 0 0 10px #00ffff;">💻 ПАНЕЛЬ ЧИТЕРІВ-ТЕСТЕРІВ</h2>
+            <div id="admin-status-badge" style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:15px;">Доступ активовано</div>
             
             <div class="admin-section">
-                <div class="cheat-menu-title">🔥 ЧИТ-МЕНЮ</div>
+                <div class="cheat-menu-title">🔥 ЧИТ-МЕНЮ ДЛЯ ЧИТЕРІВ-ТЕСТЕРІВ</div>
                 <div style="display:flex; gap:10px; justify-content:center; margin-top:15px; flex-wrap:wrap;">
-                    <button class="admin-btn-action" id="godmode-btn" style="background:#444; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
-                    <button class="admin-btn-action" id="speed-btn" style="background:#444; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
+                    <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
+                    <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
                 </div>
             </div>
 
@@ -157,18 +157,18 @@
 
             <div class="admin-section">
                 <div style="font-weight:bold; color:#0ff; margin-bottom:5px;">🔓 ДОСТУП ДО МІСІЙ:</div>
-                <button class="admin-btn-action" style="width:100%; background:#00aaee;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ ХВИЛІ</button>
+                <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ ХВИЛІ</button>
             </div>
 
             <div class="admin-section owner-only-element" id="friend-section" style="display:none;">
-                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 КЕРУВАННЯ ВАЙТЛІСТОМ ТЕСТЕРІВ:</div>
-                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм тестера"><br>
+                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 КЕРУВАННЯ СПИСКОМ ЧИТЕРІВ-ТЕСТЕРІВ:</div>
+                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм читера-тестера"><br>
                 <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;">
-                    <button class="admin-btn-action" style="background:#00cc44; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button>
-                    <button class="admin-btn-action" style="background:#444; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАТИ</button>
+                    <button class="admin-btn-action" style="background:#00cc44; color:#fff; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button>
+                    <button class="admin-btn-action" style="background:#444; color:#fff; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАТИ</button>
                 </div>
                 <div style="font-size:11px; color:#aaa; margin-top:10px; text-align:left; background:rgba(0,0,0,0.4); padding:6px; border-radius:5px;">
-                    <strong>Дозволені нікнейми:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span>
+                    <strong>Дозволені читери-тестери:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span>
                 </div>
             </div>
 
@@ -261,11 +261,17 @@
     // СЕКРЕТНИЙ ПАРОЛЬ ГОЛОВНОГО АДМІНІСТРАТОРА
     const MASTER_PASSWORD = "Hs27^&)-+5x?~";
 
-    // ПРАВИЛЬНИЙ ФІКС МАСИВУ ВАЙТЛІСТУ
+    // 🌟 ВБУДОВАНИЙ (ЗАЛІЗНИЙ) ВАЙТЛІСТ НІКНЕЙМІВ 🌟
+    // Заміни 'нік1', 'нік2' на нікнейми своїх друзів, щоб їх 100% впускало!
+    const HARDCODED_WHITELIST = ['нік1', 'нік2', 'tester1', 'vlad'];
+
+    // Завантаження збережених динамічно доданих нікнеймів
     let whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
-    if (!Array.isArray(whitelistAdmins)) {
-        whitelistAdmins = [];
-        localStorage.setItem('security_whitelist', JSON.stringify(whitelistAdmins));
+    if (!Array.isArray(whitelistAdmins)) { whitelistAdmins = []; }
+
+    // Функція повної перевірки вайтлісту (і вбудований, і доданий через меню)
+    function isNicknameAllowed(nick) {
+        return HARDCODED_WHITELIST.includes(nick) || whitelistAdmins.includes(nick);
     }
 
     let globalVolume = Number(localStorage.getItem('gameVolume')) || 80;
@@ -301,7 +307,7 @@
         }
     }
 
-    // ВХІД ТА ПЕРЕВІРКА ВАЙТЛІСТУ (КОНСПІРАТИВНО)
+    // ВХІД ТА ПЕРЕВІРКА ВАЙТЛІСТУ ЧИТЕРІВ-ТЕСТЕРІВ
     function tryOpenAdminPanel() {
         // Якщо вже авторизований як Власник
         if (localStorage.getItem('isMasterAdmin') === 'true') {
@@ -309,35 +315,33 @@
             return;
         }
 
-        // Завантажуємо свіжий список
-        whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
         let savedActiveNick = localStorage.getItem('activeFriendNick');
         
-        // Якщо на цьому телефоні вже сидить вайтліст-користувач
-        if (savedActiveNick && whitelistAdmins.includes(savedActiveNick)) {
-            openAdminPanelUI(`🕹️ ПАНЕЛЬ ТЕСТЕРІВ-ЧИТЕРІВ (${savedActiveNick})`, false);
+        // Якщо на цьому пристрої вже є успішна сесія читера-тестера
+        if (savedActiveNick && isNicknameAllowed(savedActiveNick)) {
+            openAdminPanelUI(`🕹️ ПАНЕЛЬ ЧИТЕРІВ-ТЕСТЕРІВ (${savedActiveNick})`, false);
             return;
         }
 
-        // Просимо ввести нікнейм (ніяких натяків на пароль для чужих)
+        // Запит нікнейму (повна таємність)
         let input = prompt("Введіть ваш нікнейм для авторизації в системі:");
         if (!input) return;
 
         let cleanInput = input.trim();
 
-        // Перевірка на майстер-пароль
+        // Перевірка на майстер-пароль Власника
         if (cleanInput === MASTER_PASSWORD) {
             localStorage.setItem('isMasterAdmin', 'true');
             openAdminPanelUI("👑 ГОЛОВНИЙ АДМІНІСТРАТОР (VLADIROBUS753)", true);
             return;
         }
 
-        // Перевірка по вайтлісту
-        if (whitelistAdmins.includes(cleanInput)) {
-            localStorage.setItem('activeFriendNick', cleanInput); // фіксуємо сесію на цьому пристрої
-            openAdminPanelUI(`🕹️ ПАНЕЛЬ ТЕСТЕРІВ-ЧИТЕРІВ (${cleanInput})`, false);
+        // Перевірка по вайтлісту читерів-тестерів
+        if (isNicknameAllowed(cleanInput)) {
+            localStorage.setItem('activeFriendNick', cleanInput); // запам'ятовуємо сесію
+            openAdminPanelUI(`🕹️ ПАНЕЛЬ ЧИТЕРІВ-ТЕСТЕРІВ (${cleanInput})`, false);
         } else {
-            alert("Помилка! Вашого нікнейму немає у списку тестерів.");
+            alert("Помилка! Вашого нікнейму немає у списку читерів-тестерів.");
         }
     }
 
@@ -353,9 +357,9 @@
             titleEl.style.color = "#ff0055";
             badgeEl.innerText = roleName;
         } else {
-            titleEl.innerText = "💻 ПАНЕЛЬ ТЕСТЕРІВ-ЧИТЕРІВ";
-            titleEl.style.color = "#0ff";
-            badgeEl.innerText = "Статус: Доступ активовано";
+            titleEl.innerText = "💻 ПАНЕЛЬ ЧИТЕРІВ-ТЕСТЕРІВ";
+            titleEl.style.color = "#00ffff";
+            badgeEl.innerText = "Статус: Доступ читерам-тестерам активовано";
         }
         
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
@@ -398,18 +402,18 @@
         alert("Усі місії успішно розблоковані!");
     }
 
-    // ФУНКЦІЇ ВАЙТЛІСТУ (БЕЗПЕЧНЕ ЗБЕРЕЖЕННЯ)
+    // ДОДАВАННЯ В ДИНАМІЧНИЙ СПИСОК (ДЛЯ ГОЛОВНОГО)
     function addWhitelistAdmin() {
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
         if (name) {
             whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
-            if (!whitelistAdmins.includes(name)) {
+            if (!whitelistAdmins.includes(name) && !HARDCODED_WHITELIST.includes(name)) {
                 whitelistAdmins.push(name);
                 localStorage.setItem('security_whitelist', JSON.stringify(whitelistAdmins));
                 input.value = '';
                 refreshAdminListUI();
-                alert(`Користувача "${name}" успішно додано до вайтлісту.`);
+                alert(`Користувача "${name}" успішно додано до читерів-тестерів.`);
             } else {
                 alert("Цей нікнейм вже є у списку!");
             }
@@ -426,15 +430,16 @@
             localStorage.setItem('security_whitelist', JSON.stringify(whitelistAdmins));
             input.value = '';
             refreshAdminListUI();
-            alert(`Користувача "${name}" видалено зі списку.`);
+            alert(`Користувача "${name}" видалено зі списку читерів-тестерів.`);
         } else {
-            alert("Нікнейм не знайдено!");
+            alert("Нікнейм не знайдено у списку збережених!");
         }
     }
 
     function refreshAdminListUI() {
         whitelistAdmins = JSON.parse(localStorage.getItem('security_whitelist')) || [];
-        let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає активних ніків';
+        let combined = [...HARDCODED_WHITELIST, ...whitelistAdmins];
+        let listText = combined.length > 0 ? combined.join(', ') : 'немає активних ніків';
         document.getElementById('admin-list-txt').innerText = listText;
     }
 
