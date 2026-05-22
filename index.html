@@ -62,9 +62,10 @@
         .gun-inv { width: 42px; height: 42px; background: #ff0; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 9px; border-radius: 5px; flex-shrink: 0; cursor: pointer; border: 1px solid #fff; }
         .side-shop-btn { width: 100%; padding: 8px 2px; font-size: 9px; background: transparent; border: 1px solid #ff0; color: #ff0; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        .credits-box { text-align: center; border: 1px dashed #0ff; padding: 15px 30px; margin: 15px 0; background: rgba(0,255,255,0.02); border-radius: 10px; }
-        .credits-box h3 { margin: 5px 0; font-size: 14px; color: #88ff88; letter-spacing: 1px; }
-        .credits-box p { margin: 2px 0 12px 0; font-size: 18px; font-weight: bold; color: #fff; }
+        /* Вікно титрів */
+        .credits-box { text-align: center; border: 2px dashed #0ff; padding: 20px 40px; margin: 15px 0; background: rgba(0,255,255,0.03); border-radius: 15px; box-shadow: 0 0 20px rgba(0,255,255,0.1); }
+        .credits-box h3 { margin: 8px 0 2px 0; font-size: 13px; color: #88ff88; letter-spacing: 1px; text-transform: uppercase; }
+        .credits-box p { margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; }
     </style>
 </head>
 <body>
@@ -104,19 +105,25 @@
     <div id="win-screen" class="screen" style="display:none;">
         <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1>
         <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div>
-        <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 10px;"></div>
+        <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 20px;"></div>
+        <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button>
+    </div>
+
+    <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
+        <h1 style="color:gold; font-size: 36px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-transform:uppercase;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
+        <p style="color:#0ff; font-size: 16px; margin: 0 0 20px 0;">Дякуємо за гру! Ви врятували галактику!</p>
         
         <div class="credits-box">
-            <h2 style="color:#0ff; font-size: 16px; margin: 0 0 10px 0; letter-spacing: 2px;">🎬 GAME CREDITS 🎬</h2>
-            <h3>ГОЛОВНИЙ РОЗРОБНИК & АВТОР:</h3>
+            <h2 style="color:#0ff; font-size: 18px; margin: 0 0 15px 0; letter-spacing: 3px; font-weight: bold;">🎬 ФІНАЛЬНІ ТИТРИ 🎬</h2>
+            <h3>ГОЛОВНИЙ РОЗРОБНИК & АВТОР ПРОЄКТУ:</h3>
             <p>VLADIROBUS753</p>
-            <h3>ТЕХНІЧНА ПІДТРИМКА КОДУ:</h3>
+            <h3>ТЕХНІЧНА ПІДТРИМКА КОДУ (AI):</h3>
             <p>🤖 AI ШТУЧНИЙ ІНТЕЛЕКТ (GEMINI)</p>
-            <h3>КОМПАНІЯ:</h3>
-            <p style="font-size:14px; color:#aaa; font-weight:normal;">VLADIROBUS.xYz company</p>
+            <h3>ВИДАВЕЦЬ & КОМПАНІЯ:</h3>
+            <p style="font-size:16px; color:#aaa; font-weight:normal; margin-bottom:0;">VLADIROBUS.xYz company</p>
         </div>
 
-        <button onclick="backToWaves()" class="main-btn" style="margin-top:10px; border-color: #0f0; color: #0f0;">CONTINUE</button>
+        <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button>
     </div>
 
     <div id="fail-screen" class="screen" style="display:none;">
@@ -132,65 +139,17 @@
     const container = document.documentElement;
 
     const defaultWaves = [
-        { 
-            id: 1, 
-            name: "ХВИЛЯ 1",
-            reward: 50, 
-            stars: 0, 
-            unlocked: true, 
-            spawnCount: 8,         
-            spawnTypes: ['normal'],
-            hasBoss: true,         
-            bossHp: 5,             
-            bossCooldown: 1200,
-            bossSkin: '👾'
-        },
-        { 
-            id: 2, 
-            name: "ХВИЛЯ 2",
-            reward: 80, 
-            stars: 0, 
-            unlocked: false, 
-            spawnCount: 12, 
-            spawnTypes: ['normal', 'fast'], 
-            hasBoss: true, 
-            bossHp: 8, 
-            bossCooldown: 1000,
-            bossSkin: '🛸'
-        },
-        { 
-            id: 3, 
-            name: "ХВИЛЯ 3",
-            reward: 120, 
-            stars: 0, 
-            unlocked: false, 
-            spawnCount: 20, 
-            spawnTypes: ['normal', 'fast', 'heavy'], 
-            hasBoss: true, 
-            bossHp: 25,            
-            bossCooldown: 600,
-            bossSkin: '👺'
-        },
-        { 
-            id: 4, 
-            name: "ХВИЛЯ 4 (ЛАЗЕР)",
-            reward: 145, 
-            stars: 0, 
-            unlocked: false, 
-            spawnCount: 25, 
-            spawnTypes: ['fast', 'heavy'], 
-            hasBoss: true, 
-            bossHp: 45,            
-            bossCooldown: 1500, // Кулдаун обычных пулек
-            bossSkin: '👁️'
-        }
+        { id: 1, name: "ХВИЛЯ 1", reward: 50, stars: 0, unlocked: true, spawnCount: 8, spawnTypes: ['normal'], hasBoss: true, bossHp: 5, bossCooldown: 1200, bossSkin: '👾' },
+        { id: 2, name: "ХВИЛЯ 2", reward: 80, stars: 0, unlocked: false, spawnCount: 12, spawnTypes: ['normal', 'fast'], hasBoss: true, bossHp: 8, bossCooldown: 1000, bossSkin: '🛸' },
+        { id: 3, name: "ХВИЛЯ 3", reward: 120, stars: 0, unlocked: false, spawnCount: 20, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 25, bossCooldown: 600, bossSkin: '👺' },
+        { id: 4, name: "ХВИЛЯ 4 (ЛАЗЕР)", reward: 145, stars: 0, unlocked: false, spawnCount: 25, spawnTypes: ['fast', 'heavy'], hasBoss: true, bossHp: 45, bossCooldown: 1500, bossSkin: '👁️' }
     ];
 
     let savedWaves = localStorage.getItem('waveData');
     if (savedWaves) {
         try {
             let parsed = JSON.parse(savedWaves);
-            if (!parsed[3]) { // Если старый сейв без 4 уровня — сбрасываем waveData для апдейта
+            if (!parsed[3]) {
                 localStorage.removeItem('waveData');
             }
         } catch(e) {
@@ -456,18 +415,19 @@
             h: 70,
             hp: currentWave.bossHp,
             maxHp: currentWave.bossHp,
-            speedX: currentWave.id === 4 ? 4 : 3, // На 4 волне босс быстрее двигается
+            speedX: currentWave.id === 4 ? 4 : 3, 
             lastShot: 0,
             shootCooldown: currentWave.bossCooldown,
             lastCircleShot: 0,
-            circleCooldown: currentWave.id === 4 ? 4500 : 4000, // Интервал между ультами
+            circleCooldown: currentWave.id === 4 ? 5000 : 4000, 
             ultCount: 0,         
             isUlting: false,     
             i: currentWave.bossSkin,
             
-            // Специфика для лазерного босса (4 уровень)
+            // Специфіка для лазера (4 рівень)
             laserTargetX: 0,
-            laserDuration: 2000, 
+            laserWarmupDuration: 1000, // Збільшено помітку до 1 секунди (1000мс)! Гравцеві легше зорієнтуватися.
+            laserFireDuration: 2000,   
             laserTimer: 0
         };
     }
@@ -529,7 +489,6 @@
         if (bossInstance) {
             if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5;
             
-            // Движение босса блокируется во время каста Гипер-Лазера на 4 уровне
             let isFiringMegaLaser = (currentWave.id === 4 && bossInstance.isUlting);
             if (!isFiringMegaLaser) {
                 bossInstance.x += bossInstance.speedX;
@@ -540,7 +499,6 @@
 
             let timestamp = Date.now();
             
-            // Обычная атака (пули) работает, только если босс на позиции и не делает ульту
             if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > bossInstance.shootCooldown && bossInstance.y >= bossInstance.targetY) {
                 enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
@@ -549,14 +507,13 @@
                 bossInstance.lastShot = timestamp;
             }
 
-            // АКТИВАЦИЯ УЛЬТИМАТИВНОЙ АТАКИ
+            // АКТИВАЦІЯ УЛЬТИ
             if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > bossInstance.circleCooldown && bossInstance.y >= bossInstance.targetY) {
                 bossInstance.isUlting = true;
                 bossInstance.lastCircleShot = timestamp;
                 
                 if (currentWave.id === 4) {
-                    // Для 4 уровня: нацеливаем лазер прямо на текущую координату X игрока
-                    bossInstance.laserTargetX = player.x;
+                    bossInstance.laserTargetX = player.x; // Фіксуємо позицію наведення мітки лазера
                     bossInstance.laserTimer = timestamp;
                     const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
                 } else {
@@ -564,19 +521,18 @@
                 }
             }
 
-            // ВЫПОЛНЕНИЕ УЛЬТЫ
+            // ВИКОНАННЯ УЛЬТИ БОССА
             if (bossInstance.isUlting) {
                 if (currentWave.id === 4) {
-                    // МЕХАНИКА ГИПЕР-ЛАЗЕРА (4 УРОВЕНЬ)
                     let timePassed = timestamp - bossInstance.laserTimer;
-                    if (timePassed > bossInstance.laserDuration) {
-                        // Лазер отстрелял свои 2 секунды
+                    let totalLaserTime = bossInstance.laserWarmupDuration + bossInstance.laserFireDuration; // 1000мс + 2000мс = 3000мс
+                    
+                    if (timePassed > totalLaserTime) {
                         bossInstance.isUlting = false;
-                        bossInstance.lastCircleShot = timestamp; // Сброс таймера ульты
-                    } else {
-                        // Каждые несколько кадров проверяем урон в области лазера
-                        // Лазер бьет вертикально от босса вниз. Ширина лазера ~50 пикселей.
-                        if (timestamp % 7 === 0) { // Периодический урон, чтоб не убить за 1 кадр
+                        bossInstance.lastCircleShot = timestamp; 
+                    } else if (timePassed >= bossInstance.laserWarmupDuration) {
+                        // Лазер стріляє тільки після того, як пройшла 1 секунда попередження
+                        if (timestamp % 7 === 0) { 
                             if (player.x > (bossInstance.laserTargetX - 35) && player.x < (bossInstance.laserTargetX + 35) && player.y > bossInstance.y) {
                                 takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ БОССА!");
                                 if (!gameActive) return;
@@ -584,7 +540,7 @@
                         }
                     }
                 } else {
-                    // СТАРЫЙ КРУГОВОЙ ОБСТРЕЛ (ДЛЯ 3 УРОВНЯ)
+                    // КРУГОВИЙ ОБСТРЕЛ (ДЛЯ 3 УРОВНЯ)
                     if (timestamp - bossInstance.lastCircleShot > 350) {
                         let numShots = 10; 
                         let speed = 4.8;   
@@ -592,12 +548,7 @@
 
                         for (let i = 0; i < numShots; i++) {
                             let angle = ((i * 2 * Math.PI) / numShots) + angleOffset;
-                            enemyBullets.push({
-                                x: bossInstance.x,
-                                y: bossInstance.y,
-                                vx: Math.cos(angle) * speed,
-                                vy: Math.sin(angle) * speed
-                            });
+                            enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed });
                         }
                         
                         const s = audioCtx.createBufferSource(); s.buffer = bossBuf; s.connect(audioCtx.destination); s.start();
@@ -612,13 +563,9 @@
                 }
             }
 
-            // Обработка попаданий игрока в босса
+            // Попадання в босса
             for(let j=bullets.length-1; j>=0; j--) {
-                if (bullets[j].x > bossInstance.x - bossInstance.w/2 && 
-                    bullets[j].x < bossInstance.x + bossInstance.w/2 && 
-                    bullets[j].y > bossInstance.y - bossInstance.h/2 && 
-                    bullets[j].y < bossInstance.y + bossInstance.h/2) {
-                    
+                if (bullets[j].x > bossInstance.x - bossInstance.w/2 && bullets[j].x < bossInstance.x + bossInstance.w/2 && bullets[j].y > bossInstance.y - bossInstance.h/2 && bullets[j].y < bossInstance.y + bossInstance.h/2) {
                     bullets.splice(j, 1);
                     bossInstance.hp--;
                     const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
@@ -646,39 +593,24 @@
             
             for(let j=bullets.length-1; j>=0; j--) {
                 if(Math.hypot(e.x-bullets[j].x, e.y-bullets[j].y) < (e.size / 2 + 15)) {
-                    bullets.splice(j,1);
-                    e.hp--;
+                    bullets.splice(j,1); e.hp--;
                     const s = audioCtx.createBufferSource(); s.buffer = crashBuf; s.connect(audioCtx.destination); s.start();
-                    
                     if(e.hp <= 0) {
-                        enemies.splice(i,1);
-                        kills++; document.getElementById('kills').innerText = kills;
-                        
-                        if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
-                            gameActive = false; endMission(); return;
-                        }
+                        enemies.splice(i,1); kills++; document.getElementById('kills').innerText = kills;
+                        if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; }
                     }
                     break;
                 }
             }
             
             if(e && Math.hypot(e.x-player.x, e.y-player.y) < (e.size / 2 + 18)) { 
-                enemies.splice(i, 1);
-                takeDamage("ЗІТКНЕННЯ З ОРДОЮ!");
-                if(!gameActive) return;
-                
-                if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
-                    gameActive = false; endMission(); return;
-                }
+                enemies.splice(i, 1); takeDamage("ЗІТКНЕННЯ З ОРДОЮ!"); if(!gameActive) return;
+                if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; }
             }
             
             if(e && e.y > canvas.height + 50) { 
-                enemies.splice(i,1); 
-                missed++;
-                
-                if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) {
-                    gameActive = false; endMission(); return;
-                }
+                enemies.splice(i,1); missed++;
+                if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; }
             }
         }
     }
@@ -709,104 +641,78 @@
                 let r = Math.floor(i / 4), c = i % 4;
                 let gunX = player.x + (c - 1.5) * cellW;
                 let gunY = player.y - shipH / 2 + (r * cellH) + 10;
-                ctx.beginPath();
-                ctx.fillStyle = '#ff0'; ctx.fillRect(gunX - 4, gunY - 12, 8, 16);
-                ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
+                ctx.beginPath(); ctx.fillStyle = '#ff0'; ctx.fillRect(gunX - 4, gunY - 12, 8, 16);
+                ctx.beginPath(); ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
             }
         });
         
-        ctx.beginPath();
-        ctx.save();
-        ctx.globalAlpha = 1.0; 
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '36px Arial';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(activeSkin, player.x, player.y);
-        ctx.restore();
+        ctx.beginPath(); ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '36px Arial';
+        ctx.fillStyle = '#ffffff'; ctx.fillText(activeSkin, player.x, player.y); ctx.restore();
         
         enemies.forEach(e => { 
-            ctx.beginPath();
-            ctx.save();
-            ctx.globalAlpha = 1.0;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `${e.size}px Arial`; 
-            ctx.fillText(e.i, e.x, e.y); 
-            ctx.restore();
-
+            ctx.beginPath(); ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffffff'; ctx.font = `${e.size}px Arial`; ctx.fillText(e.i, e.x, e.y); ctx.restore();
             if (e.maxHp > 1) {
-                let barW = e.size; let barH = 4;
-                let barX = e.x - barW / 2; let barY = e.y - e.size / 2 - 6;
+                let barW = e.size; let barH = 4; let barX = e.x - barW / 2; let barY = e.y - e.size / 2 - 6;
                 ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barW, barH);
                 ctx.fillStyle = '#0f0'; ctx.fillRect(barX, barY, barW * (e.hp / e.maxHp), barH);
             }
         });
 
         if (bossInstance) {
-            // Отрисовка Гипер-Лазера для 4-го Босса
+            // ВІЗУАЛ ЛАЗЕРА НА 4 РІВНІ
             if (currentWave.id === 4 && bossInstance.isUlting) {
                 ctx.save();
-                // Эффект предупреждения (первые 300мс лазер полупрозрачный, потом плотный огненный)
                 let laserAge = Date.now() - bossInstance.laserTimer;
-                if (laserAge < 300) {
-                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-                    ctx.lineWidth = 15;
+                
+                if (laserAge < bossInstance.laserWarmupDuration) {
+                    // ЛАЗЕРНА ПОМІТКА (ПОПЕРЕДЖЕННЯ) — ТЕПЕР ТРИВАЄ 1 СЕКУНДУ!
+                    // Малюємо пунктирну або тонку миготливу червону лінію прицілу
+                    ctx.strokeStyle = (Math.floor(laserAge / 100) % 2 === 0) ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.2)';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([10, 10]); // Пунктир для ефекту наведення орудія
                 } else {
-                    // Основной смертоносный луч
+                    // САМ ПОСТРІЛ ГІПЕР-ЛАЗЕРА (Смертоносний товстий вогняний промінь)
                     ctx.strokeStyle = '#ff0055';
-                    ctx.lineWidth = 55;
-                    ctx.shadowBlur = 30;
+                    ctx.lineWidth = 60;
+                    ctx.shadowBlur = 35;
                     ctx.shadowColor = '#ff00a0';
                 }
                 ctx.beginPath();
-                ctx.moveTo(bossInstance.x, bossInstance.y + 10);
+                ctx.moveTo(bossInstance.x, bossInstance.y + 15);
                 ctx.lineTo(bossInstance.laserTargetX, canvas.height);
                 ctx.stroke();
                 
-                // Внутреннее белое свечение луча
-                if (laserAge >= 300) {
+                // Внутрішній білий яскравий сердечник променя під час пострілу
+                if (laserAge >= bossInstance.laserWarmupDuration) {
                     ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 15;
+                    ctx.lineWidth = 18;
+                    ctx.setLineDash([]); // Прибираємо пунктир під час вогню
                     ctx.beginPath();
-                    ctx.moveTo(bossInstance.x, bossInstance.y + 10);
+                    ctx.moveTo(bossInstance.x, bossInstance.y + 15);
                     ctx.lineTo(bossInstance.laserTargetX, canvas.height);
                     ctx.stroke();
                 }
                 ctx.restore();
             }
 
-            ctx.beginPath();
-            ctx.save();
-            ctx.globalAlpha = 1.0;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '75px Arial';
-            ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y);
-            ctx.restore();
+            ctx.beginPath(); ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffffff'; ctx.font = '75px Arial'; ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y); ctx.restore();
             
-            let bBarW = canvas.width * 0.6; let bBarH = 10;
-            let bBarX = (canvas.width - bBarW) / 2; let bBarY = 60;
+            let bBarW = canvas.width * 0.6; let bBarH = 10; let bBarX = (canvas.width - bBarW) / 2; let bBarY = 60;
+            ctx.beginPath(); ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.roundRect(bBarX, bBarY, bBarW, bBarH, 4); ctx.fill();
+            ctx.beginPath(); ctx.fillStyle = bossInstance.isUlting ? '#ffaa00' : '#ff0055'; ctx.roundRect(bBarX, bBarY, bBarW * (bossInstance.hp / bossInstance.maxHp), bBarH, 4); ctx.fill();
             
-            ctx.beginPath();
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            ctx.roundRect(bBarX, bBarY, bBarW, bBarH, 4); ctx.fill();
-            
-            ctx.beginPath();
-            ctx.fillStyle = bossInstance.isUlting ? '#ffaa00' : '#ff0055'; 
-            ctx.roundRect(bBarX, bBarY, bBarW * (bossInstance.hp / bossInstance.maxHp), bBarH, 4); ctx.fill();
-            
-            ctx.beginPath();
-            ctx.save();
-            ctx.textAlign = 'center'; 
-            ctx.font = '12px Segoe UI'; ctx.fillStyle = '#fff';
-            
+            ctx.beginPath(); ctx.save(); ctx.textAlign = 'center'; ctx.font = '12px Segoe UI'; ctx.fillStyle = '#fff';
             let bossTitle = "КОСМІЧНИЙ ЗАГАРБНИК";
             if (currentWave.id === 3) bossTitle = (bossInstance.isUlting ? "👺 БОСС: АКТИВАЦІЯ УЛЬТИ! 👺" : "ГЕНЕРАЛ ОРДИ (ULTRA)");
-            if (currentWave.id === 4) bossTitle = (bossInstance.isUlting ? "⚠️ УВАГА: ГІПЕР-ЛАЗЕР! ⚠️" : "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ");
-            
-            ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width / 2, bBarY - 6);
-            ctx.restore();
+            if (currentWave.id === 4) {
+                let laserAge = Date.now() - bossInstance.laserTimer;
+                if (bossInstance.isUlting) {
+                    bossTitle = (laserAge < bossInstance.laserWarmupDuration) ? "⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!" : "🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥";
+                } else {
+                    bossTitle = "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";
+                }
+            }
+            ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width / 2, bBarY - 6); ctx.restore();
         }
         
         ctx.beginPath(); ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 20));
@@ -818,11 +724,7 @@
         if (enemySpawnInterval) clearInterval(enemySpawnInterval);
         
         let starCount = 1;
-        if (playerHp === 3 && missed === 0) {
-            starCount = 3;
-        } else if (playerHp >= 2) {
-            starCount = 2;
-        }
+        if (playerHp === 3 && missed === 0) { starCount = 3; } else if (playerHp >= 2) { starCount = 2; }
         
         if(starCount > currentWave.stars) currentWave.stars = starCount;
         coins += currentWave.reward;
@@ -833,12 +735,19 @@
         
         saveProgress();
         
-        document.getElementById('win-title').innerText = currentWave.hasBoss ? "БОССА ЗНИЩЕНО!" : "МІСІЯ ВИКОНАНА";
-        document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
-        document.getElementById('win-reward-text').innerText = `+${currentWave.reward} COINS`;
-        document.getElementById('win-screen').style.display = 'flex';
         document.getElementById('ui').style.display = 'none';
         document.getElementById('hp-display').style.display = 'none';
+
+        // ПЕРЕВІРКА: Якщо пройшли ОСТАННІЙ (4-й) рівень — запускаємо фінальні титри гри!
+        if (currentWave.id === 4) {
+            document.getElementById('final-credits-screen').style.display = 'flex';
+        } else {
+            // Для звичайних рівнів (1, 2, 3) — стандартне віконце перемоги
+            document.getElementById('win-title').innerText = currentWave.hasBoss ? "БОССА ЗНИЩЕНО!" : "МІСІЯ ВИКОНАНА";
+            document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
+            document.getElementById('win-reward-text').innerText = `+${currentWave.reward} COINS`;
+            document.getElementById('win-screen').style.display = 'flex';
+        }
     }
 
     updateCoinsUI();
