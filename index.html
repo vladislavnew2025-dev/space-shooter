@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
-    <title>Space Shooter: VLADIROBUS Pro</title>
+    <title>Space Shooter: by VLADIROBUS753</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; touch-action: none; }
@@ -31,13 +31,13 @@
         #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; }
         @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } }
 
-        /* Чотири секретні точки по кутах екрану */
-        .dev-dot { position: absolute; color: #151515; font-size: 16px; cursor: pointer; z-index: 12; user-select: none; padding: 5px; }
-        .dev-dot:hover { color: #333; }
-        #dot-tl { top: 10px; left: 10px; }
-        #dot-tr { top: 10px; right: 10px; }
-        #dot-bl { bottom: 10px; left: 10px; }
-        #dot-br { bottom: 10px; right: 10px; } /* Тільки ця точка відкриває адмінку */
+        /* Конспіративні точки по кутах */
+        .dev-dot { position: absolute; color: #121212; font-size: 18px; cursor: pointer; z-index: 12; user-select: none; padding: 10px; }
+        .dev-dot:hover { color: #222; }
+        #dot-tl { top: 5px; left: 5px; }
+        #dot-tr { top: 5px; right: 5px; }
+        #dot-bl { bottom: 5px; left: 5px; }
+        #dot-br { bottom: 5px; right: 5px; } /* Активна адмін-точка */
 
         /* Стилі для панелі розробника */
         .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #ff0055; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(255,0,85,0.3); color: #fff; text-align: center; }
@@ -46,9 +46,9 @@
         .admin-grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
         .admin-btn-action { background: #ff0055; border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .admin-btn-action:hover { background: #ff3377; }
-        .admin-input { background: #000; border: 1px solid #ff0055; color: #fff; padding: 8px; border-radius: 5px; width: 70%; text-align: center; margin-bottom: 8px; }
+        .admin-input { background: #000; border: 1px solid #ff0055; color: #fff; padding: 8px; border-radius: 5px; width: 80%; text-align: center; margin-bottom: 8px; font-size: 14px; }
 
-        .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed !important; }
+        .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed !allowed; }
         .coins-display { color: gold; font-size: 24px; margin-bottom: 15px; }
 
         .ship-config-container { display: flex; position: relative; width: 100%; height: 60vh; justify-content: center; align-items: center; overflow: visible; }
@@ -90,7 +90,7 @@
     <div id="hp-display" style="display:none;">❤️❤️❤️</div>
 
     <div id="main-menu" class="screen">
-        <h1 style="color:#0ff; font-size: 45px; margin-bottom: 20px;">SPACE GAME</h1>
+        <h1 style="color:#0ff; font-size: 38px; margin-bottom: 20px; text-align:center;">SPACE SHOOTER</h1>
         <div class="coins-display">💰 COINS: <span id="main-coins">0</span></div>
         <button class="main-btn" onclick="showWaves()">Start Game</button>
         <button class="main-btn" onclick="showShop()">Shop</button>
@@ -101,15 +101,16 @@
         <div class="dev-dot" id="dot-tl" onclick="fakeDotClick()">•</div>
         <div class="dev-dot" id="dot-tr" onclick="fakeDotClick()">•</div>
         <div class="dev-dot" id="dot-bl" onclick="fakeDotClick()">•</div>
-        <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div> </div>
+        <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div>
+    </div>
 
     <div id="admin-screen" class="screen" style="display:none;">
         <div class="admin-panel-box">
-            <h2 style="color:#ff0055; margin:0 0 10px 0; font-size:24px; text-shadow: 0 0 10px #ff0055;">💻 DEV PANEL (VLADIROBUS)</h2>
-            <div id="admin-status-badge" style="font-size:12px; color:#aaa; margin-bottom:10px;">Статус: Перевірка прав...</div>
+            <h2 style="color:#ff0055; margin:0 0 10px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">💻 DEV PANEL (VLADIROBUS753)</h2>
+            <div id="admin-status-badge" style="font-size:13px; color:#0ff; font-weight:bold; margin-bottom:12px;">Статус: Авторизовано</div>
             
             <div class="admin-section">
-                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 ВИДАЧА МОНЕТ (ЧИТ):</div>
+                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 ВИДАЧА МОНЕТ:</div>
                 <div class="admin-grid-btns">
                     <button class="admin-btn-action" onclick="giveAdminCoins(1000)">+1k 💰</button>
                     <button class="admin-btn-action" onclick="giveAdminCoins(10000)">+10k 💰</button>
@@ -123,13 +124,15 @@
             </div>
 
             <div class="admin-section" id="owner-only-section" style="display:none;">
-                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 ДОДАТИ ДРУГА В ЧИТ-ВАЙТЛІСТ:</div>
-                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Нікнейм чи секретний код друга"><br>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button class="admin-btn-action" style="background:#00cc44; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button>
-                    <button class="admin-btn-action" style="background:#333; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАЛИТИ</button>
+                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 КЕРУВАННЯ ВАЙТЛІСТОМ ДРУЗІВ:</div>
+                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм вашого друга"><br>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;">
+                    <button class="admin-btn-action" style="background:#00cc44; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ ДРУГА</button>
+                    <button class="admin-btn-action" style="background:#444; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАЛИТИ</button>
                 </div>
-                <div style="font-size:10px; color:#666; margin-top:8px;">Хто має доступ на цьому ПК: <span id="admin-list-txt" style="color:#aaa">немає</span></div>
+                <div style="font-size:11px; color:#aaa; margin-top:10px; text-align:left; background:rgba(0,0,0,0.4); padding:6px; border-radius:5px;">
+                    <strong>Дозволені тестери:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span>
+                </div>
             </div>
 
             <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
@@ -140,7 +143,6 @@
         <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
         <h2 style="color:#0ff; margin-bottom: 20px;">CHOOSE MISSION</h2>
         <div id="wave-list"></div>
-        <div style="color: #444; font-size: 12px; margin-top: 15px;">ВИБЕРІТЬ ДОСТУПНУ ХВИЛЮ</div>
     </div>
 
     <div id="shop-screen" class="screen" style="display:none;">
@@ -163,8 +165,7 @@
     </div>
 
     <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
-        <h1 style="color:gold; font-size: 36px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-transform:uppercase;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
-        <p style="color:#0ff; font-size: 16px; margin: 0 0 20px 0;">Дякуємо за гру! Ви врятували галактику!</p>
+        <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
         
         <div class="credits-box">
             <h2 style="color:#0ff; font-size: 18px; margin: 0 0 15px 0; letter-spacing: 3px; font-weight: bold;">🎬 ФІНАЛЬНІ ТИТРИ 🎬</h2>
@@ -198,16 +199,6 @@
         { id: 4, name: "ХВИЛЯ 4 (ЛАЗЕР)", reward: 145, stars: 0, unlocked: false, spawnCount: 25, spawnTypes: ['fast', 'heavy'], hasBoss: true, bossHp: 45, bossCooldown: 1500, bossSkin: '👁️' }
     ];
 
-    let savedWaves = localStorage.getItem('waveData');
-    if (savedWaves) {
-        try {
-            let parsed = JSON.parse(savedWaves);
-            if (!parsed[3]) localStorage.removeItem('waveData');
-        } catch(e) {
-            localStorage.removeItem('waveData');
-        }
-    }
-
     let coins = Number(localStorage.getItem('coins')) || 0;
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: false };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
@@ -216,123 +207,116 @@
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [1]; 
     let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 4;
-    
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
-    // ВАЙТЛІСТ ДЛЯ ДРУЗІВ (ЗБЕРІГАЄТЬСЯ НА ПРИСТРОЇ)
+    // ВАЙТЛІСТ НІКНЕЙМІВ ДЛЯ ДРУЗІВ
     let whitelistAdmins = JSON.parse(localStorage.getItem('whitelistAdmins')) || [];
-
-    // Поточний сесійний статус авторизації
-    let userHasAdminAccess = false;
-    let isPrimaryOwner = false;
-
-    let currentLeftTab = 'guns';
-    let currentRightTab = 'inv_guns';
-    let selectedGunIdx = null;
 
     let gameActive = false, currentWave = null, playerHp = 3, kills = 0, missed = 0, spawnedThisWave = 0;
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
     let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
     let bossInstance = null;
 
-    // АВТОМАТИЧНА ПЕРЕВІРКА ГІТХАБУ ПРИ ЗАПУСКУ
-    function checkAutomaticRights() {
-        let currentHost = window.location.hostname;
-        
-        // Якщо це твій офіційний репозиторій на GitHub Pages або локальний тест розробника
-        if (currentHost.includes("vladislavnew2025-dev.github.io") || currentHost === "localhost" || currentHost === "127.0.0.1") {
-            isPrimaryOwner = true;
-            userHasAdminAccess = true;
-        }
-    }
-    checkAutomaticRights();
+    let currentLeftTab = 'guns';
+    let currentRightTab = 'inv_guns';
+    let selectedGunIdx = null;
 
-    function fakeDotClick() {
-        // Пусті точки нічого не роблять, щоб заплутати інших гравців
-    }
+    // ТВІЙ ГОЛОВНИЙ ПАРОЛЬ АДМІНІСТРАТОРА
+    const MASTER_PASSWORD = "Hs27^&)-+5x?~";
 
+    function fakeDotClick() {}
+
+    // НОВА БЕЗПЕЧНА ТА ЛЕГКА СИСТЕМА ВХОДУ
     function tryOpenAdminPanel() {
-        // 1. Якщо зайшов ти з Гітхабу — пускає миттєво без жодних питань
-        if (isPrimaryOwner) {
-            openAdminPanelUI("👑 ГОЛОВНИЙ РОЗРОБНИК (VLADIROBUS)");
+        // 1. Перевіряємо, чи цей пристрій вже вводив майстер-пароль раніше
+        if (localStorage.getItem('isMasterAdmin') === 'true') {
+            openAdminPanelUI("👑 ГОЛОВНИЙ АДМІНІСТРАТОР (VLADIROBUS753)", true);
             return;
         }
 
-        // 2. Якщо це твій друг, у якого вже активовано чит-код на цьому ПК
-        let localAuthorized = localStorage.getItem('isFriendCheatActive') === 'true';
-        if (localAuthorized) {
-            openAdminPanelUI("🕹️ ТЕСТЕР / ГРАВЕЦЬ З ЧИТАМИ");
+        // 2. Перевіряємо, чи цей пристрій вже був успішно активований другом з вайтлісту
+        let savedFriendNick = localStorage.getItem('activeFriendNick');
+        if (savedFriendNick && whitelistAdmins.includes(savedFriendNick)) {
+            openAdminPanelUI(`🕹️ ТЕСТЕР (${savedFriendNick})`, false);
             return;
         }
 
-        // 3. Якщо це новий друг, якому ти хочеш активувати доступ прямо зараз:
-        let code = prompt("Введіть секретний чит-код для активації панелі:");
-        if (!code) return;
+        // 3. Якщо заходять вперше або з нового пристрою: запитуємо пароль/нік
+        let input = prompt("Введіть секретний пароль або ваш нікнейм тестера:");
+        if (!input) return; // Скасували введення
 
-        let cleaned = code.trim();
-        if (whitelistAdmins.includes(cleaned) || cleaned === "vlad_dev_2026") {
-            localStorage.setItem('isFriendCheatActive', 'true');
-            openAdminPanelUI("🕹️ ТЕСТЕР / ГРАВЕЦЬ З ЧИТАМИ");
+        let cleanInput = input.trim();
+
+        // Перевірка на Творця (Головний пароль)
+        if (cleanInput === MASTER_PASSWORD) {
+            localStorage.setItem('isMasterAdmin', 'true');
+            openAdminPanelUI("👑 ГОЛОВНИЙ АДМІНІСТРАТОР (VLADIROBUS753)", true);
+            return;
+        }
+
+        // Перевірка на Друга з Вайтлісту
+        if (whitelistAdmins.includes(cleanInput)) {
+            localStorage.setItem('activeFriendNick', cleanInput);
+            openAdminPanelUI(`🕹️ ТЕСТЕР (${cleanInput})`, false);
         } else {
-            alert("Помилка! Цей код не додано у вайтліст розробника.");
+            // Якщо ні пароль не підійшов, ні в вайтлісті немає — кнопка просто не реагує (або показує помилку)
+            alert("Помилка доступу! Невірний пароль або ваш нікнейм не вписано у вайтліст.");
         }
     }
 
-    function openAdminPanelUI(roleName) {
+    function openAdminPanelUI(roleName, showOwnerSection) {
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
         document.getElementById('admin-status-badge').innerText = `Статус: ${roleName}`;
         
-        // Тільки ти, як Головний Адмін, можеш керувати списком друзів та бачити секцію вайтлісту
-        if (isPrimaryOwner) {
-            document.getElementById('owner-only-section').style.style.display = 'block';
+        let ownerSection = document.getElementById('owner-only-section');
+        if (showOwnerSection) {
+            ownerSection.style.display = 'block';
             refreshAdminListUI();
         } else {
-            document.getElementById('owner-only-section').style.style.display = 'none';
+            ownerSection.style.display = 'none';
         }
     }
 
     function giveAdminCoins(amount) {
         coins += amount;
         saveProgress();
-        alert(`Чит спрацював! Видано +${amount} монет.`);
+        alert(`Додано +${amount} монет!`);
     }
 
     function unlockAllAdminWaves() {
         waveData.forEach(w => w.unlocked = true);
         saveProgress();
-        alert("Всі хвилі успішно відкриті!");
+        alert("Усі місії розблоковано!");
     }
 
     function addWhitelistAdmin() {
-        if (!isPrimaryOwner) return;
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
         if (name && !whitelistAdmins.includes(name)) {
             whitelistAdmins.push(name);
-            localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins));
+            saveProgress();
             input.value = '';
             refreshAdminListUI();
-            alert(`Чит-код "${name}" додано. Скажи його другу!`);
+            alert(`Користувача "${name}" успішно додано у вайтліст друзів!`);
         }
     }
 
     function removeWhitelistAdmin() {
-        if (!isPrimaryOwner) return;
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
         let idx = whitelistAdmins.indexOf(name);
         if (idx !== -1) {
             whitelistAdmins.splice(idx, 1);
-            localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins));
+            saveProgress();
             input.value = '';
             refreshAdminListUI();
-            alert(`Код "${name}" видалено з доступу.`);
+            alert(`Користувача "${name}" видалено з вайтлісту.`);
         }
     }
 
     function refreshAdminListUI() {
-        let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає активних кодів';
+        let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає активних ніків';
         document.getElementById('admin-list-txt').innerText = listText;
     }
 
@@ -471,6 +455,7 @@
         localStorage.setItem('shipInventory', JSON.stringify(shipInventory));
         localStorage.setItem('unlockedCells', unlockedCells);
         localStorage.setItem('waveData', JSON.stringify(waveData));
+        localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins)); 
         updateCoinsUI(); 
     }
 
