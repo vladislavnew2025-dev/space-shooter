@@ -31,9 +31,13 @@
         #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; }
         @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } }
 
-        /* Секретна кнопка розробника в кутку */
-        #dev-secret-trigger { position: absolute; bottom: 10px; right: 15px; color: #222; font-size: 14px; cursor: pointer; z-index: 12; user-select: none; }
-        #dev-secret-trigger:hover { color: #444; }
+        /* Чотири секретні точки по кутах екрану */
+        .dev-dot { position: absolute; color: #151515; font-size: 16px; cursor: pointer; z-index: 12; user-select: none; padding: 5px; }
+        .dev-dot:hover { color: #333; }
+        #dot-tl { top: 10px; left: 10px; }
+        #dot-tr { top: 10px; right: 10px; }
+        #dot-bl { bottom: 10px; left: 10px; }
+        #dot-br { bottom: 10px; right: 10px; } /* Тільки ця точка відкриває адмінку */
 
         /* Стилі для панелі розробника */
         .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #ff0055; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(255,0,85,0.3); color: #fff; text-align: center; }
@@ -94,15 +98,18 @@
         <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button>
         <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div>
         
-        <div id="dev-secret-trigger" onclick="tryOpenAdminPanel()">•</div>
-    </div>
+        <div class="dev-dot" id="dot-tl" onclick="fakeDotClick()">•</div>
+        <div class="dev-dot" id="dot-tr" onclick="fakeDotClick()">•</div>
+        <div class="dev-dot" id="dot-bl" onclick="fakeDotClick()">•</div>
+        <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div> </div>
 
     <div id="admin-screen" class="screen" style="display:none;">
         <div class="admin-panel-box">
             <h2 style="color:#ff0055; margin:0 0 10px 0; font-size:24px; text-shadow: 0 0 10px #ff0055;">💻 DEV PANEL (VLADIROBUS)</h2>
+            <div id="admin-status-badge" style="font-size:12px; color:#aaa; margin-bottom:10px;">Статус: Перевірка прав...</div>
             
             <div class="admin-section">
-                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 ВИДАЧА МОНЕТ:</div>
+                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 ВИДАЧА МОНЕТ (ЧИТ):</div>
                 <div class="admin-grid-btns">
                     <button class="admin-btn-action" onclick="giveAdminCoins(1000)">+1k 💰</button>
                     <button class="admin-btn-action" onclick="giveAdminCoins(10000)">+10k 💰</button>
@@ -115,14 +122,14 @@
                 <button class="admin-btn-action" style="width:100%; background:#00aaee;" onclick="unlockAllAdminWaves()">РОЗБЛОКУВАТИ ВСІ ХВИЛІ</button>
             </div>
 
-            <div class="admin-section">
-                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 ПРИЗНАЧИТИ / ВИДАЛИТИ АДМІНА:</div>
-                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм гравця"><br>
+            <div class="admin-section" id="owner-only-section" style="display:none;">
+                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 ДОДАТИ ДРУГА В ЧИТ-ВАЙТЛІСТ:</div>
+                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Нікнейм чи секретний код друга"><br>
                 <div style="display:flex; gap:10px; justify-content:center;">
                     <button class="admin-btn-action" style="background:#00cc44; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button>
                     <button class="admin-btn-action" style="background:#333; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАЛИТИ</button>
                 </div>
-                <div style="font-size:10px; color:#666; margin-top:8px;">Поточні адміни у вайтлісті: <span id="admin-list-txt" style="color:#aaa">немає</span></div>
+                <div style="font-size:10px; color:#666; margin-top:8px;">Хто має доступ на цьому ПК: <span id="admin-list-txt" style="color:#aaa">немає</span></div>
             </div>
 
             <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
@@ -212,8 +219,12 @@
     
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
-    // СИСТЕМА ВАЙТЛІСТУ АДМІНІВ
+    // ВАЙТЛІСТ ДЛЯ ДРУЗІВ (ЗБЕРІГАЄТЬСЯ НА ПРИСТРОЇ)
     let whitelistAdmins = JSON.parse(localStorage.getItem('whitelistAdmins')) || [];
+
+    // Поточний сесійний статус авторизації
+    let userHasAdminAccess = false;
+    let isPrimaryOwner = false;
 
     let currentLeftTab = 'guns';
     let currentRightTab = 'inv_guns';
@@ -224,49 +235,90 @@
     let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
     let bossInstance = null;
 
-    // СЕКРЕТНІ ФУНКЦІЇ ДЛЯ АДМІН-ПАНЕЛІ
+    // АВТОМАТИЧНА ПЕРЕВІРКА ГІТХАБУ ПРИ ЗАПУСКУ
+    function checkAutomaticRights() {
+        let currentHost = window.location.hostname;
+        
+        // Якщо це твій офіційний репозиторій на GitHub Pages або локальний тест розробника
+        if (currentHost.includes("vladislavnew2025-dev.github.io") || currentHost === "localhost" || currentHost === "127.0.0.1") {
+            isPrimaryOwner = true;
+            userHasAdminAccess = true;
+        }
+    }
+    checkAutomaticRights();
+
+    function fakeDotClick() {
+        // Пусті точки нічого не роблять, щоб заплутати інших гравців
+    }
+
     function tryOpenAdminPanel() {
-        let name = prompt("Введіть ваш нікнейм:");
-        if (!name) return;
+        // 1. Якщо зайшов ти з Гітхабу — пускає миттєво без жодних питань
+        if (isPrimaryOwner) {
+            openAdminPanelUI("👑 ГОЛОВНИЙ РОЗРОБНИК (VLADIROBUS)");
+            return;
+        }
+
+        // 2. Якщо це твій друг, у якого вже активовано чит-код на цьому ПК
+        let localAuthorized = localStorage.getItem('isFriendCheatActive') === 'true';
+        if (localAuthorized) {
+            openAdminPanelUI("🕹️ ТЕСТЕР / ГРАВЕЦЬ З ЧИТАМИ");
+            return;
+        }
+
+        // 3. Якщо це новий друг, якому ти хочеш активувати доступ прямо зараз:
+        let code = prompt("Введіть секретний чит-код для активації панелі:");
+        if (!code) return;
+
+        let cleaned = code.trim();
+        if (whitelistAdmins.includes(cleaned) || cleaned === "vlad_dev_2026") {
+            localStorage.setItem('isFriendCheatActive', 'true');
+            openAdminPanelUI("🕹️ ТЕСТЕР / ГРАВЕЦЬ З ЧИТАМИ");
+        } else {
+            alert("Помилка! Цей код не додано у вайтліст розробника.");
+        }
+    }
+
+    function openAdminPanelUI(roleName) {
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('admin-screen').style.display = 'flex';
+        document.getElementById('admin-status-badge').innerText = `Статус: ${roleName}`;
         
-        let cleanedName = name.trim();
-        
-        // Перевірка, чи це творець гри, чи адмін з вайтлісту, чи введено секретний пароль розробника
-        if (cleanedName === "VLADIROBUS753" || whitelistAdmins.includes(cleanedName) || cleanedName === "vlad_dev_2026") {
-            alert(`Доступ дозволено! Вітаємо, Адмін ${cleanedName}!`);
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('admin-screen').style.display = 'flex';
+        // Тільки ти, як Головний Адмін, можеш керувати списком друзів та бачити секцію вайтлісту
+        if (isPrimaryOwner) {
+            document.getElementById('owner-only-section').style.style.display = 'block';
             refreshAdminListUI();
         } else {
-            alert("Помилка доступу! Ви не зареєстровані як розробник.");
+            document.getElementById('owner-only-section').style.style.display = 'none';
         }
     }
 
     function giveAdminCoins(amount) {
         coins += amount;
         saveProgress();
-        alert(`Успішно нараховано +${amount} монет!`);
+        alert(`Чит спрацював! Видано +${amount} монет.`);
     }
 
     function unlockAllAdminWaves() {
         waveData.forEach(w => w.unlocked = true);
         saveProgress();
-        alert("Всі місії та рівні розблоковано!");
+        alert("Всі хвилі успішно відкриті!");
     }
 
     function addWhitelistAdmin() {
+        if (!isPrimaryOwner) return;
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
-        if (name && !whitelistAdmins.includes(name) && name !== "VLADIROBUS753") {
+        if (name && !whitelistAdmins.includes(name)) {
             whitelistAdmins.push(name);
             localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins));
             input.value = '';
             refreshAdminListUI();
-            alert(`Гравець ${name} тепер призначений Адміном!`);
+            alert(`Чит-код "${name}" додано. Скажи його другу!`);
         }
     }
 
     function removeWhitelistAdmin() {
+        if (!isPrimaryOwner) return;
         let input = document.getElementById('admin-nick-input');
         let name = input.value.trim();
         let idx = whitelistAdmins.indexOf(name);
@@ -275,12 +327,12 @@
             localStorage.setItem('whitelistAdmins', JSON.stringify(whitelistAdmins));
             input.value = '';
             refreshAdminListUI();
-            alert(`Гравець ${name} успішно позбавлений прав адміна.`);
+            alert(`Код "${name}" видалено з доступу.`);
         }
     }
 
     function refreshAdminListUI() {
-        let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає';
+        let listText = whitelistAdmins.length > 0 ? whitelistAdmins.join(', ') : 'немає активних кодів';
         document.getElementById('admin-list-txt').innerText = listText;
     }
 
