@@ -88,7 +88,6 @@
     <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div>
     <div id="hp-display" style="display:none;">❤️❤️❤️</div>
 
-    <!-- РЕЄСТРАЦІЯ -->
     <div id="register-screen" class="screen" style="display:none; background: radial-gradient(circle, #0a0a20 0%, #000 100%);">
         <div style="background: rgba(7,7,16,0.95); border: 2px solid #0ff; border-radius: 20px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 35px rgba(0,255,255,0.35);">
             <h1 style="color: #0ff; font-size: 28px; margin-top: 0; letter-spacing: 2px;">🌌 ЛАСКАВО ПРОСИМО!</h1>
@@ -98,7 +97,6 @@
         </div>
     </div>
 
-    <!-- БАН -->
     <div id="banned-screen" class="screen" style="display:none; background: #100000;">
         <div style="text-align: center; padding: 20px; max-width: 500px;">
             <h1 style="color: #ff3366; font-size: 45px; margin-bottom: 10px;">🛑 ВАС ЗАБЛОКОВАНО!</h1>
@@ -111,7 +109,6 @@
         </div>
     </div>
 
-    <!-- ГОЛОВНЕ МЕНЮ -->
     <div id="main-menu" class="screen">
         <h1 style="color:#0ff; font-size: 38px; margin-bottom: 20px; text-align:center;">SPACE SHOOTER</h1>
         <div class="coins-display">💰 COINS: <span id="main-coins">0</span></div>
@@ -124,7 +121,6 @@
         <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div>
     </div>
 
-    <!-- НАЛАШТУВАННЯ -->
     <div id="settings-screen" class="screen" style="display:none;">
         <div class="settings-box">
             <h2 style="color:#0ff; margin-top:0;">⚙️ SETTINGS</h2>
@@ -141,7 +137,6 @@
         </div>
     </div>
 
-    <!-- АДМІН ПАНЕЛЬ -->
     <div id="admin-screen" class="screen" style="display:none;">
         <div class="admin-panel-box">
             <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
@@ -176,12 +171,12 @@
         </div>
     </div>
 
-    <!-- МЕНЕДЖЕР ГРАВЦІВ -->
     <div id="player-manage-screen" class="screen" style="display:none;">
         <div class="admin-panel-box" style="max-width: 550px;">
             <h2 style="color:#ffcc00; margin:0 0 5px 0;">👑 КЕРУВАННЯ ГРУПАМИ ТА ГРАВЦЯМИ</h2>
-            <div style="margin-bottom: 12px;">
+            <div style="margin-bottom: 12px; display:flex; flex-direction:column; gap:8px;">
                 <button id="toggle-owner-visibility-btn" class="admin-btn-action" style="background:#5533ff; color:#fff; width:100%; padding:6px;" onclick="toggleOwnerInLists()">👁️ ПОКАЗАТИ ВЛАСНИКА В СПИСКАХ</button>
+                <button class="admin-btn-action" style="background:#00aa44; color:#fff; width:100%; padding:6px;" onclick="forceRefreshGroups()">🔄 ОНОВИТИ ГРУПИ</button>
             </div>
             <div style="background: rgba(255,255,255,0.03); border: 1px dashed #444; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left;">
                 <div style="font-size:12px; font-weight:bold; color:#0ff; margin-bottom:5px;">➕ СТВОРИТИ ВЛАСНУ ГРУПУ:</div>
@@ -196,7 +191,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА НАЛАШТУВАНЬ ГРАВЦЯ -->
     <div id="player-settings-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="color:#ffcc00; margin-top:0;">⚙️ НАЛАШТУВАННЯ: <span id="modal-target-nick" style="color:#fff;"></span></h3>
@@ -236,7 +230,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА БАНУ -->
     <div id="player-ban-modal" class="modal-overlay">
         <div class="modal-box" style="border-color:#ff3366; box-shadow: 0 0 25px rgba(255,51,102,0.3);">
             <h3 style="color:#ff3366; margin-top:0;">🛑 БЛОКУВАННЯ / ВИДАЛЕННЯ</h3>
@@ -264,14 +257,12 @@
         </div>
     </div>
 
-    <!-- ВИБІР МІСІЇ -->
     <div id="wave-screen" class="screen" style="display:none;">
         <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
         <h2 style="color:#0ff; margin-bottom: 20px;">CHOOSE MISSION</h2>
         <div id="wave-list"></div>
     </div>
 
-    <!-- МАГАЗИН -->
     <div id="shop-screen" class="screen" style="display:none;">
         <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
         <h1 style="color:gold; margin-bottom: 5px;">SPACE SHOP</h1>
@@ -284,7 +275,6 @@
         <div id="shop-content"></div>
     </div>
 
-    <!-- ПЕРЕМОГА -->
     <div id="win-screen" class="screen" style="display:none;">
         <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1>
         <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div>
@@ -292,7 +282,6 @@
         <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button>
     </div>
 
-    <!-- ФІНАЛЬНІ ТИТРИ -->
     <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
         <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
         <div class="credits-box">
@@ -304,7 +293,6 @@
         <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button>
     </div>
 
-    <!-- ПОРАЗКА -->
     <div id="fail-screen" class="screen" style="display:none;">
         <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1>
         <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
@@ -317,9 +305,6 @@
     const ctx = canvas.getContext('2d');
     const container = document.documentElement;
 
-    // ============================================================
-    // ДАНІ ХВИЛЬ (ПОВНА ВЕРСІЯ З bossSkin, лазером, ультами)
-    // ============================================================
     const defaultWaves = [
         { id: 1, name: "ХВИЛЯ 1", reward: 50, stars: 0, unlocked: true, spawnCount: 8, spawnTypes: ['normal'], hasBoss: true, bossHp: 5, bossCooldown: 1200, bossSkin: '👾' },
         { id: 2, name: "ХВИЛЯ 2", reward: 80, stars: 0, unlocked: false, spawnCount: 12, spawnTypes: ['normal', 'fast'], hasBoss: true, bossHp: 8, bossCooldown: 1000, bossSkin: '🛸' },
@@ -327,9 +312,6 @@
         { id: 4, name: "ХВИЛЯ 4 (ЛАЗЕР)", reward: 145, stars: 0, unlocked: false, spawnCount: 25, spawnTypes: ['fast', 'heavy'], hasBoss: true, bossHp: 45, bossCooldown: 1500, bossSkin: '👁️' }
     ];
 
-    // ============================================================
-    // СИСТЕМА ГРАВЦІВ ТА ГРУП
-    // ============================================================
     const MASTER_PASSWORD = "Hs27^&)-+5x?~";
     let myNickname = localStorage.getItem('myRegisteredNickname') || '';
     let globalPlayersDB = JSON.parse(localStorage.getItem('space_players_db')) || {};
@@ -341,9 +323,6 @@
     if (!customGroups['тестери']) customGroups['тестери'] = { label: 'Тестери', color: '#9933ff' };
     localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
 
-    // ============================================================
-    // ЗМІННІ ГРИ
-    // ============================================================
     let coins = Number(localStorage.getItem('coins')) || 0;
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: false };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
@@ -367,7 +346,6 @@
     let currentModalTargetUser = '';
     let sessionStartTime = Date.now();
 
-    // Авто-збереження часу сесії
     setInterval(() => {
         if (myNickname && myNickname !== "VLADIROBUS753" && globalPlayersDB[myNickname]) {
             let elapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
@@ -377,9 +355,6 @@
         }
     }, 5000);
 
-    // ============================================================
-    // ІНІЦІАЛІЗАЦІЯ
-    // ============================================================
     window.onload = function() {
         checkBanStatus();
         if (!myNickname) {
@@ -450,14 +425,10 @@
         }
     }
 
-    // ============================================================
-    // АДМІН-ПАНЕЛЬ (СІРА ТОЧКА)
-    // ============================================================
     function tryOpenAdminPanel() {
         let isOwner = (localStorage.getItem('isMasterAdmin') === 'true' || myNickname === "VLADIROBUS753");
         let currentGroup = (globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки');
         let hasAccess = (isOwner || currentGroup === 'читери' || currentGroup === 'тестери');
-
         if (hasAccess) {
             openAdminPanelUI(isOwner, currentGroup);
         } else {
@@ -467,7 +438,6 @@
                 if (!myNickname) { myNickname = "VLADIROBUS753"; localStorage.setItem('myRegisteredNickname', myNickname); }
                 openAdminPanelUI(true, 'власник');
             }
-            // Для звичайних ігроків — нічого не відбувається
         }
     }
 
@@ -475,19 +445,10 @@
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
         document.getElementById('admin-active-name').innerText = myNickname;
-
         const panelTitle = document.getElementById('admin-panel-title');
-        if (isOwner) {
-            panelTitle.innerText = "Адмінське меню керування";
-            panelTitle.style.color = "#ff0055";
-        } else if (currentGroup === 'читери') {
-            panelTitle.innerText = "Меню читів";
-            panelTitle.style.color = "#00ffff";
-        } else if (currentGroup === 'тестери') {
-            panelTitle.innerText = "Меню тестерів";
-            panelTitle.style.color = "#00ffff";
-        }
-
+        if (isOwner) { panelTitle.innerText = "Адмінське меню керування"; panelTitle.style.color = "#ff0055"; }
+        else if (currentGroup === 'читери') { panelTitle.innerText = "Меню читів"; panelTitle.style.color = "#00ffff"; }
+        else if (currentGroup === 'тестери') { panelTitle.innerText = "Меню тестерів"; panelTitle.style.color = "#00ffff"; }
         document.getElementById('owner-only-zone').style.display = isOwner ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
         document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
@@ -512,8 +473,7 @@
         let amount = Math.abs(Number(document.getElementById('panel-coin-amount').value)) || 0;
         let finalValue = amount * panelCoinSign;
         coins = Math.max(0, coins + finalValue);
-        saveProgress();
-        updateCoinsUI();
+        saveProgress(); updateCoinsUI();
         if (myNickname && myNickname !== "VLADIROBUS753" && globalPlayersDB[myNickname]) {
             globalPlayersDB[myNickname].coins = coins;
             localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
@@ -521,14 +481,20 @@
         alert(`Ваш баланс змінено на ${finalValue} монет!`);
     }
 
-    // ============================================================
-    // МЕНЕДЖЕР ГРУП (ТІЛЬКИ ДЛЯ ВЛАСНИКА)
-    // ============================================================
     function openPlayerManagementUI() {
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
         updateOwnerVisibilityBtnUI();
         renderGroupsAndPlayers();
+    }
+
+    function forceRefreshGroups() {
+        if (!customGroups['ігроки']) customGroups['ігроки'] = { label: 'Ігроки', color: '#bbb' };
+        if (!customGroups['читери']) customGroups['читери'] = { label: 'Читери', color: '#a0522d' };
+        if (!customGroups['тестери']) customGroups['тестери'] = { label: 'Тестери', color: '#9933ff' };
+        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+        renderGroupsAndPlayers();
+        alert('Групи оновлено!');
     }
 
     function toggleOwnerInLists() {
@@ -642,9 +608,6 @@
         closeBanModal(); renderGroupsAndPlayers();
     }
 
-    // ============================================================
-    // СТАНДАРТНІ ФУНКЦІЇ
-    // ============================================================
     function changeVolume(val) { globalVolume = Number(val); localStorage.setItem('gameVolume', globalVolume); }
     function toggleGodMode() { godModeActive = !godModeActive; if (myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].godMode = godModeActive; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } openAdminPanelUI(myNickname === "VLADIROBUS753", globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки'); }
     function toggleGameSpeed() { gameSpeedMultiplier = gameSpeedMultiplier === 1 ? 4 : 1; openAdminPanelUI(myNickname === "VLADIROBUS753", globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки'); if (gameActive) startIntervals(); }
@@ -694,9 +657,6 @@
         }
     }
 
-    // ============================================================
-    // МАГАЗИН
-    // ============================================================
     function switchTab(tab) {
         document.getElementById('tab-upgrades').classList.toggle('active', tab === 'upgrades');
         document.getElementById('tab-skins').classList.toggle('active', tab === 'skins');
@@ -735,9 +695,6 @@
     function buyShipItem(type, price) { if(coins < price) return; if(type === 'gun') shipInventory.push(1); if(type === 'cell' && unlockedCells < 16) { shipGrid[unlockedCells] = 0; unlockedCells++; } coins -= price; if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].coins = coins; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } saveProgress(); renderShopItems('ship'); }
     function useDefault() { activeSkin = '🚀'; saveProgress(); if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].activeSkin = '🚀'; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } switchTab('skins'); }
 
-    // ============================================================
-    // ХВИЛІ ТА ЗАПУСК МІСІЇ
-    // ============================================================
     function renderWaves() {
         const list = document.getElementById('wave-list'); list.innerHTML = '';
         waveData.forEach(w => {
@@ -769,7 +726,6 @@
     function startIntervals() {
         if (shootInterval) clearInterval(shootInterval);
         if (enemySpawnInterval) clearInterval(enemySpawnInterval);
-
         let fireRate = (unlockedUpgrades.fastFire ? 150 : 280) / gameSpeedMultiplier;
         shootInterval = setInterval(() => {
             if(gameActive) {
@@ -781,7 +737,6 @@
                 playSound(shootBuf);
             }
         }, fireRate);
-
         let spawnRate = 900 / gameSpeedMultiplier;
         enemySpawnInterval = setInterval(() => {
             if (!gameActive) return;
@@ -840,30 +795,23 @@
 
     function gameLoop() { if(!gameActive) return; update(); draw(); requestAnimationFrame(gameLoop); }
 
-    // ============================================================
-    // UPDATE — ПОВНА ЛОГІКА З ЛАЗЕРОМ БОСА ТА УЛЬТАМИ
-    // ============================================================
     function update() {
         let m = gameSpeedMultiplier;
         player.x += (player.targetX - player.x) * 0.2 * m;
         starsBg.forEach(s => { s.y += 3 * m; if(s.y > canvas.height) s.y = 0; });
-
         for(let i=bullets.length-1; i>=0; i--) { bullets[i].y -= 18 * m; if(bullets[i].y < 0) bullets.splice(i,1); }
-
         for(let i=enemyBullets.length-1; i>=0; i--) {
             enemyBullets[i].x += (enemyBullets[i].vx || 0) * m;
             enemyBullets[i].y += (enemyBullets[i].vy || 7.5) * m;
             if(enemyBullets[i].y > canvas.height || enemyBullets[i].y < -50 || enemyBullets[i].x < -50 || enemyBullets[i].x > canvas.width + 50) { enemyBullets.splice(i, 1); continue; }
             if(Math.hypot(enemyBullets[i].x - player.x, enemyBullets[i].y - player.y) < 28) { enemyBullets.splice(i, 1); takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!"); if(!gameActive) return; }
         }
-
         if (bossInstance) {
             if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5 * m;
             if (!(currentWave.id === 4 && bossInstance.isUlting)) {
                 bossInstance.x += bossInstance.speedX * m;
                 if (bossInstance.x > canvas.width - bossInstance.w / 2 || bossInstance.x < bossInstance.w / 2) bossInstance.speedX *= -1;
             }
-
             let timestamp = Date.now();
             let currentCooldown = bossInstance.shootCooldown / m;
             if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > currentCooldown && bossInstance.y >= bossInstance.targetY) {
@@ -871,7 +819,6 @@
                 enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 playSound(bossBuf); bossInstance.lastShot = timestamp;
             }
-
             let currentCircleCooldown = bossInstance.circleCooldown / m;
             if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > currentCircleCooldown && bossInstance.y >= bossInstance.targetY) {
                 if (currentWave.id === 3 || currentWave.id === 4) {
@@ -880,7 +827,6 @@
                     else { bossInstance.ultCount = 0; }
                 }
             }
-
             if (bossInstance.isUlting) {
                 if (currentWave.id === 4) {
                     let timePassed = timestamp - bossInstance.laserTimer;
@@ -902,7 +848,6 @@
                     }
                 }
             }
-
             for(let j=bullets.length-1; j>=0; j--) {
                 if (bullets[j].x > bossInstance.x - bossInstance.w/2 && bullets[j].x < bossInstance.x + bossInstance.w/2 && bullets[j].y > bossInstance.y - bossInstance.h/2 && bullets[j].y < bossInstance.y + bossInstance.h/2) {
                     bullets.splice(j, 1); bossInstance.hp--; playSound(crashBuf);
@@ -911,7 +856,6 @@
             }
             if (Math.hypot(bossInstance.x - player.x, bossInstance.y - player.y) < 55) { takeDamage("БОСС ПРОТАРАНИВ ВАС!"); bossInstance.x = canvas.width / 2; if(!gameActive) return; }
         }
-
         for(let i=enemies.length-1; i>=0; i--) {
             let e = enemies[i]; e.y += e.speed * m;
             for(let j=bullets.length-1; j>=0; j--) {
@@ -926,21 +870,15 @@
         }
     }
 
-    // ============================================================
-    // DRAW — ПОВНА ВІДМАЛЬОВКА З ЛАЗЕРОМ БОСА
-    // ============================================================
     function draw() {
         ctx.fillStyle = '#000510'; ctx.fillRect(0,0,canvas.width, canvas.height);
         ctx.fillStyle = '#666'; starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
-
         let maxCols = 1, maxRows = 1;
         shipGrid.forEach((cell, idx) => { if (cell !== null) { let r = Math.floor(idx / 4) + 1; let c = (idx % 4) + 1; if (c > maxCols) maxCols = c; if (r > maxRows) maxRows = r; } });
         let cellW = 32, cellH = 25, shipW = maxCols * cellW, shipH = maxRows * cellH;
-
         ctx.beginPath(); ctx.strokeStyle = godModeActive ? '#00cc44' : 'rgba(0, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(0, 255, 255, 0.05)';
         let shipLeft = player.x - shipW / 2, shipTop = player.y - shipH / 2;
         ctx.roundRect(shipLeft, shipTop, shipW, shipH, 8); ctx.fill(); ctx.stroke();
-
         shipGrid.forEach((s, i) => {
             if(s === 1) {
                 let r = Math.floor(i / 4), c = i % 4;
@@ -949,15 +887,12 @@
                 ctx.beginPath(); ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
             }
         });
-
         ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '36px Arial';
         ctx.fillStyle = '#ffffff'; ctx.fillText(activeSkin, player.x, player.y); ctx.restore();
-
         enemies.forEach(e => {
             ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffffff'; ctx.font = `${e.size}px Arial`; ctx.fillText(e.i, e.x, e.y); ctx.restore();
             if (e.maxHp > 1) { let barW = e.size; let barX = e.x - barW / 2; let barY = e.y - e.size / 2 - 6; ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barW, 4); ctx.fillStyle = '#0f0'; ctx.fillRect(barX, barY, barW * (e.hp / e.maxHp), 4); }
         });
-
         if (bossInstance) {
             if (currentWave.id === 4 && bossInstance.isUlting) {
                 ctx.save(); let laserAge = Date.now() - bossInstance.laserTimer;
@@ -968,34 +903,26 @@
                 if (laserAge >= warmup) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 18; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y + 15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke(); }
                 ctx.restore();
             }
-
             ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffffff'; ctx.font = '75px Arial'; ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y); ctx.restore();
             let bBarW = canvas.width * 0.6; let bBarX = (canvas.width - bBarW) / 2; let bBarY = 60;
             ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.beginPath(); ctx.roundRect(bBarX, bBarY, bBarW, 10, 4); ctx.fill();
             ctx.fillStyle = bossInstance.isUlting ? '#ffaa00' : '#ff0055'; ctx.beginPath(); ctx.roundRect(bBarX, bBarY, bBarW * (bossInstance.hp / bossInstance.maxHp), 10, 4); ctx.fill();
-
             ctx.save(); ctx.textAlign = 'center'; ctx.font = '12px Segoe UI'; ctx.fillStyle = '#fff';
             let bossTitle = "КОСМІЧНИЙ ЗАГАРБНИК";
             if (currentWave.id === 3) bossTitle = (bossInstance.isUlting ? "👺 БОСС: АКТИВАЦІЯ УЛЬТИ! 👺" : "ГЕНЕРАЛ ОРДИ (ULTRA)");
             if (currentWave.id === 4) { let laserAge = Date.now() - bossInstance.laserTimer; let warmup = bossInstance.laserWarmupDuration / gameSpeedMultiplier; bossTitle = bossInstance.isUlting ? ((laserAge < warmup) ? "⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!" : "🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥") : "КОСМІЧНЕ ОКО АПОКАЛІПСИСУ"; }
             ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width / 2, bBarY - 6); ctx.restore();
         }
-
         ctx.fillStyle = '#0ff'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 20));
         ctx.fillStyle = '#f00'; enemyBullets.forEach(eb => ctx.fillRect(eb.x-4, eb.y-4, 8, 8));
     }
 
-    // ============================================================
-    // КІНЕЦЬ МІСІЇ
-    // ============================================================
     function endMission() {
         if (shootInterval) clearInterval(shootInterval);
         if (enemySpawnInterval) clearInterval(enemySpawnInterval);
-
         let starCount = 1;
         if (playerHp === 3 && missed === 0) starCount = 3; else if (playerHp >= 2) starCount = 2;
         if(starCount > currentWave.stars) currentWave.stars = starCount;
-
         coins += currentWave.reward;
         if(myNickname && myNickname !== "VLADIROBUS753" && globalPlayersDB[myNickname]) {
             globalPlayersDB[myNickname].coins = (globalPlayersDB[myNickname].coins || 0) + currentWave.reward;
@@ -1005,7 +932,6 @@
         saveProgress(); updateCoinsUI();
         document.getElementById('ui').style.display = 'none';
         document.getElementById('hp-display').style.display = 'none';
-
         if (currentWave.id === 4) { document.getElementById('final-credits-screen').style.display = 'flex'; }
         else {
             document.getElementById('win-title').innerText = currentWave.hasBoss ? "БОССА ЗНИЩЕНО!" : "МІСІЯ ВИКОНАНА";
