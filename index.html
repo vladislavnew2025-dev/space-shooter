@@ -335,11 +335,11 @@
     let globalPlayersDB = JSON.parse(localStorage.getItem('space_players_db')) || {};
     let showOwnerInLists = localStorage.getItem('space_show_owner_list') === 'true';
 
-    let customGroups = JSON.parse(localStorage.getItem('space_custom_groups')) || {
-        'ігроки': { label: 'Игроки', color: '#bbb' },
-        'читери': { label: 'Читери', color: '#a0522d' },
-        'тестери': { label: 'Тестери', color: '#9933ff' }
-    };
+    let customGroups = JSON.parse(localStorage.getItem('space_custom_groups')) || {};
+    if (!customGroups['ігроки']) customGroups['ігроки'] = { label: 'Ігроки', color: '#bbb' };
+    if (!customGroups['читери']) customGroups['читери'] = { label: 'Читери', color: '#a0522d' };
+    if (!customGroups['тестери']) customGroups['тестери'] = { label: 'Тестери', color: '#9933ff' };
+    localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
 
     // ============================================================
     // ЗМІННІ ГРИ
