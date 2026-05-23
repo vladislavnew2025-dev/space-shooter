@@ -6,83 +6,83 @@
     <link rel="manifest" href="manifest.json">
     <title>Space Shooter: by VLADIROBUS753</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; } [cite: 502, 503]
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; touch-action: none; } [cite: 504, 505]
-        canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; } [cite: 505, 506]
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; touch-action: none; }
+        canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; } [cite: 506, 507]
-        #hp-display { position: absolute; top: 15px; right: 15px; color: #ff3366; font-size: 20px; font-weight: bold; z-index: 5; pointer-events: none; } [cite: 507, 508]
+        #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; }
+        #hp-display { position: absolute; top: 15px; right: 15px; color: #ff3366; font-size: 20px; font-weight: bold; z-index: 5; pointer-events: none; }
 
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; } [cite: 509, 510]
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
 
-        .main-btn { width: 220px; padding: 12px; margin: 8px; font-size: 18px; background: transparent; border: 2px solid #0ff; color: #0ff; cursor: pointer; border-radius: 10px; text-transform: uppercase; } [cite: 511, 512]
+        .main-btn { width: 220px; padding: 12px; margin: 8px; font-size: 18px; background: transparent; border: 2px solid #0ff; color: #0ff; cursor: pointer; border-radius: 10px; text-transform: uppercase; }
         
-        .shop-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; } [cite: 513, 514]
-        .tab-btn { background: rgba(0, 255, 255, 0.1); border: 1px solid #0ff; color: #fff; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; } [cite: 514, 515]
-        .tab-btn.active { background: #0ff; color: #000; } [cite: 516]
+        .shop-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { background: rgba(0, 255, 255, 0.1); border: 1px solid #0ff; color: #fff; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+        .tab-btn.active { background: #0ff; color: #000; }
         
-        #shop-content { width: 90%; max-width: 400px; height: 50vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; } [cite: 517, 518]
-        .shop-item { background: #0a0a0a; border: 1px solid #333; padding: 15px; margin: 10px 0; width: 100%; border-radius: 15px; text-align: center; } [cite: 519, 520]
+        #shop-content { width: 90%; max-width: 400px; height: 50vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .shop-item { background: #0a0a0a; border: 1px solid #333; padding: 15px; margin: 10px 0; width: 100%; border-radius: 15px; text-align: center; }
         
-        #wave-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 45vh; overflow-y: auto; padding: 10px; width: 95%; max-width: 500px; } [cite: 520, 521]
-        .wave-card { background: #0a0a0a; border: 2px solid #0ff; padding: 15px; text-align: center; cursor: pointer; border-radius: 15px; } [cite: 522, 523]
-        .wave-card.boss-wave { border-color: #f00; box-shadow: 0 0 10px rgba(255,0,0,0.5); } [cite: 523, 524]
+        #wave-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 45vh; overflow-y: auto; padding: 10px; width: 95%; max-width: 500px; }
+        .wave-card { background: #0a0a0a; border: 2px solid #0ff; padding: 15px; text-align: center; cursor: pointer; border-radius: 15px; }
+        .wave-card.boss-wave { border-color: #f00; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
         
-        #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; } [cite: 524, 525]
-        @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } } [cite: 526, 527]
+        #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; }
+        @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } }
 
-        .dev-dot { position: absolute; color: #121212; font-size: 18px; cursor: pointer; z-index: 12; user-select: none; padding: 10px; } [cite: 527, 528]
-        #dot-tl { top: 5px; left: 5px; } [cite: 530]
-        #dot-tr { top: 5px; right: 5px; } [cite: 531]
-        #dot-bl { bottom: 5px; left: 5px; } [cite: 532]
-        #dot-br { bottom: 5px; right: 5px; } [cite: 533]
+        .dev-dot { position: absolute; color: #121212; font-size: 18px; cursor: pointer; z-index: 12; user-select: none; padding: 10px; }
+        #dot-tl { top: 5px; left: 5px; }
+        #dot-tr { top: 5px; right: 5px; }
+        #dot-bl { bottom: 5px; left: 5px; }
+        #dot-br { bottom: 5px; right: 5px; }
 
-        .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #00ffff; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(0,255,255,0.2); color: #fff; text-align: center; max-height: 90vh; overflow-y: auto; } [cite: 534, 535]
-        .admin-section { border-bottom: 1px dashed #333; padding: 15px 0; margin-bottom: 5px; } [cite: 536, 537]
-        .admin-grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; } [cite: 538, 539]
-        .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; } [cite: 539, 540]
-        .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 80%; text-align: center; margin-bottom: 8px; font-size: 14px; } [cite: 541, 542]
-        .cheat-menu-title { font-weight: bold; color: #ffcc00; margin-bottom: 15px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,204,0,0.2); padding-bottom: 5px; } [cite: 543, 544]
+        .admin-panel-box { width: 90%; max-width: 450px; background: #070710; border: 3px double #00ffff; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(0,255,255,0.2); color: #fff; text-align: center; max-height: 90vh; overflow-y: auto; }
+        .admin-section { border-bottom: 1px dashed #333; padding: 15px 0; margin-bottom: 5px; }
+        .admin-grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
+        .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 80%; text-align: center; margin-bottom: 8px; font-size: 14px; }
+        .cheat-menu-title { font-weight: bold; color: #ffcc00; margin-bottom: 15px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,204,0,0.2); padding-bottom: 5px; }
 
-        .settings-box { width: 90%; max-width: 400px; background: #0a0a14; border: 2px solid #0ff; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 0 20px rgba(0,255,255,0.15); } [cite: 544, 545]
-        .settings-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding-bottom: 10px; border-bottom: 1px solid #222; } [cite: 546, 547]
-        .dungeon-group { border: 2px dashed #ff3333; border-radius: 15px; padding: 15px; margin-top: 25px; background: rgba(255,0,0,0.02); } [cite: 547, 548]
-        .wipe-btn { width: 100%; padding: 12px; background: #cc0000; color: #fff; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; letter-spacing: 1px; } [cite: 548, 549]
+        .settings-box { width: 90%; max-width: 400px; background: #0a0a14; border: 2px solid #0ff; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 0 20px rgba(0,255,255,0.15); }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding-bottom: 10px; border-bottom: 1px solid #222; }
+        .dungeon-group { border: 2px dashed #ff3333; border-radius: 15px; padding: 15px; margin-top: 25px; background: rgba(255,0,0,0.02); }
+        .wipe-btn { width: 100%; padding: 12px; background: #cc0000; color: #fff; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; letter-spacing: 1px; }
 
-        .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; } [cite: 551]
-        .coins-display { color: gold; font-size: 24px; margin-bottom: 15px; } [cite: 552, 553]
+        .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
+        .coins-display { color: gold; font-size: 24px; margin-bottom: 15px; }
 
-        .ship-config-container { display: flex; position: relative; width: 100%; height: 60vh; justify-content: center; align-items: center; overflow: visible; } [cite: 553, 554]
-        .sidebar { position: absolute; top: 0; width: 150px; height: 100%; background: rgba(5, 5, 5, 0.95); border: 1px solid #0ff; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 10px; border-radius: 10px; z-index: 15; } [cite: 554, 555]
-        .sidebar-left { left: -30px; transform: translateX(-75%); } [cite: 556, 557]
-        .sidebar-left:hover, .sidebar-left:focus-within { transform: translateX(35px); } [cite: 557, 558]
-        .sidebar-right { right: -30px; transform: translateX(75%); } [cite: 558, 559]
-        .sidebar-right:hover, .sidebar-right:focus-within { transform: translateX(-35px); } [cite: 559, 560]
-        .sidebar-handle { position: absolute; top: 50%; transform: translateY(-50%); background: #0ff; color: #000; padding: 15px 5px; font-size: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; writing-mode: vertical-lr; letter-spacing: 1px; } [cite: 560, 561]
-        .sidebar-left .sidebar-handle { right: -23px; } [cite: 562]
-        .sidebar-right .sidebar-handle { left: -23px; } [cite: 563, 564]
+        .ship-config-container { display: flex; position: relative; width: 100%; height: 60vh; justify-content: center; align-items: center; overflow: visible; }
+        .sidebar { position: absolute; top: 0; width: 150px; height: 100%; background: rgba(5, 5, 5, 0.95); border: 1px solid #0ff; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 10px; border-radius: 10px; z-index: 15; }
+        .sidebar-left { left: -30px; transform: translateX(-75%); }
+        .sidebar-left:hover, .sidebar-left:focus-within { transform: translateX(35px); }
+        .sidebar-right { right: -30px; transform: translateX(75%); }
+        .sidebar-right:hover, .sidebar-right:focus-within { transform: translateX(-35px); }
+        .sidebar-handle { position: absolute; top: 50%; transform: translateY(-50%); background: #0ff; color: #000; padding: 15px 5px; font-size: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; writing-mode: vertical-lr; letter-spacing: 1px; }
+        .sidebar-left .sidebar-handle { right: -23px; }
+        .sidebar-right .sidebar-handle { left: -23px; }
 
-        .side-tabs { display: flex; gap: 2px; margin-bottom: 10px; width: 100%; } [cite: 564, 565]
-        .side-tab-btn { flex: 1; font-size: 9px; padding: 5px 2px; background: rgba(0,255,255,0.1); border: 1px solid #0ff; color: #fff; cursor: pointer; border-radius: 5px; text-transform: uppercase; text-align: center;} [cite: 565, 566]
-        .side-tab-btn.active { background: #0ff; color: #000; } [cite: 567, 568]
-        .side-list { flex: 1; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; } [cite: 568, 569]
+        .side-tabs { display: flex; gap: 2px; margin-bottom: 10px; width: 100%; }
+        .side-tab-btn { flex: 1; font-size: 9px; padding: 5px 2px; background: rgba(0,255,255,0.1); border: 1px solid #0ff; color: #fff; cursor: pointer; border-radius: 5px; text-transform: uppercase; text-align: center;}
+        .side-tab-btn.active { background: #0ff; color: #000; }
+        .side-list { flex: 1; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 
-        .grid-ui { display: grid; grid-template-columns: repeat(4, 45px); gap: 5px; background: #050505; padding: 10px; border: 2px solid #0ff; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,255,0.2); } [cite: 569, 570]
-        .cell-ui { width: 45px; height: 45px; border: 1px solid #0ff; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(0,255,255,0.05); cursor: pointer; border-radius: 5px; transition: background 0.2s; } [cite: 571, 572]
-        .cell-ui.locked { border-color: #333; color: #333; background: #000; cursor: not-allowed; } [cite: 574, 575]
+        .grid-ui { display: grid; grid-template-columns: repeat(4, 45px); gap: 5px; background: #050505; padding: 10px; border: 2px solid #0ff; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,255,0.2); }
+        .cell-ui { width: 45px; height: 45px; border: 1px solid #0ff; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(0,255,255,0.05); cursor: pointer; border-radius: 5px; transition: background 0.2s; }
+        .cell-ui.locked { border-color: #333; color: #333; background: #000; cursor: not-allowed; }
         
-        .gun-inv { width: 42px; height: 42px; background: #ff0; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 9px; border-radius: 5px; flex-shrink: 0; cursor: pointer; border: 1px solid #fff; } [cite: 575, 576]
-        .side-shop-btn { width: 100%; padding: 8px 2px; font-size: 9px; background: transparent; border: 1px solid #ff0; color: #ff0; border-radius: 5px; cursor: pointer; font-weight: bold; } [cite: 577, 578]
+        .gun-inv { width: 42px; height: 42px; background: #ff0; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 9px; border-radius: 5px; flex-shrink: 0; cursor: pointer; border: 1px solid #fff; }
+        .side-shop-btn { width: 100%; padding: 8px 2px; font-size: 9px; background: transparent; border: 1px solid #ff0; color: #ff0; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        .credits-box { text-align: center; border: 2px dashed #0ff; padding: 20px 40px; margin: 15px 0; background: rgba(0,255,255,0.03); border-radius: 15px; box-shadow: 0 0 20px rgba(0,255,255,0.1); } [cite: 579, 580]
-        .credits-box h3 { margin: 8px 0 2px 0; font-size: 13px; color: #88ff88; letter-spacing: 1px; text-transform: uppercase; } [cite: 581, 582]
-        .credits-box p { margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; } [cite: 582, 583]
+        .credits-box { text-align: center; border: 2px dashed #0ff; padding: 20px 40px; margin: 15px 0; background: rgba(0,255,255,0.03); border-radius: 15px; box-shadow: 0 0 20px rgba(0,255,255,0.1); }
+        .credits-box h3 { margin: 8px 0 2px 0; font-size: 13px; color: #88ff88; letter-spacing: 1px; text-transform: uppercase; }
+        .credits-box p { margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; }
     </style>
 </head>
 <body>
 
-    <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div> [cite: 584]
-    <div id="hp-display" style="display:none;">❤️❤️❤️</div> [cite: 584]
+    <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div>
+    <div id="hp-display" style="display:none;">❤️❤️❤️</div>
 
     <div id="main-menu" class="screen">
         <h1 style="color:#0ff; font-size: 38px; margin-bottom: 20px; text-align:center;">SPACE SHOOTER</h1>
@@ -90,13 +90,13 @@
         <button class="main-btn" onclick="showWaves()">Start Game</button>
         <button class="main-btn" onclick="showShop()">Shop</button>
         <button class="main-btn" onclick="showSettings()">Settings</button>
-        <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button> [cite: 584, 585]
-        <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div> [cite: 585, 586]
+        <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button>
+        <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div>
         
-        <div class="dev-dot" id="dot-tl" onclick="fakeDotClick()">•</div> [cite: 586]
-        <div class="dev-dot" id="dot-tr" onclick="fakeDotClick()">•</div> [cite: 586]
-        <div class="dev-dot" id="dot-bl" onclick="fakeDotClick()">•</div> [cite: 586]
-        <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div> [cite: 586]
+        <div class="dev-dot" id="dot-tl" onclick="fakeDotClick()">•</div>
+        <div class="dev-dot" id="dot-tr" onclick="fakeDotClick()">•</div>
+        <div class="dev-dot" id="dot-bl" onclick="fakeDotClick()">•</div>
+        <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div>
     </div>
 
     <div id="settings-screen" class="screen" style="display:none;">
@@ -104,117 +104,116 @@
             <h2 style="color:#0ff; margin-top:0;">⚙️ SETTINGS</h2>
             <div class="settings-row">
                 <span>🔊 Звук</span>
-                <input type="range" id="volume-control" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;" oninput="changeVolume(this.value)"> [cite: 587, 588]
+                <input type="range" id="volume-control" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;" oninput="changeVolume(this.value)">
             </div>
             <div class="dungeon-group">
                 <div style="color:#ff3333; font-weight:bold; font-size:15px; margin-bottom:5px; letter-spacing:1px;">⚠️ DUNGEON ZONE</div>
                 <div style="font-size:11px; color:#aaa; margin-bottom:12px; line-height:1.4;">Повне очищення локальних файлів збереження вашого профілю гравця.</div>
-                <button class="wipe-btn" onclick="triggerWipeProgress()">💥 WIPE ALL PROGRESS!!!</button> [cite: 588, 589]
+                <button class="wipe-btn" onclick="triggerWipeProgress()">💥 WIPE ALL PROGRESS!!!</button>
             </div>
-            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:20px;">Назад</button> [cite: 589]
+            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:20px;">Назад</button>
         </div>
     </div>
 
     <div id="admin-screen" class="screen" style="display:none;">
         <div class="admin-panel-box">
-            <h2 id="admin-panel-main-title" style="color:#00ffff; margin:0 0 10px 0; font-size:22px; text-shadow: 0 0 10px #00ffff;">💻 ПАНЕЛЬ ЧИТЕРІВ-ТЕСТЕРІВ</h2> [cite: 589, 590]
-            <div id="admin-status-badge" style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:15px;">Доступ активовано</div> [cite: 590, 591]
+            <h2 id="admin-panel-main-title" style="color:#00ffff; margin:0 0 10px 0; font-size:22px; text-shadow: 0 0 10px #00ffff;">💻 ПАНЕЛЬ ЧИТЕРІВ-ТЕСТЕРІВ</h2>
+            <div id="admin-status-badge" style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:15px;">Доступ активовано</div>
             
             <div class="admin-section">
-                <div class="cheat-menu-title">🔥 ЧИТ-МЕНЮ ДЛЯ ЧИТЕРІВ-ТЕСТЕРІВ</div> [cite: 591]
-                <div style="display:flex; gap:10px; justify-content:center; margin-top:15px; flex-wrap:wrap;"> [cite: 591, 592]
-                    <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button> [cite: 592, 593]
-                    <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button> [cite: 593, 594]
+                <div class="cheat-menu-title">🔥 ЧИТ-МЕНЮ ДЛЯ ЧИТЕРІВ-ТЕСТЕРІВ</div>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:15px; flex-wrap:wrap;">
+                    <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
+                    <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
                 </div>
             </div>
 
             <div class="admin-section">
-                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 НАРАХУВАТИ МОНЕТИ:</div> [cite: 594, 595]
+                <div style="font-weight:bold; color:gold; margin-bottom:5px;">💰 НАРАХУВАТИ МОНЕТИ:</div>
                 <div class="admin-grid-btns">
-                    <button class="admin-btn-action" onclick="giveAdminCoins(1000)">+1k 💰</button> [cite: 595]
-                    <button class="admin-btn-action" onclick="giveAdminCoins(10000)">+10k 💰</button> [cite: 595]
-                    <button class="admin-btn-action" onclick="giveAdminCoins(100000)">+100k 💰</button> [cite: 595]
+                    <button class="admin-btn-action" onclick="giveAdminCoins(1000)">+1k 💰</button>
+                    <button class="admin-btn-action" onclick="giveAdminCoins(10000)">+10k 💰</button>
+                    <button class="admin-btn-action" onclick="giveAdminCoins(100000)">+100k 💰</button>
                 </div>
             </div>
 
             <div class="admin-section">
-                <div style="font-weight:bold; color:#0ff; margin-bottom:5px;">🔓 ДОСТУП ДО МІСІЙ:</div> [cite: 596, 597]
-                <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ ХВИЛІ</button> [cite: 597, 598]
+                <div style="font-weight:bold; color:#0ff; margin-bottom:5px;">🔓 ДОСТУП ДО МІСІЙ:</div>
+                <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ ХВИЛІ</button>
             </div>
 
             <div class="admin-section owner-only-element" id="friend-section" style="display:none;">
-                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 КЕРУВАННЯ СПИСКОМ ЧИТЕРІВ-ТЕСТЕРІВ:</div> [cite: 598, 599]
-                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм читера-тестера"><br> [cite: 599]
-                <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;"> [cite: 599, 600]
-                    <button class="admin-btn-action" style="background:#00cc44; color:#fff; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button> [cite: 600, 601]
-                    <button class="admin-btn-action" style="background:#444; color:#fff; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАТИ</button> [cite: 601, 602]
+                <div style="font-weight:bold; color:#88ff88; margin-bottom:5px;">👑 КЕРУВАННЯ СПИСКОМ ЧИТЕРІВ-ТЕСТЕРІВ:</div>
+                <input type="text" id="admin-nick-input" class="admin-input" placeholder="Введіть нікнейм читера-тестера"><br>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;">
+                    <button class="admin-btn-action" style="background:#00cc44; color:#fff; padding:6px 15px;" onclick="addWhitelistAdmin()">ДОДАТИ</button>
+                    <button class="admin-btn-action" style="background:#444; color:#fff; padding:6px 15px;" onclick="removeWhitelistAdmin()">ВИДАТИ</button>
                 </div>
-                <div style="font-size:11px; color:#aaa; margin-top:10px; text-align:left; background:rgba(0,0,0,0.4); padding:6px; border-radius:5px;"> [cite: 602, 603]
-                    <strong>Дозволені читери-тестери:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span> [cite: 603]
+                <div style="font-size:11px; color:#aaa; margin-top:10px; text-align:left; background:rgba(0,0,0,0.4); padding:6px; border-radius:5px;">
+                    <strong>Дозволені читери-тестери:</strong> <span id="admin-list-txt" style="color:#0ff">немає</span>
                 </div>
             </div>
 
             <div class="admin-section owner-only-element" id="dungeon-zone-section" style="display:none;">
-                <div style="background: rgba(0, 255, 255, 0.03); border: 2px dashed #0ff; border-radius: 12px; padding: 12px; margin-top: 10px;"> [cite: 603, 604]
-                    <div style="font-weight:bold; color:#0ff; margin-bottom:5px; font-size:13px;">🔄 СИНХРОНІЗАЦІЯ СИСТЕМИ:</div> [cite: 604, 605]
-                    <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff; padding:10px; font-size:11px;" onclick="forceUpdateGame()">⚡ FORCE UPDATE</button> [cite: 605, 606]
+                <div style="background: rgba(0, 255, 255, 0.03); border: 2px dashed #0ff; border-radius: 12px; padding: 12px; margin-top: 10px;">
+                    <div style="font-weight:bold; color:#0ff; margin-bottom:5px; font-size:13px;">🔄 СИНХРОНІЗАЦІЯ СИСТЕМИ:</div>
+                    <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff; padding:10px; font-size:11px;" onclick="forceUpdateGame()">⚡ FORCE UPDATE</button>
                 </div>
             </div>
 
-            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button> [cite: 606, 607]
+            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
         </div>
     </div>
 
     <div id="wave-screen" class="screen" style="display:none;">
-        <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button> [cite: 607, 608]
-        <h2 style="color:#0ff; margin-bottom: 20px;">CHOOSE MISSION</h2> [cite: 608, 609]
-        <div id="wave-list"></div> [cite: 609]
+        <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
+        <h2 style="color:#0ff; margin-bottom: 20px;">CHOOSE MISSION</h2>
+        <div id="wave-list"></div>
     </div>
 
     <div id="shop-screen" class="screen" style="display:none;">
-        <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button> [cite: 609, 610]
-        <h1 style="color:gold; margin-bottom: 5px;">SPACE SHOP</h1> [cite: 610, 611]
-        <div class="coins-display" style="font-size: 20px;">💰: <span id="shop-coins">0</span></div> [cite: 611]
+        <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
+        <h1 style="color:gold; margin-bottom: 5px;">SPACE SHOP</h1>
+        <div class="coins-display" style="font-size: 20px;">💰: <span id="shop-coins">0</span></div>
         <div class="shop-tabs">
-            <button class="tab-btn active" id="tab-upgrades" onclick="switchTab('upgrades')">UPGRADES</button> [cite: 611]
-            <button class="tab-btn" id="tab-skins" onclick="switchTab('skins')">SKINS</button> [cite: 611]
-            <button class="tab-btn" id="tab-ship" onclick="switchTab('ship')">SHIP CONFIG</button> [cite: 611]
+            <button class="tab-btn active" id="tab-upgrades" onclick="switchTab('upgrades')">UPGRADES</button>
+            <button class="tab-btn" id="tab-skins" onclick="switchTab('skins')">SKINS</button>
+            <button class="tab-btn" id="tab-ship" onclick="switchTab('ship')">SHIP CONFIG</button>
         </div>
-        <div id="shop-content"></div> [cite: 611]
+        <div id="shop-content"></div>
     </div>
 
     <div id="win-screen" class="screen" style="display:none;">
-        <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1> [cite: 612, 613]
-        <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div> [cite: 613, 614]
-        <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 20px;"></div> [cite: 614, 615]
-        <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button> [cite: 615, 616]
+        <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1>
+        <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div>
+        <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 20px;"></div>
+        <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button>
     </div>
 
-    <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);"> [cite: 616, 617]
-        <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1> [cite: 617, 618]
+    <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
+        <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
         <div class="credits-box">
-            <h2 style="color:#0ff; font-size: 18px; margin: 0 0 15px 0; letter-spacing: 3px; font-weight: bold;">🎬 ФІНАЛЬНІ ТИТРИ 🎬</h2> [cite: 618, 619]
+            <h2 style="color:#0ff; font-size: 18px; margin: 0 0 15px 0; letter-spacing: 3px; font-weight: bold;">🎬 ФІНАЛЬНІ ТИТРИ 🎬</h2>
             <h3>ГОЛОВНИЙ РОЗРОБНИК & АВТОР ПРОЄКТУ:</h3>
             <p>VLADIROBUS753</p>
             <h3>ТЕХНІЧНА ПІДТРИМКА КОДУ (AI):</h3>
             <p>🤖 AI ШТУЧНИЙ ІНТЕЛЕКТ (GEMINI)</p>
             <h3>ВИДАВЕЦЬ & КОМПАНІЯ:</h3>
-            <p style="font-size:16px; color:#aaa; font-weight:normal; margin-bottom:0;">VLADIROBUS.xYz company</p> [cite: 619, 620]
+            <p style="font-size:16px; color:#aaa; font-weight:normal; margin-bottom:0;">VLADIROBUS.xYz company</p>
         </div>
-        <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button> [cite: 620, 621]
+        <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button>
     </div>
 
     <div id="fail-screen" class="screen" style="display:none;">
-        <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1> [cite: 621, 622]
-        <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button> [cite: 622, 623]
+        <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1>
+        <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
     </div>
 
-    <canvas id="game"></canvas> [cite: 623]
+    <canvas id="game"></canvas>
 
 <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const container = document.documentElement;
 
     const defaultWaves = [
         { id: 1, name: "ХВИЛЯ 1", reward: 50, stars: 0, unlocked: true, spawnCount: 8, spawnTypes: ['normal'], hasBoss: true, bossHp: 5, bossCooldown: 1200, bossSkin: '👾' },
@@ -380,7 +379,7 @@
             refreshAdminListUI();
             alert(`Користувача "${name}" видалено зі списку читерів-тестерів.`);
         } else {
-            alert("Нікнейм не знайдено у списку збережених!");
+            alert("Нікнейм не знадено у списку збережених!");
         }
     }
 
@@ -746,7 +745,8 @@
             hp: currentWave.bossHp, maxHp: currentWave.bossHp, 
             speedX: currentWave.id === 4 ? 4 : 3, lastShot: 0, 
             shootCooldown: currentWave.bossCooldown, lastCircleShot: 0, 
-            circleCooldown: currentWave.id === 4 ? 5000 : 4000, ultCount: 0, isUlting: false, i: currentWave.bossSkin
+            circleCooldown: currentWave.id === 4 ? 5000 : 4000, ultCount: 0, isUlting: false, i: currentWave.bossSkin,
+            laserTimer: 0, laserTargetX: 0, laserWarmupDuration: 1800, laserActiveDuration: 1500
         };
     }
 
@@ -805,51 +805,95 @@
 
         if (bossInstance) {
             if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5 * m;
+            
             if (!(currentWave.id === 4 && bossInstance.isUlting)) {
                 bossInstance.x += bossInstance.speedX * m;
                 if (bossInstance.x > canvas.width - bossInstance.w / 2 || bossInstance.x < bossInstance.w / 2) bossInstance.speedX *= -1;
             }
+            
             let timestamp = Date.now();
             let currentCooldown = bossInstance.shootCooldown / m;
+            
             if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > currentCooldown && bossInstance.y >= bossInstance.targetY) {
                 enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
                 playSound(bossBuf);
                 bossInstance.lastShot = timestamp;
             }
+            
             let currentCircleCooldown = bossInstance.circleCooldown / m;
             if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > currentCircleCooldown && bossInstance.y >= bossInstance.targetY) {
-                if (currentWave.id === 3 || currentWave.id === 4) {
-                    bossInstance.isUlting = true;
-                    bossInstance.lastCircleShot = timestamp;
-                    if (currentWave.id === 4) {
-                        bossInstance.laserTimer = timestamp;
-                        bossInstance.laserTargetX = player.x;
+                bossInstance.isUlting = true;
+                bossInstance.lastCircleShot = timestamp;
+                if (currentWave.id === 4) {
+                    bossInstance.laserTimer = timestamp;
+                    bossInstance.laserTargetX = player.x;
+                }
+            }
+            
+            if (bossInstance.isUlting) {
+                if (currentWave.id === 3) {
+                    if (!bossInstance.stepCount) { bossInstance.stepCount = 0; bossInstance.anglePulse = 0; }
+                    if (timestamp - bossInstance.lastShot > 80 / m) {
+                        bossInstance.anglePulse += 0.34;
+                        let vx1 = Math.cos(bossInstance.anglePulse) * 4.5;
+                        let vy1 = Math.sin(bossInstance.anglePulse) * 4.5;
+                        enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: vx1, vy: vy1 });
+                        enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: -vx1, vy: -vy1 });
+                        playSound(bossBuf);
+                        bossInstance.lastShot = timestamp;
+                        bossInstance.stepCount++;
+                        if (bossInstance.stepCount >= 24) {
+                            bossInstance.isUlting = false;
+                            bossInstance.stepCount = 0;
+                            bossInstance.lastCircleShot = timestamp + (1000 / m);
+                        }
+                    }
+                } else if (currentWave.id === 4) {
+                    let elapsed = timestamp - bossInstance.laserTimer;
+                    let warmup = bossInstance.laserWarmupDuration;
+                    let activeTime = bossInstance.laserActiveDuration;
+
+                    if (elapsed < warmup) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(bossInstance.x, bossInstance.y + 20);
+                        ctx.lineTo(bossInstance.laserTargetX, canvas.height);
+                        ctx.stroke();
+                        ctx.restore();
+                    } else if (elapsed < warmup + activeTime) {
+                        ctx.save();
+                        ctx.strokeStyle = '#ff0033';
+                        ctx.lineWidth = 28;
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = '#ff0000';
+                        ctx.beginPath();
+                        ctx.moveTo(bossInstance.x, bossInstance.y + 20);
+                        ctx.lineTo(bossInstance.laserTargetX, canvas.height);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        let beamX = bossInstance.laserTargetX;
+                        if (player.x > beamX - 30 && player.x < beamX + 30 && player.y > bossInstance.y) {
+                            if (!bossInstance.lastHitTime || timestamp - bossInstance.lastHitTime > 600) {
+                                takeDamage("ГІПЕРЛАЗЕР СПАЛИВ ВАС!");
+                                bossInstance.lastHitTime = timestamp;
+                            }
+                        }
+                    } else {
+                        bossInstance.isUlting = false;
+                        bossInstance.lastCircleShot = timestamp;
                     }
                 } else {
                     for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
                         enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4 });
                     }
                     playSound(bossBuf);
+                    bossInstance.isUlting = false;
                     bossInstance.lastCircleShot = timestamp;
-                }
-            }
-            if (bossInstance.isUlting && currentWave.id === 3) {
-                if (!bossInstance.stepCount) { bossInstance.stepCount = 0; bossInstance.anglePulse = 0; }
-                if (timestamp - bossInstance.lastShot > 80 / m) {
-                    bossInstance.anglePulse += 0.34;
-                    let vx1 = Math.cos(bossInstance.anglePulse) * 4.5;
-                    let vy1 = Math.sin(bossInstance.anglePulse) * 4.5;
-                    enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: vx1, vy: vy1 });
-                    enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: -vx1, vy: -vy1 });
-                    playSound(bossBuf);
-                    bossInstance.lastShot = timestamp;
-                    bossInstance.stepCount++;
-                    if (bossInstance.stepCount >= 24) {
-                        bossInstance.isUlting = false;
-                        bossInstance.stepCount = 0;
-                        bossInstance.lastCircleShot = timestamp + (1000 / m);
-                    }
                 }
             }
 
@@ -912,7 +956,6 @@
             }
         }
 
-        // РЕНДЕР ГАРМАТ НА КОРАБЛІ
         let cellW = 12, cellH = 12;
         let shipW = 4 * cellW, shipH = 4 * cellH;
         shipGrid.forEach((id, idx) => {
@@ -921,21 +964,21 @@
                 let c = idx % 4;
                 let gunX = player.x - shipW / 2 + (c * cellW) + cellW / 2;
                 let gunY = player.y - shipH / 2 + (r * cellH) + 10;
-                ctx.beginPath(); ctx.fillStyle = '#ff0'; ctx.fillRect(gunX - 4, gunY - 12, 8, 16);
-                ctx.beginPath(); ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
+                ctx.fillStyle = '#ff0'; ctx.fillRect(gunX - 4, gunY - 12, 8, 16);
+                ctx.fillStyle = '#0ff'; ctx.fillRect(gunX - 6, gunY - 2, 12, 6);
             }
         });
 
-        // ВАЖЛИВО: Очищення і встановлення кольору для виводу тексту-корабля гравця
+        // ВІДОБРАЖЕННЯ КОРАБЛЯ ГРАВЦЯ
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = '36px Arial';
-        ctx.fillStyle = '#ffffff'; // Колір обов'язково білий, щоб емодзі відображалися видимими!
+        ctx.fillStyle = '#ffffff'; 
         ctx.fillText(activeSkin, player.x, player.y);
         ctx.restore();
 
-        // МАЛЮВАННЯ ВОРОГІВ (ПОВНІСТЮ ВИДИМІ)
+        // ВІДОБРАЖЕННЯ ЗВИЧАЙНИХ ІНОПЛАНЕТЯН (ПОВНІСТЮ ВИДИМІ ЕМОДЗІ)
         enemies.forEach(e => {
             ctx.save();
             ctx.textAlign = 'center';
@@ -951,7 +994,7 @@
             }
         });
 
-        // МАЛЮВАННЯ БОСА (ПОВНІСТЮ ВИДИМИЙ)
+        // ВІДОБРАЖЕННЯ БОСА
         if (bossInstance) {
             ctx.save();
             ctx.textAlign = 'center';
