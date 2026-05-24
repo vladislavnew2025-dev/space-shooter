@@ -4,42 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <title>Space Shooter: by VLADIROBUS753</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; touch-action: none; }
         canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-
         #ui { position: absolute; top: 15px; left: 15px; color: #0ff; font-size: 18px; pointer-events: none; z-index: 5; }
         #hp-display { position: absolute; top: 15px; right: 15px; color: #ff3366; font-size: 20px; font-weight: bold; z-index: 5; pointer-events: none; }
-
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
-
         .main-btn { width: 220px; padding: 12px; margin: 8px; font-size: 18px; background: transparent; border: 2px solid #0ff; color: #0ff; cursor: pointer; border-radius: 10px; text-transform: uppercase; }
-        
         .shop-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { background: rgba(0, 255, 255, 0.1); border: 1px solid #0ff; color: #fff; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; }
         .tab-btn.active { background: #0ff; color: #000; }
-        
         #shop-content { width: 90%; max-width: 400px; height: 50vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
         .shop-item { background: #0a0a0a; border: 1px solid #333; padding: 15px; margin: 10px 0; width: 100%; border-radius: 15px; text-align: center; }
-        
         #wave-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 45vh; overflow-y: auto; padding: 10px; width: 95%; max-width: 500px; }
         .wave-card { background: #0a0a0a; border: 2px solid #0ff; padding: 10px; text-align: center; cursor: pointer; border-radius: 15px; }
         .wave-card.boss-wave { border-color: #f00; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
-        
         #footer { position: absolute; bottom: 10px; text-align: center; width: 100%; font-size: 13px; font-weight: bold; animation: colorShift 4s infinite alternate; }
         @keyframes colorShift { 0% { color: #600; } 100% { color: #060; } }
-
         .dev-dot { position: absolute; color: #1a1a1a; font-size: 22px; cursor: pointer; z-index: 12; user-select: none; padding: 12px; }
         #dot-br { bottom: 5px; right: 5px; }
-
         .admin-panel-box { width: 95%; max-width: 500px; background: #070710; border: 3px double #00ffff; border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(0,255,255,0.2); color: #fff; text-align: center; max-height: 92vh; overflow-y: auto; }
         .admin-section { border-bottom: 1px dashed #333; padding: 12px 0; }
         .admin-section:last-child { border: none; }
         .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 85%; text-align: center; margin-bottom: 8px; font-size: 14px; }
-
         .group-collapse-btn { width: 100%; background: #111122; border: 1px solid #333; color: #fff; padding: 10px; text-align: left; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 5px; border-radius: 6px; display: flex; justify-content: space-between; }
         .group-content { background: rgba(0,0,0,0.4); border: 1px solid #222; border-top: none; padding: 8px; display: none; flex-direction: column; gap: 6px; margin-bottom: 10px; max-height: 250px; overflow-y: auto; }
         .player-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 4px; border-left: 3px solid #666; }
@@ -47,20 +39,16 @@
         .p-btn { border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .p-btn-edit { background: #ffcc00; color: #000; }
         .p-btn-ban { background: #ff3366; color: #fff; }
-
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index: 100; display:none; justify-content:center; align-items:center; }
         .modal-box { background: #0f0f1c; border: 2px solid #0ff; border-radius: 15px; padding: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 25px rgba(0,255,255,0.3); }
-
         .settings-box { width: 90%; max-width: 400px; background: #0a0a14; border: 2px solid #0ff; border-radius: 20px; padding: 25px; text-align: center; }
         .settings-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding-bottom: 10px; border-bottom: 1px solid #222; }
         .dungeon-group { border: 2px dashed #ff3333; border-radius: 15px; padding: 15px; margin-top: 25px; }
         .wipe-btn { width: 100%; padding: 12px; background: #cc0000; color: #fff; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
-
         .locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
         .coins-display { color: gold; font-size: 24px; margin-bottom: 15px; }
-
         .ship-config-container { display: flex; position: relative; width: 100%; height: 60vh; justify-content: center; align-items: center; }
-        .sidebar { position: absolute; top: 0; width: 150px; height: 100%; background: rgba(5, 5, 5, 0.95); border: 1px solid #0ff; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 10px; border-radius: 10px; z-index: 15; }
+        .sidebar { position: absolute; top: 0; width: 150px; height: 100%; background: rgba(5,5,5,0.95); border: 1px solid #0ff; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 10px; border-radius: 10px; z-index: 15; }
         .sidebar-left { left: -30px; transform: translateX(-75%); }
         .sidebar-left:hover, .sidebar-left:focus-within { transform: translateX(35px); }
         .sidebar-right { right: -30px; transform: translateX(75%); }
@@ -84,222 +72,224 @@
 </head>
 <body>
 
-    <div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div>
-    <div id="hp-display" style="display:none;">❤️❤️❤️</div>
+<div id="ui" style="display:none;">KILLS: <span id="kills">0</span>/<span id="required-kills">0</span></div>
+<div id="hp-display" style="display:none;">❤️❤️❤️</div>
 
-    <div id="register-screen" class="screen" style="display:none; background: radial-gradient(circle, #0a0a20 0%, #000 100%);">
-        <div style="background: rgba(7,7,16,0.95); border: 2px solid #0ff; border-radius: 20px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 35px rgba(0,255,255,0.35);">
-            <h1 style="color: #0ff; font-size: 28px; margin-top: 0; letter-spacing: 2px;">🌌 ЛАСКАВО ПРОСИМО!</h1>
-            <p style="color: #aaa; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">Введіть ваш унікальний нікнейм для збереження прогресу:</p>
-            <input type="text" id="user-register-input" style="background:#000; border: 2px solid #0ff; border-radius: 10px; color:#fff; padding: 12px; width: 100%; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px;" placeholder="Ваш нікнейм...">
-            <button class="main-btn" style="width: 100%; background: rgba(0,255,255,0.1);" onclick="submitFirstRegistration()">ЗБЕРЕГТИ ТА ЗАЙТИ</button>
+<div id="register-screen" class="screen" style="display:none; background: radial-gradient(circle, #0a0a20 0%, #000 100%);">
+    <div style="background: rgba(7,7,16,0.95); border: 2px solid #0ff; border-radius: 20px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 35px rgba(0,255,255,0.35);">
+        <h1 style="color: #0ff; font-size: 28px; margin-top: 0; letter-spacing: 2px;">🌌 ЛАСКАВО ПРОСИМО!</h1>
+        <p style="color: #aaa; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">Введіть ваш унікальний нікнейм для збереження прогресу:</p>
+        <input type="text" id="user-register-input" style="background:#000; border: 2px solid #0ff; border-radius: 10px; color:#fff; padding: 12px; width: 100%; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px;" placeholder="Ваш нікнейм...">
+        <button class="main-btn" style="width: 100%; background: rgba(0,255,255,0.1);" onclick="submitFirstRegistration()">ЗБЕРЕГТИ ТА ЗАЙТИ</button>
+    </div>
+</div>
+
+<div id="banned-screen" class="screen" style="display:none; background: #100000;">
+    <div style="text-align: center; padding: 20px; max-width: 500px;">
+        <h1 style="color: #ff3366; font-size: 45px; margin-bottom: 10px;">🛑 ВАС ЗАБЛОКОВАНО!</h1>
+        <div style="border: 2px dashed #ff3366; padding: 20px; border-radius: 15px; background: rgba(255,0,0,0.05); margin-bottom: 25px;">
+            <p style="font-size: 18px; margin: 0 0 10px 0;">Обмеження накладено Головним Адміністратором.</p>
+            <p style="color: #ff8888; font-weight: bold;">Причина: <span id="ban-reason-text">Порушення правил гри</span></p>
+            <p style="color: #ffcc00; font-size: 14px;" id="ban-time-left-text"></p>
         </div>
+        <p style="color: #666; font-size: 12px;">Зверніться до власника групи для розблокування.</p>
     </div>
+</div>
 
-    <div id="banned-screen" class="screen" style="display:none; background: #100000;">
-        <div style="text-align: center; padding: 20px; max-width: 500px;">
-            <h1 style="color: #ff3366; font-size: 45px; margin-bottom: 10px;">🛑 ВАС ЗАБЛОКОВАНО!</h1>
-            <div style="border: 2px dashed #ff3366; padding: 20px; border-radius: 15px; background: rgba(255,0,0,0.05); margin-bottom: 25px;">
-                <p style="font-size: 18px; margin: 0 0 10px 0;">Обмеження накладено Головним Адміністратором.</p>
-                <p style="color: #ff8888; font-weight: bold;">Причина: <span id="ban-reason-text">Порушення правил гри</span></p>
-                <p style="color: #ffcc00; font-size: 14px;" id="ban-time-left-text"></p>
-            </div>
-            <p style="color: #666; font-size: 12px;">Зверніться до власника групи для розблокування.</p>
+<div id="main-menu" class="screen">
+    <h1 style="color:#0ff; font-size: 38px; margin-bottom: 20px; text-align:center;">SPACE SHOOTER</h1>
+    <div class="coins-display">💰 COINS: <span id="main-coins">0</span></div>
+    <div style="margin-bottom: 15px; color: #88ff88; font-weight: bold;">Вітаємо, <span id="menu-player-nick">...</span>!</div>
+    <button class="main-btn" onclick="showWaves()">Start Game</button>
+    <button class="main-btn" onclick="showShop()">Shop</button>
+    <button class="main-btn" onclick="showSettings()">Settings</button>
+    <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button>
+    <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div>
+    <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div>
+</div>
+
+<div id="settings-screen" class="screen" style="display:none;">
+    <div class="settings-box">
+        <h2 style="color:#0ff; margin-top:0;">⚙️ SETTINGS</h2>
+        <div class="settings-row">
+            <span>🔊 Звук</span>
+            <input type="range" id="volume-control" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;" oninput="changeVolume(this.value)">
         </div>
-    </div>
-
-    <div id="main-menu" class="screen">
-        <h1 style="color:#0ff; font-size: 38px; margin-bottom: 20px; text-align:center;">SPACE SHOOTER</h1>
-        <div class="coins-display">💰 COINS: <span id="main-coins">0</span></div>
-        <div style="margin-bottom: 15px; color: #88ff88; font-weight: bold;">Вітаємо, <span id="menu-player-nick">...</span>!</div>
-        <button class="main-btn" onclick="showWaves()">Start Game</button>
-        <button class="main-btn" onclick="showShop()">Shop</button>
-        <button class="main-btn" onclick="showSettings()">Settings</button>
-        <button class="main-btn" style="border-color: #f00; color: #f00;" onclick="exitGame()">Exit</button>
-        <div id="footer">VLADIROBUS.xYz company | Creator: VLADIROBUS753</div>
-        <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div>
-    </div>
-
-    <div id="settings-screen" class="screen" style="display:none;">
-        <div class="settings-box">
-            <h2 style="color:#0ff; margin-top:0;">⚙️ SETTINGS</h2>
-            <div class="settings-row">
-                <span>🔊 Звук</span>
-                <input type="range" id="volume-control" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;" oninput="changeVolume(this.value)">
-            </div>
-            <div class="dungeon-group">
-                <div style="color:#ff3333; font-weight:bold; font-size:15px; margin-bottom:5px;">⚠️ DUNGEON ZONE</div>
-                <p style="font-size:11px; color:#888; margin: 0 0 10px 0;">Повне очищення локальних файлів збереження вашого профілю гравця.</p>
-                <button class="wipe-btn" onclick="triggerWipeProgress()">💥 WIPE ALL PROGRESS!!!</button>
-            </div>
-            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:20px;">Назад</button>
+        <div class="dungeon-group">
+            <div style="color:#ff3333; font-weight:bold; font-size:15px; margin-bottom:5px;">⚠️ DUNGEON ZONE</div>
+            <p style="font-size:11px; color:#888; margin: 0 0 10px 0;">Повне очищення локальних файлів збереження вашого профілю гравця.</p>
+            <button class="wipe-btn" onclick="triggerWipeProgress()">💥 WIPE ALL PROGRESS!!!</button>
         </div>
+        <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:20px;">Назад</button>
     </div>
+</div>
 
-    <div id="admin-screen" class="screen" style="display:none;">
-        <div class="admin-panel-box">
-            <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
-            <div id="admin-status-badge" style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:10px;">Користувач: <span id="admin-active-name">...</span></div>
-            
-            <div class="admin-section" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed #333; margin-bottom: 10px;">
-                <div style="font-weight:bold; color:gold; margin-bottom:8px; font-size:14px;">💰 НАРАХУВАННЯ МОНЕТ (НА СЕБЕ):</div>
-                <div style="display: flex; gap: 6px; justify-content: center; align-items: center; width: 90%; margin: 0 auto 10px auto;">
-                    <button id="panel-coin-toggle-btn" class="admin-btn-action" style="background:#00cc44; color:#fff; font-size:16px; width:55px; height: 35px;" onclick="togglePanelCoinMode()">[ + ]</button>
-                    <input type="number" id="panel-coin-amount" class="admin-input" style="margin:0; height: 35px; flex:1;" value="1000" min="1">
-                </div>
-                <button class="admin-btn-action" style="width:90%; background:#ffcc00; color:#000; padding:10px; font-size:13px;" onclick="executePanelCoinChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
+<div id="admin-screen" class="screen" style="display:none;">
+    <div class="admin-panel-box">
+        <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
+        <div style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:10px;">Користувач: <span id="admin-active-name">...</span></div>
+        <div class="admin-section" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed #333; margin-bottom: 10px;">
+            <div style="font-weight:bold; color:gold; margin-bottom:8px; font-size:14px;">💰 НАРАХУВАННЯ МОНЕТ (НА СЕБЕ):</div>
+            <div style="display: flex; gap: 6px; justify-content: center; align-items: center; width: 90%; margin: 0 auto 10px auto;">
+                <button id="panel-coin-toggle-btn" class="admin-btn-action" style="background:#00cc44; color:#fff; font-size:16px; width:55px; height:35px;" onclick="togglePanelCoinMode()">[ + ]</button>
+                <input type="number" id="panel-coin-amount" class="admin-input" style="margin:0; height:35px; flex:1;" value="1000" min="1">
             </div>
-
-            <div class="admin-section">
-                <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px;">🔥 ШВИДКІ ЧИТИ</div>
-                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                    <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
-                    <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
-                </div>
-            </div>
-
-            <div class="admin-section">
-                <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
-            </div>
-
-            <div id="owner-only-zone" style="display:none; margin-top:10px;">
-                <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП (ВЛАСНИК)</button>
-            </div>
-
-            <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
+            <button class="admin-btn-action" style="width:90%; background:#ffcc00; color:#000; padding:10px; font-size:13px;" onclick="executePanelCoinChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
         </div>
-    </div>
-
-    <div id="player-manage-screen" class="screen" style="display:none;">
-        <div class="admin-panel-box" style="max-width: 550px;">
-            <h2 style="color:#ffcc00; margin:0 0 5px 0;">👑 КЕРУВАННЯ ГРУПАМИ ТА ГРАВЦЯМИ</h2>
-            <div style="margin-bottom: 12px; display:flex; flex-direction:column; gap:8px;">
-                <button id="toggle-owner-visibility-btn" class="admin-btn-action" style="background:#5533ff; color:#fff; width:100%; padding:6px;" onclick="toggleOwnerInLists()">👁️ ПОКАЗАТИ ВЛАСНИКА В СПИСКАХ</button>
-                <button class="admin-btn-action" style="background:#00aa44; color:#fff; width:100%; padding:6px;" onclick="forceRefreshGroups()">🔄 ОНОВИТИ ГРУПИ</button>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border: 1px dashed #444; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left;">
-                <div style="font-size:12px; font-weight:bold; color:#0ff; margin-bottom:5px;">➕ СТВОРИТИ ВЛАСНУ ГРУПУ:</div>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <input type="text" id="new-group-name" style="background:#000; border:1px solid #333; color:#fff; padding:6px; border-radius:4px; flex:1; font-size:12px;" placeholder="Назва grupy...">
-                    <input type="color" id="new-group-color" value="#00ffcc" style="border:none; background:transparent; width:35px; height:30px; cursor:pointer;">
-                    <button class="admin-btn-action" style="background:#00cc44; color:#fff;" onclick="addNewCustomGroup()">СТВОРИТИ</button>
-                </div>
-            </div>
-            <div id="groups-wrapper" style="text-align: left; margin-bottom: 15px;"></div>
-            <button onclick="backToAdminFromManage()" class="main-btn" style="border-color:#fff; color:#fff; font-size:13px; width:140px; padding:6px;">НАЗАД</button>
-        </div>
-    </div>
-
-    <div id="player-settings-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="color:#ffcc00; margin-top:0;">⚙️ НАЛАШТУВАННЯ: <span id="modal-target-nick" style="color:#fff;"></span></h3>
-            <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px;">
-                <div style="border: 1px solid #333; padding: 8px; border-radius: 6px; background: rgba(255,255,255,0.02);">
-                    <label style="color: gold; font-weight: bold;">💰 Змінити баланс монет:</label>
-                    <div style="display:flex; gap:5px; margin-top:4px;">
-                        <input type="number" id="modal-edit-coins" style="background:#000; border:1px solid #ffcc00; color:#fff; padding:5px; border-radius:4px; flex:1;" value="0">
-                    </div>
-                    <small style="color:#666;">Поточний баланс оновиться на вказане число.</small>
-                </div>
-                <div>
-                    <label>🛡️ Режим Безсмертя:</label>
-                    <select id="modal-edit-god" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;">
-                        <option value="false">ВИМКНЕНO</option>
-                        <option value="true">УВІМКНЕНO</option>
-                    </select>
-                </div>
-                <div>
-                    <label>🚀 Змінити Скін:</label>
-                    <select id="modal-edit-skin" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;">
-                        <option value="🚀">🚀 Дефолтний</option>
-                        <option value="🐥">🐥 Фенікс</option>
-                        <option value="🛸">🛸 НЛО</option>
-                        <option value="👑">👑 Королівський</option>
-                    </select>
-                </div>
-                <div>
-                    <label>👥 Змінити групу (Перемістити):</label>
-                    <select id="modal-edit-group" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;"></select>
-                </div>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="admin-btn-action" style="background:#00cc44; color:#fff; flex:1;" onclick="saveIndividualPlayerSettings()">ЗБЕРЕГТИ</button>
-                <button class="admin-btn-action" style="background:#555; color:#fff; flex:1;" onclick="closePlayerModal()">СКАСУВАТИ</button>
+        <div class="admin-section">
+            <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px;">🔥 ШВИДКІ ЧИТИ</div>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
+                <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
             </div>
         </div>
+        <div class="admin-section">
+            <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
+        </div>
+        <div id="owner-only-zone" style="display:none; margin-top:10px;">
+            <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП (ВЛАСНИК)</button>
+        </div>
+        <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
     </div>
+</div>
 
-    <div id="player-ban-modal" class="modal-overlay">
-        <div class="modal-box" style="border-color:#ff3366; box-shadow: 0 0 25px rgba(255,51,102,0.3);">
-            <h3 style="color:#ff3366; margin-top:0;">🛑 БЛОКУВАННЯ / ВИДАЛЕННЯ</h3>
-            <p style="font-size:13px;">Оберіть дію для гравця <b id="ban-modal-target-nick"></b>:</p>
-            <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
-                <div>
-                    <label>📝 Причина блокування:</label>
-                    <input type="text" id="ban-modal-reason" style="background:#000; border:1px solid #ff3366; color:#fff; padding:6px; border-radius:4px; width:100%; margin-top:3px;" value="Порушення правил">
-                </div>
-                <div>
-                    <label>⏱️ Час дії блокування:</label>
-                    <select id="ban-modal-time" style="background:#000; border:1px solid #ff3366; color:#fff; padding:6px; border-radius:4px; width:100%; margin-top:3px;">
-                        <option value="permanent">Назавжди (Permanent)</option>
-                        <option value="60">1 хвилина</option>
-                        <option value="300">5 хвилин</option>
-                        <option value="3600">1 година</option>
-                    </select>
-                </div>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <button class="admin-btn-action" style="background:#cc0000; color:#fff; padding:10px;" onclick="executePlayerBan(true)">🛑 ЗАБЛОКУВАТИ</button>
-                <button class="admin-btn-action" style="background:#ffaa00; color:#000; padding:10px;" onclick="executePlayerBan(false)">🗑️ ВИДАТИ З ГРУПИ</button>
-                <button class="admin-btn-action" style="background:#555; color:#fff; padding:6px;" onclick="closeBanModal()">СКАСУВАТИ</button>
+<div id="player-manage-screen" class="screen" style="display:none;">
+    <div class="admin-panel-box" style="max-width: 550px;">
+        <h2 style="color:#ffcc00; margin:0 0 5px 0;">👑 КЕРУВАННЯ ГРУПАМИ ТА ГРАВЦЯМИ</h2>
+        <div style="margin-bottom: 12px; display:flex; flex-direction:column; gap:8px;">
+            <button id="toggle-owner-visibility-btn" class="admin-btn-action" style="background:#5533ff; color:#fff; width:100%; padding:6px;" onclick="toggleOwnerInLists()">👁️ ПОКАЗАТИ ВЛАСНИКА В СПИСКАХ</button>
+            <button class="admin-btn-action" style="background:#00aa44; color:#fff; width:100%; padding:6px;" onclick="forceRefreshGroups()">🔄 ОНОВИТИ ГРАВЦІВ З СЕРВЕРА</button>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px dashed #444; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left;">
+            <div style="font-size:12px; font-weight:bold; color:#0ff; margin-bottom:5px;">➕ СТВОРИТИ ВЛАСНУ ГРУПУ:</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" id="new-group-name" style="background:#000; border:1px solid #333; color:#fff; padding:6px; border-radius:4px; flex:1; font-size:12px;" placeholder="Назва групи...">
+                <input type="color" id="new-group-color" value="#00ffcc" style="border:none; background:transparent; width:35px; height:30px; cursor:pointer;">
+                <button class="admin-btn-action" style="background:#00cc44; color:#fff;" onclick="addNewCustomGroup()">СТВОРИТИ</button>
             </div>
         </div>
+        <div id="groups-wrapper" style="text-align: left; margin-bottom: 15px;"></div>
+        <button onclick="backToAdminFromManage()" class="main-btn" style="border-color:#fff; color:#fff; font-size:13px; width:140px; padding:6px;">НАЗАД</button>
     </div>
+</div>
 
-    <div id="wave-screen" class="screen" style="display:none;">
-        <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
-        <h2 style="color:#0ff; margin-bottom: 20px;">CHOOSE MISSION</h2>
-        <div id="wave-list"></div>
-    </div>
-
-    <div id="shop-screen" class="screen" style="display:none;">
-        <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
-        <h1 style="color:gold; margin-bottom: 5px;">SPACE SHOP</h1>
-        <div class="coins-display" style="font-size: 20px;">💰: <span id="shop-coins">0</span></div>
-        <div class="shop-tabs">
-            <button class="tab-btn active" id="tab-upgrades" onclick="switchTab('upgrades')">UPGRADES</button>
-            <button class="tab-btn" id="tab-skins" onclick="switchTab('skins')">SKINS</button>
-            <button class="tab-btn" id="tab-ship" onclick="switchTab('ship')">SHIP CONFIG</button>
+<div id="player-settings-modal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="color:#ffcc00; margin-top:0;">⚙️ НАЛАШТУВАННЯ: <span id="modal-target-nick" style="color:#fff;"></span></h3>
+        <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px;">
+            <div style="border: 1px solid #333; padding: 8px; border-radius: 6px;">
+                <label style="color: gold; font-weight: bold;">💰 Змінити баланс монет:</label>
+                <input type="number" id="modal-edit-coins" style="background:#000; border:1px solid #ffcc00; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:4px;" value="0">
+                <small style="color:#666;">Поточний баланс оновиться на вказане число.</small>
+            </div>
+            <div>
+                <label>🛡️ Режим Безсмертя:</label>
+                <select id="modal-edit-god" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;">
+                    <option value="false">ВИМКНЕНO</option>
+                    <option value="true">УВІМКНЕНO</option>
+                </select>
+            </div>
+            <div>
+                <label>🚀 Змінити Скін:</label>
+                <select id="modal-edit-skin" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;">
+                    <option value="🚀">🚀 Дефолтний</option>
+                    <option value="🐥">🐥 Фенікс</option>
+                    <option value="🛸">🛸 НЛО</option>
+                    <option value="👑">👑 Королівство</option>
+                </select>
+            </div>
+            <div>
+                <label>👥 Змінити групу:</label>
+                <select id="modal-edit-group" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;"></select>
+            </div>
         </div>
-        <div id="shop-content"></div>
-    </div>
-
-    <div id="win-screen" class="screen" style="display:none;">
-        <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1>
-        <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div>
-        <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 20px;"></div>
-        <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button>
-    </div>
-
-    <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
-        <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-shadow: 0 0 15px rgba(255,215,0,0.5); text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
-        <div class="credits-box">
-            <h2 style="color:#0ff; font-size: 18px; margin: 0 0 15px 0; letter-spacing: 3px; font-weight: bold;">🎬 ФІНАЛЬНІ ТИТРИ 🎬</h2>
-            <h3>ГОЛОВНИЙ РОЗРОБНИК:</h3><p>VLADIROBUS753</p>
-            <h3>AI ASSISTANT:</h3><p>🤖 Claude (by Anthropic)</p>
-            <h3>ВИДАВЕЦЬ:</h3><p style="font-size:16px; color:#aaa; font-weight:normal; margin-bottom:0;">VLADIROBUS.xYz company</p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="admin-btn-action" style="background:#00cc44; color:#fff; flex:1;" onclick="saveIndividualPlayerSettings()">ЗБЕРЕГТИ</button>
+            <button class="admin-btn-action" style="background:#555; color:#fff; flex:1;" onclick="closePlayerModal()">СКАСУВАТИ</button>
         </div>
-        <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button>
     </div>
+</div>
 
-    <div id="fail-screen" class="screen" style="display:none;">
-        <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1>
-        <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
+<div id="player-ban-modal" class="modal-overlay">
+    <div class="modal-box" style="border-color:#ff3366;">
+        <h3 style="color:#ff3366; margin-top:0;">🛑 БЛОКУВАННЯ / ВИДАЛЕННЯ</h3>
+        <p style="font-size:13px;">Дія для гравця <b id="ban-modal-target-nick"></b>:</p>
+        <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+            <div>
+                <label>📝 Причина:</label>
+                <input type="text" id="ban-modal-reason" style="background:#000; border:1px solid #ff3366; color:#fff; padding:6px; border-radius:4px; width:100%; margin-top:3px;" value="Порушення правил">
+            </div>
+            <div>
+                <label>⏱️ Час блокування:</label>
+                <select id="ban-modal-time" style="background:#000; border:1px solid #ff3366; color:#fff; padding:6px; border-radius:4px; width:100%; margin-top:3px;">
+                    <option value="permanent">Назавжди</option>
+                    <option value="60">1 хвилина</option>
+                    <option value="300">5 хвилин</option>
+                    <option value="3600">1 година</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="admin-btn-action" style="background:#cc0000; color:#fff; padding:10px;" onclick="executePlayerBan(true)">🛑 ЗАБЛОКУВАТИ</button>
+            <button class="admin-btn-action" style="background:#ffaa00; color:#000; padding:10px;" onclick="executePlayerBan(false)">🗑️ ВИДАТИ З ГРУПИ</button>
+            <button class="admin-btn-action" style="background:#555; color:#fff; padding:6px;" onclick="closeBanModal()">СКАСУВАТИ</button>
+        </div>
     </div>
+</div>
 
-    <canvas id="game"></canvas>
+<div id="wave-screen" class="screen" style="display:none;">
+    <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
+    <h2 style="color:#0ff; margin-bottom: 20px;">CHOOSE MISSION</h2>
+    <div id="wave-list"></div>
+</div>
+
+<div id="shop-screen" class="screen" style="display:none;">
+    <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
+    <h1 style="color:gold; margin-bottom: 5px;">SPACE SHOP</h1>
+    <div class="coins-display" style="font-size: 20px;">💰: <span id="shop-coins">0</span></div>
+    <div class="shop-tabs">
+        <button class="tab-btn active" id="tab-upgrades" onclick="switchTab('upgrades')">UPGRADES</button>
+        <button class="tab-btn" id="tab-skins" onclick="switchTab('skins')">SKINS</button>
+        <button class="tab-btn" id="tab-ship" onclick="switchTab('ship')">SHIP CONFIG</button>
+    </div>
+    <div id="shop-content"></div>
+</div>
+
+<div id="win-screen" class="screen" style="display:none;">
+    <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1>
+    <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div>
+    <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 20px;"></div>
+    <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button>
+</div>
+
+<div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
+    <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
+    <div class="credits-box">
+        <h2 style="color:#0ff; font-size: 18px; margin: 0 0 15px 0; letter-spacing: 3px;">🎬 ФІНАЛЬНІ ТИТРИ 🎬</h2>
+        <h3>ГОЛОВНИЙ РОЗРОБНИК:</h3><p>VLADIROBUS753</p>
+        <h3>AI ASSISTANT:</h3><p>🤖 Claude (by Anthropic)</p>
+        <h3>ВИДАВЕЦЬ:</h3><p style="font-size:16px; color:#aaa; font-weight:normal; margin-bottom:0;">VLADIROBUS.xYz company</p>
+    </div>
+    <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button>
+</div>
+
+<div id="fail-screen" class="screen" style="display:none;">
+    <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1>
+    <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
+</div>
+
+<canvas id="game"></canvas>
 
 <script>
+    // ============================================================
+    // FIREBASE
+    // ============================================================
+    const firebaseConfig = {
+        databaseURL: "https://space-shooter-game-9d55f-default-rtdb.europe-west1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const container = document.documentElement;
@@ -313,9 +303,8 @@
 
     const MASTER_PASSWORD = "Hs27^&)-+5x?~";
     let myNickname = localStorage.getItem('myRegisteredNickname') || '';
-    // isOwner визначається ТІЛЬКИ по паролю, не по нікнейму
     let isOwner = localStorage.getItem('isMasterAdmin') === 'true';
-    let globalPlayersDB = JSON.parse(localStorage.getItem('space_players_db')) || {};
+    let globalPlayersDB = {};
     let showOwnerInLists = localStorage.getItem('space_show_owner_list') === 'true';
 
     let customGroups = JSON.parse(localStorage.getItem('space_custom_groups')) || {};
@@ -336,28 +325,28 @@
     let godModeActive = false;
     let gameSpeedMultiplier = 1;
     let panelCoinSign = 1;
-
     let globalVolume = Number(localStorage.getItem('gameVolume')) || 80;
     let gameActive = false, currentWave = null, playerHp = 3, kills = 0, missed = 0, spawnedThisWave = 0;
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
     let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
     let bossInstance = null;
-
-    let currentLeftTab = 'guns', currentRightTab = 'inv_guns', selectedGunIdx = null;
+    let currentLeftTab = 'guns', selectedGunIdx = null;
     let currentModalTargetUser = '';
     let sessionStartTime = Date.now();
 
+    // Авто-збереження часу в Firebase
     setInterval(() => {
-        if (myNickname && !isOwner && globalPlayersDB[myNickname]) {
-            let elapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
+        if (myNickname && !isOwner) {
+            let elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
             sessionStartTime = Date.now();
-            globalPlayersDB[myNickname].timePlayed = (globalPlayersDB[myNickname].timePlayed || 0) + elapsedSec;
-            localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
+            db.ref('players/' + myNickname + '/timePlayed').transaction(val => (val || 0) + elapsed);
         }
     }, 5000);
 
+    // ============================================================
+    // ІНІЦІАЛІЗАЦІЯ
+    // ============================================================
     window.onload = function() {
-        checkBanStatus();
         if (!myNickname) {
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('register-screen').style.display = 'flex';
@@ -369,24 +358,41 @@
         updateCoinsUI();
     }
 
-    function checkBanStatus() {
-        if (myNickname && globalPlayersDB[myNickname]) {
-            let p = globalPlayersDB[myNickname];
-            if (p.isBanned) {
-                if (p.banUntil === 'permanent') { showBanScreen(p.banReason, "Назавжди"); }
-                else {
-                    let timeLeft = Math.floor((p.banUntil - Date.now()) / 1000);
-                    if (timeLeft > 0) {
-                        showBanScreen(p.banReason, `Залишилось: ${timeLeft} сек.`);
-                        let banTimer = setInterval(() => {
-                            let rem = Math.floor((p.banUntil - Date.now()) / 1000);
-                            if (rem <= 0) { clearInterval(banTimer); location.reload(); }
-                            else { document.getElementById('ban-time-left-text').innerText = `Розблокування через: ${rem} сек.`; }
-                        }, 1000);
-                    } else {
-                        globalPlayersDB[myNickname].isBanned = false;
-                        localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
-                    }
+    function syncCurrentPlayerWithDB() {
+        if (!myNickname || isOwner) {
+            checkBanStatus(null);
+            return;
+        }
+        db.ref('players/' + myNickname).once('value').then(snapshot => {
+            let p = snapshot.exists() ? snapshot.val() : null;
+            if (p) {
+                globalPlayersDB[myNickname] = p;
+                coins = p.coins || coins;
+                godModeActive = p.godMode || false;
+                activeSkin = p.activeSkin || '🚀';
+                saveProgress();
+                updateCoinsUI();
+            }
+            checkBanStatus(p);
+        });
+    }
+
+    function checkBanStatus(p) {
+        if (!p) return;
+        if (p.isBanned) {
+            if (p.banUntil === 'permanent') {
+                showBanScreen(p.banReason, "Назавжди");
+            } else {
+                let timeLeft = Math.floor((p.banUntil - Date.now()) / 1000);
+                if (timeLeft > 0) {
+                    showBanScreen(p.banReason, '');
+                    let banTimer = setInterval(() => {
+                        let rem = Math.floor((p.banUntil - Date.now()) / 1000);
+                        if (rem <= 0) { clearInterval(banTimer); location.reload(); }
+                        else { document.getElementById('ban-time-left-text').innerText = `Розблокування через: ${rem} сек.`; }
+                    }, 1000);
+                } else {
+                    db.ref('players/' + myNickname).update({ isBanned: false });
                 }
             }
         }
@@ -396,80 +402,64 @@
         document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
         document.getElementById('banned-screen').style.display = 'flex';
         document.getElementById('ban-reason-text').innerText = reason;
-        document.getElementById('ban-time-left-text').innerText = timeText === "Назавжди" ? "Блокування: Назавжди" : timeText;
+        document.getElementById('ban-time-left-text').innerText = timeText;
     }
 
-function submitFirstRegistration() {
-    let input = document.getElementById('user-register-input').value.trim();
-    if (!input) { alert("Вхід не може бути порожнім!"); return; }
-    
-    // Якщо ввів пароль — заходиш як власник
-    if (input === MASTER_PASSWORD) {
-        myNickname = "VLADIROBUS753";
-        localStorage.setItem('myRegisteredNickname', myNickname);
-        localStorage.setItem('isMasterAdmin', 'true');
-        alert("👑 Вітаємо! Доступ активовано.");
-        location.reload();
-        return;
-    }
-    
-    // Звичайний гравець — реєструємось по ніку
-    myNickname = input;
-    localStorage.setItem('myRegisteredNickname', myNickname);
-    if (!globalPlayersDB[myNickname]) {
-        globalPlayersDB[myNickname] = { nickname: myNickname, group: 'ігроки', coins: 0, godMode: false, activeSkin: '🚀', timePlayed: 0, isBanned: false, banReason: '', banUntil: null };
-        localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
-    }
-    location.reload();
-}
-
-    function syncCurrentPlayerWithDB() {
-        if (myNickname && globalPlayersDB[myNickname]) {
-            let p = globalPlayersDB[myNickname];
-            coins = p.coins || coins;
-            godModeActive = p.godMode || godModeActive;
-            activeSkin = p.activeSkin || activeSkin;
-            saveProgress();
-        }
-    }
-
-    // СІРА ТОЧКА — тільки пароль відкриває, нік не має значення
-    function tryOpenAdminPanel() {
-        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        let hasSpecialGroup = (currentGroup === 'читери' || currentGroup === 'тестери');
-
-        if (isOwner) {
-            openAdminPanelUI(true, currentGroup);
-        } else if (hasSpecialGroup) {
-            openAdminPanelUI(false, currentGroup);
-        } else {
-            // Звичайні гравці — точка нічого не робить, просто мовчки ігноруємо
+    function submitFirstRegistration() {
+        let input = document.getElementById('user-register-input').value.trim();
+        if (!input) { alert("Нікнейм не може бути порожнім!"); return; }
+        if (input === MASTER_PASSWORD) {
+            myNickname = "VLADIROBUS753";
+            localStorage.setItem('myRegisteredNickname', myNickname);
+            localStorage.setItem('isMasterAdmin', 'true');
+            alert("👑 Вітаємо! Доступ активовано.");
+            location.reload();
             return;
         }
+        myNickname = input;
+        localStorage.setItem('myRegisteredNickname', myNickname);
+        db.ref('players/' + myNickname).once('value').then(snapshot => {
+            if (!snapshot.exists()) {
+                db.ref('players/' + myNickname).set({
+                    nickname: myNickname, group: 'ігроки', coins: 0,
+                    godMode: false, activeSkin: '🚀', timePlayed: 0,
+                    isBanned: false, banReason: '', banUntil: null
+                });
+            }
+            location.reload();
+        });
+    }
+
+    // ============================================================
+    // АДМІН
+    // ============================================================
+    function tryOpenAdminPanel() {
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        if (isOwner) { openAdminPanelUI(true, currentGroup); }
+        else if (currentGroup === 'читери' || currentGroup === 'тестери') { openAdminPanelUI(false, currentGroup); }
+        // Звичайні гравці — нічого не відбувається
     }
 
     function openAdminPanelUI(ownerAccess, currentGroup) {
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
         document.getElementById('admin-active-name').innerText = myNickname;
-        const panelTitle = document.getElementById('admin-panel-title');
-        if (ownerAccess) { panelTitle.innerText = "Адмінське меню керування"; panelTitle.style.color = "#ff0055"; }
-        else if (currentGroup === 'читери') { panelTitle.innerText = "Меню читів"; panelTitle.style.color = "#00ffff"; }
-        else if (currentGroup === 'тестери') { panelTitle.innerText = "Меню тестерів"; panelTitle.style.color = "#00ffff"; }
+        const t = document.getElementById('admin-panel-title');
+        if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
+        else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
+        else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
         document.getElementById('owner-only-zone').style.display = ownerAccess ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
         document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
         document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
         document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
-        panelCoinSign = 1;
-        updatePanelCoinModeBtnUI();
+        panelCoinSign = 1; updatePanelCoinModeBtnUI();
     }
 
     function togglePanelCoinMode() {
-        panelCoinSign = (panelCoinSign === 1) ? -1 : 1;
+        panelCoinSign = panelCoinSign === 1 ? -1 : 1;
         updatePanelCoinModeBtnUI();
     }
-
     function updatePanelCoinModeBtnUI() {
         const btn = document.getElementById('panel-coin-toggle-btn');
         if (panelCoinSign === 1) { btn.innerText = "[ + ]"; btn.style.background = "#00cc44"; }
@@ -481,13 +471,15 @@ function submitFirstRegistration() {
         let finalValue = amount * panelCoinSign;
         coins = Math.max(0, coins + finalValue);
         saveProgress(); updateCoinsUI();
-        if (myNickname && globalPlayersDB[myNickname]) {
-            globalPlayersDB[myNickname].coins = coins;
-            localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
+        if (myNickname && !isOwner) {
+            db.ref('players/' + myNickname).update({ coins: coins });
         }
         alert(`Ваш баланс змінено на ${finalValue} монет!`);
     }
 
+    // ============================================================
+    // МЕНЕДЖЕР ГРАВЦІВ
+    // ============================================================
     function openPlayerManagementUI() {
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
@@ -496,15 +488,12 @@ function submitFirstRegistration() {
     }
 
     function forceRefreshGroups() {
-        // Перезавантажуємо з localStorage і знову перевіряємо базові групи
-        globalPlayersDB = JSON.parse(localStorage.getItem('space_players_db')) || {};
         customGroups = JSON.parse(localStorage.getItem('space_custom_groups')) || {};
         if (!customGroups['ігроки']) customGroups['ігроки'] = { label: 'Ігроки', color: '#bbb' };
         if (!customGroups['читери']) customGroups['читери'] = { label: 'Читери', color: '#a0522d' };
         if (!customGroups['тестери']) customGroups['тестери'] = { label: 'Тестери', color: '#9933ff' };
         localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
         renderGroupsAndPlayers();
-        alert('Групи та гравці оновлено!');
     }
 
     function toggleOwnerInLists() {
@@ -513,18 +502,15 @@ function submitFirstRegistration() {
         updateOwnerVisibilityBtnUI();
         renderGroupsAndPlayers();
     }
-
     function updateOwnerVisibilityBtnUI() {
         const btn = document.getElementById('toggle-owner-visibility-btn');
         btn.innerText = showOwnerInLists ? "👁️ ВЛАСНИК ПОКАЗУЄТЬСЯ" : "👁️ ВЛАСНИК ПРИХОВАНИЙ";
         btn.style.background = showOwnerInLists ? "#00cc44" : "#5533ff";
     }
-
     function backToAdminFromManage() {
         document.getElementById('player-manage-screen').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
     }
-
     function addNewCustomGroup() {
         let nameInput = document.getElementById('new-group-name').value.trim();
         let colorInput = document.getElementById('new-group-color').value;
@@ -538,44 +524,53 @@ function submitFirstRegistration() {
     }
 
     function renderGroupsAndPlayers() {
-        // Завжди свіжі дані з localStorage
-        globalPlayersDB = JSON.parse(localStorage.getItem('space_players_db')) || {};
         const wrapper = document.getElementById('groups-wrapper');
-        wrapper.innerHTML = '';
-        Object.keys(customGroups).forEach(groupId => {
-            let groupInfo = customGroups[groupId];
-            let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
-            if (showOwnerInLists && isOwner) {
-                if (!playersInGroup.some(p => p.nickname === myNickname)) {
-                    playersInGroup.push({ nickname: myNickname, group: groupId, coins: coins, godMode: godModeActive, activeSkin: activeSkin, timePlayed: 0, isBanned: false });
+        wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
+        db.ref('players').once('value').then(snapshot => {
+            globalPlayersDB = {};
+            if (snapshot.exists()) {
+                snapshot.forEach(child => { globalPlayersDB[child.key] = child.val(); });
+            }
+            wrapper.innerHTML = '';
+            Object.keys(customGroups).forEach(groupId => {
+                let groupInfo = customGroups[groupId];
+                let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
+                if (showOwnerInLists && isOwner) {
+                    if (!playersInGroup.some(p => p.nickname === myNickname)) {
+                        playersInGroup.push({ nickname: myNickname, coins: coins, timePlayed: 0 });
+                    }
                 }
-            }
-            const groupContainer = document.createElement('div');
-            groupContainer.innerHTML = `
-                <button class="group-collapse-btn" onclick="toggleGroupCollapse('${groupId}')">
-                    <span style="color: ${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
-                    <span>▼</span>
-                </button>
-                <div class="group-content" id="group-content-${groupId}">
-                    <div id="player-list-holder-${groupId}"></div>
-                </div>`;
-            wrapper.appendChild(groupContainer);
-            const holder = document.getElementById(`player-list-holder-${groupId}`);
-            if (playersInGroup.length === 0) {
-                holder.innerHTML = '<div style="color:#555; font-size:12px; padding:5px;">Гравців немає</div>';
-            }
-            playersInGroup.forEach(p => {
-                let timeText = p.timePlayed || 0;
-                const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
-                row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins || 0} | ⏱️ ${timeText}с</small></div>
-                <div class="player-actions"><button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
-                <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button></div>`;
-                holder.appendChild(row);
+                const groupContainer = document.createElement('div');
+                groupContainer.innerHTML = `
+                    <button class="group-collapse-btn" onclick="toggleGroupCollapse('${groupId}')">
+                        <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="group-content" id="group-content-${groupId}">
+                        <div id="player-list-holder-${groupId}"></div>
+                    </div>`;
+                wrapper.appendChild(groupContainer);
+                const holder = document.getElementById(`player-list-holder-${groupId}`);
+                if (playersInGroup.length === 0) {
+                    holder.innerHTML = '<div style="color:#555;font-size:12px;padding:5px;">Гравців немає</div>';
+                }
+                playersInGroup.forEach(p => {
+                    const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
+                    row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
+                    <div class="player-actions">
+                        <button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
+                        <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>
+                    </div>`;
+                    holder.appendChild(row);
+                });
             });
         });
     }
 
-    function toggleGroupCollapse(id) { let el = document.getElementById(`group-content-${id}`); el.style.display = (el.style.display === 'flex') ? 'none' : 'flex'; }
+    function toggleGroupCollapse(id) {
+        let el = document.getElementById(`group-content-${id}`);
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+    }
 
     function openPlayerSettingsModal(nick) {
         currentModalTargetUser = nick;
@@ -584,14 +579,13 @@ function submitFirstRegistration() {
         document.getElementById('modal-edit-god').value = p.godMode ? "true" : "false";
         document.getElementById('modal-edit-skin').value = p.activeSkin || "🚀";
         document.getElementById('modal-edit-coins').value = p.coins || 0;
-        const selectGroup = document.getElementById('modal-edit-group'); selectGroup.innerHTML = '';
+        const sel = document.getElementById('modal-edit-group'); sel.innerHTML = '';
         Object.keys(customGroups).forEach(gId => {
             let opt = document.createElement('option'); opt.value = gId; opt.innerText = customGroups[gId].label;
-            if (p.group === gId) opt.selected = true; selectGroup.appendChild(opt);
+            if (p.group === gId) opt.selected = true; sel.appendChild(opt);
         });
         document.getElementById('player-settings-modal').style.display = 'flex';
     }
-
     function closePlayerModal() { document.getElementById('player-settings-modal').style.display = 'none'; }
 
     function saveIndividualPlayerSettings() {
@@ -602,57 +596,64 @@ function submitFirstRegistration() {
         let targetCoins = Number(document.getElementById('modal-edit-coins').value) || 0;
         let prevGroup = globalPlayersDB[nick] ? globalPlayersDB[nick].group : 'ігроки';
 
+        db.ref('players/' + nick).update({
+            godMode: targetGod, activeSkin: targetSkin,
+            group: targetGroup, coins: targetCoins
+        });
         if (globalPlayersDB[nick]) {
             globalPlayersDB[nick].godMode = targetGod;
             globalPlayersDB[nick].activeSkin = targetSkin;
             globalPlayersDB[nick].group = targetGroup;
             globalPlayersDB[nick].coins = targetCoins;
-            localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
         }
 
-        // Повідомлення якщо перемістили в читери або тестери
         if (prevGroup !== targetGroup && (targetGroup === 'читери' || targetGroup === 'тестери')) {
             let groupName = customGroups[targetGroup] ? customGroups[targetGroup].label : targetGroup;
-            alert(`✅ Гравця "${nick}" переміщено в групу "${groupName}"!\n\nТепер він може натиснути на сіру точку в правому нижньому куті головного меню — там відкриється спеціальне меню.`);
+            alert(`✅ Гравця "${nick}" переміщено в групу "${groupName}"!\n\nТепер він може натиснути на сіру точку в правому нижньому куті головного меню.`);
         }
-
         closePlayerModal(); renderGroupsAndPlayers();
     }
 
-    function openPlayerBanModal(nick) { currentModalTargetUser = nick; document.getElementById('ban-modal-target-nick').innerText = nick; document.getElementById('player-ban-modal').style.display = 'flex'; }
+    function openPlayerBanModal(nick) {
+        currentModalTargetUser = nick;
+        document.getElementById('ban-modal-target-nick').innerText = nick;
+        document.getElementById('player-ban-modal').style.display = 'flex';
+    }
     function closeBanModal() { document.getElementById('player-ban-modal').style.display = 'none'; }
+
     function executePlayerBan(shouldBan) {
-        let nick = currentModalTargetUser; if (!nick || !globalPlayersDB[nick]) return;
+        let nick = currentModalTargetUser; if (!nick) return;
         if (shouldBan) {
-            globalPlayersDB[nick].isBanned = true; globalPlayersDB[nick].banReason = document.getElementById('ban-modal-reason').value;
+            let reason = document.getElementById('ban-modal-reason').value;
             let timeVal = document.getElementById('ban-modal-time').value;
-            globalPlayersDB[nick].banUntil = (timeVal === 'permanent') ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
-        } else { globalPlayersDB[nick].group = 'ігроки'; }
-        localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
+            let banUntil = timeVal === 'permanent' ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
+            db.ref('players/' + nick).update({ isBanned: true, banReason: reason, banUntil: banUntil });
+        } else {
+            db.ref('players/' + nick).update({ group: 'ігроки' });
+        }
         closeBanModal(); renderGroupsAndPlayers();
     }
 
+    // ============================================================
+    // СТАНДАРТНІ ФУНКЦІЇ
+    // ============================================================
     function changeVolume(val) { globalVolume = Number(val); localStorage.setItem('gameVolume', globalVolume); }
-
     function toggleGodMode() {
         godModeActive = !godModeActive;
-        if (myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].godMode = godModeActive; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); }
-        let cg = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ godMode: godModeActive });
+        let cg = globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки';
         openAdminPanelUI(isOwner, cg);
     }
-
     function toggleGameSpeed() {
         gameSpeedMultiplier = gameSpeedMultiplier === 1 ? 4 : 1;
-        let cg = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        let cg = globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки';
         openAdminPanelUI(isOwner, cg);
         if (gameActive) startIntervals();
     }
-
     function unlockAllAdminWaves() { waveData.forEach(w => w.unlocked = true); saveProgress(); alert("Усі місії розблоковані!"); }
     function triggerWipeProgress() { if (confirm("💥 Збити весь ігровий прогрес?")) { localStorage.clear(); location.reload(); } }
     function updateCoinsUI() { document.getElementById('main-coins').innerText = coins; document.getElementById('shop-coins').innerText = coins; }
-    function updateHpUI() { document.getElementById('hp-display').innerText = godModeActive ? '🛡️ INFINITY' : ('❤️'.repeat(playerHp) + '🖤'.repeat(3 - playerHp)); }
-
+    function updateHpUI() { document.getElementById('hp-display').innerText = godModeActive ? '🛡️ INFINITY' : ('❤️'.repeat(playerHp) + '🖤'.repeat(3-playerHp)); }
     function showWaves() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); }
     function showShop() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('shop-screen').style.display = 'flex'; switchTab('upgrades'); updateCoinsUI(); }
     function showSettings() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('settings-screen').style.display = 'flex'; document.getElementById('volume-control').value = globalVolume; }
@@ -674,302 +675,275 @@ function submitFirstRegistration() {
     function playSound(buffer) {
         if (!audioCtx || !buffer) return;
         try {
-            const source = audioCtx.createBufferSource(); source.buffer = buffer;
-            const gainNode = audioCtx.createGain(); gainNode.gain.value = globalVolume / 100;
-            source.connect(gainNode); gainNode.connect(audioCtx.destination); source.start();
+            const src = audioCtx.createBufferSource(); src.buffer = buffer;
+            const gain = audioCtx.createGain(); gain.gain.value = globalVolume / 100;
+            src.connect(gain); gain.connect(audioCtx.destination); src.start();
         } catch(e) {}
     }
 
     function initAudio() {
         if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const rate = audioCtx.sampleRate;
-            shootBuf = audioCtx.createBuffer(1, rate * 0.1, rate); let s = shootBuf.getChannelData(0);
-            for(let i=0; i<s.length; i++) s[i] = Math.sin(2*Math.PI*(1100*Math.exp(-35*(i/rate)))) * (1-i/s.length) * 0.08;
-            crashBuf = audioCtx.createBuffer(1, rate * 0.2, rate); let c = crashBuf.getChannelData(0);
-            for(let i=0; i<c.length; i++) c[i] = (Math.random()*2-1) * (1-i/c.length) * 0.08;
-            hurtBuf = audioCtx.createBuffer(1, rate * 0.15, rate); let h = hurtBuf.getChannelData(0);
-            for(let i=0; i<h.length; i++) h[i] = Math.sin(2*Math.PI*(120*Math.exp(-10*(i/rate)))) * (Math.random()*2-1) * (1-i/h.length) * 0.15;
-            bossBuf = audioCtx.createBuffer(1, rate * 0.25, rate); let b = bossBuf.getChannelData(0);
-            for(let i=0; i<b.length; i++) b[i] = Math.sin(2*Math.PI*(400*Math.exp(-15*(i/rate)))) * (1-i/b.length) * 0.15;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const r = audioCtx.sampleRate;
+            shootBuf = audioCtx.createBuffer(1, r*0.1, r); let s=shootBuf.getChannelData(0); for(let i=0;i<s.length;i++) s[i]=Math.sin(2*Math.PI*(1100*Math.exp(-35*(i/r))))*(1-i/s.length)*0.08;
+            crashBuf = audioCtx.createBuffer(1, r*0.2, r); let c=crashBuf.getChannelData(0); for(let i=0;i<c.length;i++) c[i]=(Math.random()*2-1)*(1-i/c.length)*0.08;
+            hurtBuf = audioCtx.createBuffer(1, r*0.15, r); let h=hurtBuf.getChannelData(0); for(let i=0;i<h.length;i++) h[i]=Math.sin(2*Math.PI*(120*Math.exp(-10*(i/r))))*(Math.random()*2-1)*(1-i/h.length)*0.15;
+            bossBuf = audioCtx.createBuffer(1, r*0.25, r); let b=bossBuf.getChannelData(0); for(let i=0;i<b.length;i++) b[i]=Math.sin(2*Math.PI*(400*Math.exp(-15*(i/r))))*(1-i/b.length)*0.15;
         }
     }
 
+    // ============================================================
+    // МАГАЗИН
+    // ============================================================
     function switchTab(tab) {
-        document.getElementById('tab-upgrades').classList.toggle('active', tab === 'upgrades');
-        document.getElementById('tab-skins').classList.toggle('active', tab === 'skins');
-        document.getElementById('tab-ship').classList.toggle('active', tab === 'ship');
+        ['upgrades','skins','ship'].forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===tab));
         renderShopItems(tab);
     }
-    function switchSideTab(side, tab) { if(side === 'left') currentLeftTab = tab; else currentRightTab = tab; renderShopItems('ship'); }
+    function switchSideTab(side, tab) { if(side==='left') currentLeftTab=tab; renderShopItems('ship'); }
 
     function renderShopItems(tab) {
         const content = document.getElementById('shop-content'); content.innerHTML = '';
         if (tab === 'upgrades') {
-            content.innerHTML = `<div class="shop-item"><div style="color:#0ff">⚡ FAST FIRE</div><p style="font-size:11px;color:#777;margin:3px 0">Збільшує швидкість стрільби лазерів вашого винищувача.</p><button class="main-btn" style="width:160px;font-size:12px" onclick="buyUpgrade('fastFire', 1000)">${unlockedUpgrades.fastFire ? 'OWNED' : 'BUY 1000💰'}</button></div>`;
+            content.innerHTML = `<div class="shop-item"><div style="color:#0ff">⚡ FAST FIRE</div><p style="font-size:11px;color:#777;margin:3px 0">Збільшує швидкість стрільби.</p><button class="main-btn" style="width:160px;font-size:12px" onclick="buyUpgrade('fastFire',1000)">${unlockedUpgrades.fastFire?'OWNED':'BUY 1000💰'}</button></div>`;
         } else if (tab === 'skins') {
-            content.innerHTML = `<div class="shop-item"><div style="color:gold">🐥 PHOENIX</div><button class="main-btn" style="width:160px;font-size:12px" onclick="buySkin('phoenix', '🐥', 500)">${unlockedSkins.phoenix ? (activeSkin === '🐥' ? 'EQUIPPED' : 'EQUIP') : 'BUY 500💰'}</button></div><div class="shop-item"><div>🚀 DEFAULT</div><button class="main-btn" style="width:160px;font-size:12px" onclick="useDefault()">USE</button></div>`;
+            content.innerHTML = `<div class="shop-item"><div style="color:gold">🐥 PHOENIX</div><button class="main-btn" style="width:160px;font-size:12px" onclick="buySkin('phoenix','🐥',500)">${unlockedSkins.phoenix?(activeSkin==='🐥'?'EQUIPPED':'EQUIP'):'BUY 500💰'}</button></div><div class="shop-item"><div>🚀 DEFAULT</div><button class="main-btn" style="width:160px;font-size:12px" onclick="useDefault()">USE</button></div>`;
         } else if (tab === 'ship') {
             content.innerHTML = `<div class="ship-config-container"><div class="sidebar sidebar-left"><div class="sidebar-handle">SHOP 🛒</div><div class="side-tabs"><button class="side-tab-btn ${currentLeftTab==='guns'?'active':''}" onclick="switchSideTab('left','guns')">Guns</button><button class="side-tab-btn ${currentLeftTab==='cells'?'active':''}" onclick="switchSideTab('left','cells')">Cells</button></div><div class="side-list" id="left-side-list"></div></div><div class="grid-ui" id="g-ui"></div><div class="sidebar sidebar-right"><div class="sidebar-handle">ITEMS 🎒</div><div class="side-list" id="right-side-list"></div></div></div>`;
-            const leftList = document.getElementById('left-side-list');
-            if (currentLeftTab === 'guns') leftList.innerHTML = `<button onclick="buyShipItem('gun', 1500)" class="side-shop-btn">BUY GUN 1500💰</button>`;
-            else leftList.innerHTML = `<button onclick="buyShipItem('cell', 3000)" class="side-shop-btn" ${unlockedCells >= 16 ? 'disabled' : ''}>BUY CELL 3000💰</button>`;
+            const ll = document.getElementById('left-side-list');
+            if (currentLeftTab==='guns') ll.innerHTML=`<button onclick="buyShipItem('gun',1500)" class="side-shop-btn">BUY GUN 1500💰</button>`;
+            else ll.innerHTML=`<button onclick="buyShipItem('cell',3000)" class="side-shop-btn" ${unlockedCells>=16?'disabled':''}>BUY CELL 3000💰</button>`;
             const gDiv = document.getElementById('g-ui');
-            shipGrid.forEach((s, i) => {
-                const c = document.createElement('div'); c.className = 'cell-ui' + (s===null?' locked':''); c.innerHTML = s===1?'🔫':(s===null?'🔒':'');
-                c.onclick = () => { if(s===null) return; if(selectedGunIdx!==null && s===0) { shipGrid[i]=1; shipInventory.splice(selectedGunIdx,1); selectedGunIdx=null; } else if(s===1) { shipGrid[i]=0; shipInventory.push(1); } saveProgress(); renderShopItems('ship'); };
+            shipGrid.forEach((s,i) => {
+                const c=document.createElement('div'); c.className='cell-ui'+(s===null?' locked':''); c.innerHTML=s===1?'🔫':(s===null?'🔒':'');
+                c.onclick=()=>{ if(s===null) return; if(selectedGunIdx!==null&&s===0){shipGrid[i]=1;shipInventory.splice(selectedGunIdx,1);selectedGunIdx=null;}else if(s===1){shipGrid[i]=0;shipInventory.push(1);} saveProgress();renderShopItems('ship'); };
                 gDiv.appendChild(c);
             });
-            const rightList = document.getElementById('right-side-list');
-            shipInventory.forEach((_, i) => {
-                const g = document.createElement('div'); g.className = 'gun-inv'; g.innerHTML = '🔫 GUN'; if(selectedGunIdx===i) g.style.border = '2px solid #0ff';
-                g.onclick = () => { selectedGunIdx = (selectedGunIdx === i) ? null : i; renderShopItems('ship'); }; rightList.appendChild(g);
+            const rl = document.getElementById('right-side-list');
+            shipInventory.forEach((_,i) => {
+                const g=document.createElement('div'); g.className='gun-inv'; g.innerHTML='🔫 GUN'; if(selectedGunIdx===i) g.style.border='2px solid #0ff';
+                g.onclick=()=>{ selectedGunIdx=(selectedGunIdx===i)?null:i; renderShopItems('ship'); }; rl.appendChild(g);
             });
         }
     }
 
-    function buyUpgrade(type, price) { if (!unlockedUpgrades[type] && coins >= price) { coins -= price; unlockedUpgrades[type] = true; saveProgress(); if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].coins = coins; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } switchTab('upgrades'); } }
-    function buySkin(id, icon, price) { if (unlockedSkins[id]) { activeSkin = icon; saveProgress(); if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].activeSkin = icon; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } switchTab('skins'); } else if (coins >= price) { coins -= price; unlockedSkins[id] = true; activeSkin = icon; saveProgress(); if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].coins = coins; globalPlayersDB[myNickname].activeSkin = icon; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } switchTab('skins'); } }
-    function buyShipItem(type, price) { if(coins < price) return; if(type === 'gun') shipInventory.push(1); if(type === 'cell' && unlockedCells < 16) { shipGrid[unlockedCells] = 0; unlockedCells++; } coins -= price; if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].coins = coins; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } saveProgress(); renderShopItems('ship'); }
-    function useDefault() { activeSkin = '🚀'; saveProgress(); if(myNickname && globalPlayersDB[myNickname]) { globalPlayersDB[myNickname].activeSkin = '🚀'; localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB)); } switchTab('skins'); }
+    function buyUpgrade(type, price) {
+        if (!unlockedUpgrades[type] && coins >= price) {
+            coins -= price; unlockedUpgrades[type] = true; saveProgress();
+            if (!isOwner) db.ref('players/'+myNickname).update({coins});
+            switchTab('upgrades');
+        }
+    }
+    function buySkin(id, icon, price) {
+        if (unlockedSkins[id]) { activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:icon}); switchTab('skins'); }
+        else if (coins >= price) { coins-=price; unlockedSkins[id]=true; activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins,activeSkin:icon}); switchTab('skins'); }
+    }
+    function buyShipItem(type, price) {
+        if(coins<price) return;
+        if(type==='gun') shipInventory.push(1);
+        if(type==='cell'&&unlockedCells<16){shipGrid[unlockedCells]=0;unlockedCells++;}
+        coins-=price; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship');
+    }
+    function useDefault() { activeSkin='🚀'; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:'🚀'}); switchTab('skins'); }
 
+    // ============================================================
+    // ХВИЛІ
+    // ============================================================
     function renderWaves() {
         const list = document.getElementById('wave-list'); list.innerHTML = '';
         waveData.forEach(w => {
             const card = document.createElement('div');
-            card.className = `wave-card ${w.unlocked ? '' : 'locked'} ${w.hasBoss ? 'boss-wave' : ''}`;
+            card.className = `wave-card ${w.unlocked?'':'locked'} ${w.hasBoss?'boss-wave':''}`;
             card.innerHTML = `<h3 style="margin:0;color:${w.hasBoss?'#f11':'#0ff'}">WAVE ${w.id}</h3>
-                              <div style="font-size:11px;color:#ff0;margin:3px 0;">${w.name}</div>
-                              <div style="color:gold">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
-                              <div style="font-size:10px;color:#666;margin-top:2px;">Reward: ${w.reward}💰</div>
-                              <button style="font-size:10px;border:1px solid #0ff;background:transparent;color:#0ff;margin-top:5px;padding:3px 10px;border-radius:10px">СТАРТ</button>`;
-            if(w.unlocked) card.onclick = () => { if (container.requestFullscreen) container.requestFullscreen().catch(()=>{}); startMission(w); };
+                <div style="font-size:11px;color:#ff0;margin:3px 0;">${w.name}</div>
+                <div style="color:gold">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
+                <div style="font-size:10px;color:#666;margin-top:2px;">Reward: ${w.reward}💰</div>
+                <button style="font-size:10px;border:1px solid #0ff;background:transparent;color:#0ff;margin-top:5px;padding:3px 10px;border-radius:10px">СТАРТ</button>`;
+            if(w.unlocked) card.onclick = () => { if(container.requestFullscreen) container.requestFullscreen().catch(()=>{}); startMission(w); };
             list.appendChild(card);
         });
     }
 
     function startMission(w) {
-        let totalTargets = w.spawnCount + (w.hasBoss ? 1 : 0);
-        initAudio(); currentWave = w; gameActive = true; playerHp = 3;
-        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-        document.getElementById('ui').style.display = 'block';
-        document.getElementById('hp-display').style.display = 'block';
-        document.getElementById('kills').innerText = '0';
-        document.getElementById('required-kills').innerText = totalTargets;
-        kills = 0; missed = 0; spawnedThisWave = 0;
-        bullets = []; enemyBullets = []; enemies = []; bossInstance = null;
+        initAudio(); currentWave=w; gameActive=true; playerHp=3;
+        document.querySelectorAll('.screen').forEach(s=>s.style.display='none');
+        document.getElementById('ui').style.display='block';
+        document.getElementById('hp-display').style.display='block';
+        document.getElementById('kills').innerText='0';
+        document.getElementById('required-kills').innerText=w.spawnCount+(w.hasBoss?1:0);
+        kills=0; missed=0; spawnedThisWave=0;
+        bullets=[]; enemyBullets=[]; enemies=[]; bossInstance=null;
         init(); updateHpUI(); startIntervals(); requestAnimationFrame(gameLoop);
     }
 
     function startIntervals() {
-        if (shootInterval) clearInterval(shootInterval);
-        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
-        let fireRate = (unlockedUpgrades.fastFire ? 150 : 280) / gameSpeedMultiplier;
-        shootInterval = setInterval(() => {
-            if(gameActive) {
-                let hasGuns = false;
-                shipGrid.forEach((s, i) => {
-                    if(s===1) { hasGuns = true; let r = Math.floor(i/4), c = i%4; bullets.push({x: player.x + (c - 1.5) * 32, y: player.y - 45 + r * 20}); }
-                });
-                if (!hasGuns) bullets.push({x: player.x, y: player.y - 20});
+        if(shootInterval) clearInterval(shootInterval);
+        if(enemySpawnInterval) clearInterval(enemySpawnInterval);
+        let fireRate=(unlockedUpgrades.fastFire?150:280)/gameSpeedMultiplier;
+        shootInterval=setInterval(()=>{
+            if(gameActive){
+                let hasGuns=false;
+                shipGrid.forEach((s,i)=>{if(s===1){hasGuns=true;let r=Math.floor(i/4),c=i%4;bullets.push({x:player.x+(c-1.5)*32,y:player.y-45+r*20});}});
+                if(!hasGuns) bullets.push({x:player.x,y:player.y-20});
                 playSound(shootBuf);
             }
         }, fireRate);
-        let spawnRate = 900 / gameSpeedMultiplier;
-        enemySpawnInterval = setInterval(() => {
-            if (!gameActive) return;
-            if (spawnedThisWave < currentWave.spawnCount) {
-                if (Math.random() < 0.6) spawnEnemy();
-            } else {
-                if (enemies.length === 0) {
-                    if (currentWave.hasBoss && !bossInstance && kills < (currentWave.spawnCount + 1)) spawnBoss();
-                    else if (!currentWave.hasBoss) { gameActive = false; endMission(); }
-                }
+        enemySpawnInterval=setInterval(()=>{
+            if(!gameActive) return;
+            if(spawnedThisWave<currentWave.spawnCount){if(Math.random()<0.6) spawnEnemy();}
+            else if(enemies.length===0){
+                if(currentWave.hasBoss&&!bossInstance&&kills<currentWave.spawnCount+1) spawnBoss();
+                else if(!currentWave.hasBoss){gameActive=false;endMission();}
             }
-        }, spawnRate);
+        }, 900/gameSpeedMultiplier);
     }
 
     function spawnEnemy() {
-        let types = currentWave.spawnTypes;
-        let chosenType = types[Math.floor(Math.random() * types.length)];
-        if (chosenType === 'normal') enemies.push({x: Math.random()*canvas.width, y: -50, hp: 1, maxHp: 1, speed: 3.2, size: 35, i: '👾'});
-        else if (chosenType === 'fast') enemies.push({x: Math.random()*canvas.width, y: -50, hp: 1, maxHp: 1, speed: 6.5, size: 30, i: '🚀'});
-        else if (chosenType === 'heavy') enemies.push({x: Math.random()*canvas.width, y: -50, hp: 4, maxHp: 4, speed: 1.8, size: 50, i: '🛸'});
+        let t=currentWave.spawnTypes[Math.floor(Math.random()*currentWave.spawnTypes.length)];
+        if(t==='normal') enemies.push({x:Math.random()*canvas.width,y:-50,hp:1,maxHp:1,speed:3.2,size:35,i:'👾'});
+        else if(t==='fast') enemies.push({x:Math.random()*canvas.width,y:-50,hp:1,maxHp:1,speed:6.5,size:30,i:'🚀'});
+        else if(t==='heavy') enemies.push({x:Math.random()*canvas.width,y:-50,hp:4,maxHp:4,speed:1.8,size:50,i:'🛸'});
         spawnedThisWave++;
     }
 
     function spawnBoss() {
-        bossInstance = {
-            x: canvas.width / 2, y: -100, targetY: 110, w: 130, h: 70,
-            hp: currentWave.bossHp, maxHp: currentWave.bossHp,
-            speedX: currentWave.id === 4 ? 4 : 3, lastShot: 0,
-            shootCooldown: currentWave.bossCooldown, lastCircleShot: 0,
-            circleCooldown: currentWave.id === 4 ? 5000 : 4000,
-            ultCount: 0, isUlting: false, i: currentWave.bossSkin,
-            laserTargetX: 0, laserWarmupDuration: 1000, laserFireDuration: 2000, laserTimer: 0
-        };
+        bossInstance={x:canvas.width/2,y:-100,targetY:110,w:130,h:70,hp:currentWave.bossHp,maxHp:currentWave.bossHp,speedX:currentWave.id===4?4:3,lastShot:0,shootCooldown:currentWave.bossCooldown,lastCircleShot:0,circleCooldown:currentWave.id===4?5000:4000,ultCount:0,isUlting:false,i:currentWave.bossSkin,laserTargetX:0,laserWarmupDuration:1000,laserFireDuration:2000,laserTimer:0};
     }
 
     function init() {
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        player.x = canvas.width / 2; player.targetX = player.x; player.y = canvas.height - 100;
-        starsBg = []; for(let i=0; i<30; i++) starsBg.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2});
+        canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+        player.x=canvas.width/2; player.targetX=player.x; player.y=canvas.height-100;
+        starsBg=[]; for(let i=0;i<30;i++) starsBg.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,s:Math.random()*2});
     }
 
-    window.addEventListener('pointermove', (e) => { if(gameActive) player.targetX = e.clientX; });
-    window.addEventListener('touchmove', (e) => { if(gameActive && e.touches.length > 0) player.targetX = e.touches[0].clientX; });
+    window.addEventListener('pointermove',(e)=>{if(gameActive) player.targetX=e.clientX;});
+    window.addEventListener('touchmove',(e)=>{if(gameActive&&e.touches.length>0) player.targetX=e.touches[0].clientX;});
 
-    function takeDamage(reasonText) {
-        if (godModeActive) return;
+    function takeDamage(reason) {
+        if(godModeActive) return;
         playerHp--; updateHpUI(); playSound(hurtBuf);
-        if (playerHp <= 0) {
-            gameActive = false;
-            document.getElementById('fail-title').innerText = reasonText;
-            document.getElementById('fail-screen').style.display = 'flex';
-            document.getElementById('ui').style.display = 'none';
-            document.getElementById('hp-display').style.display = 'none';
+        if(playerHp<=0){
+            gameActive=false;
+            document.getElementById('fail-title').innerText=reason;
+            document.getElementById('fail-screen').style.display='flex';
+            document.getElementById('ui').style.display='none';
+            document.getElementById('hp-display').style.display='none';
         }
     }
 
-    function gameLoop() { if(!gameActive) return; update(); draw(); requestAnimationFrame(gameLoop); }
+    function gameLoop(){if(!gameActive) return; update(); draw(); requestAnimationFrame(gameLoop);}
 
     function update() {
-        let m = gameSpeedMultiplier;
-        player.x += (player.targetX - player.x) * 0.2 * m;
-        starsBg.forEach(s => { s.y += 3 * m; if(s.y > canvas.height) s.y = 0; });
-        for(let i=bullets.length-1; i>=0; i--) { bullets[i].y -= 18 * m; if(bullets[i].y < 0) bullets.splice(i,1); }
-        for(let i=enemyBullets.length-1; i>=0; i--) {
-            enemyBullets[i].x += (enemyBullets[i].vx || 0) * m;
-            enemyBullets[i].y += (enemyBullets[i].vy || 7.5) * m;
-            if(enemyBullets[i].y > canvas.height || enemyBullets[i].y < -50 || enemyBullets[i].x < -50 || enemyBullets[i].x > canvas.width + 50) { enemyBullets.splice(i, 1); continue; }
-            if(Math.hypot(enemyBullets[i].x - player.x, enemyBullets[i].y - player.y) < 28) { enemyBullets.splice(i, 1); takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!"); if(!gameActive) return; }
+        let m=gameSpeedMultiplier;
+        player.x+=(player.targetX-player.x)*0.2*m;
+        starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
+        for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
+        for(let i=enemyBullets.length-1;i>=0;i--){
+            enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
+            enemyBullets[i].y+=(enemyBullets[i].vy||7.5)*m;
+            if(enemyBullets[i].y>canvas.height||enemyBullets[i].y<-50||enemyBullets[i].x<-50||enemyBullets[i].x>canvas.width+50){enemyBullets.splice(i,1);continue;}
+            if(Math.hypot(enemyBullets[i].x-player.x,enemyBullets[i].y-player.y)<28){enemyBullets.splice(i,1);takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");if(!gameActive)return;}
         }
-        if (bossInstance) {
-            if (bossInstance.y < bossInstance.targetY) bossInstance.y += 2.5 * m;
-            if (!(currentWave.id === 4 && bossInstance.isUlting)) {
-                bossInstance.x += bossInstance.speedX * m;
-                if (bossInstance.x > canvas.width - bossInstance.w / 2 || bossInstance.x < bossInstance.w / 2) bossInstance.speedX *= -1;
+        if(bossInstance){
+            if(bossInstance.y<bossInstance.targetY) bossInstance.y+=2.5*m;
+            if(!(currentWave.id===4&&bossInstance.isUlting)){bossInstance.x+=bossInstance.speedX*m;if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2)bossInstance.speedX*=-1;}
+            let ts=Date.now();
+            if(!bossInstance.isUlting&&ts-bossInstance.lastShot>bossInstance.shootCooldown/m&&bossInstance.y>=bossInstance.targetY){
+                enemyBullets.push({x:bossInstance.x-25,y:bossInstance.y+20,vx:0,vy:7.5});
+                enemyBullets.push({x:bossInstance.x+25,y:bossInstance.y+20,vx:0,vy:7.5});
+                playSound(bossBuf);bossInstance.lastShot=ts;
             }
-            let timestamp = Date.now();
-            if (!bossInstance.isUlting && timestamp - bossInstance.lastShot > bossInstance.shootCooldown / m && bossInstance.y >= bossInstance.targetY) {
-                enemyBullets.push({ x: bossInstance.x - 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
-                enemyBullets.push({ x: bossInstance.x + 25, y: bossInstance.y + 20, vx: 0, vy: 7.5 });
-                playSound(bossBuf); bossInstance.lastShot = timestamp;
+            if(!bossInstance.isUlting&&ts-bossInstance.lastCircleShot>bossInstance.circleCooldown/m&&bossInstance.y>=bossInstance.targetY){
+                if(currentWave.id===3||currentWave.id===4){bossInstance.isUlting=true;bossInstance.lastCircleShot=ts;if(currentWave.id===4){bossInstance.laserTargetX=player.x;bossInstance.laserTimer=ts;playSound(bossBuf);}else bossInstance.ultCount=0;}
             }
-            if (!bossInstance.isUlting && timestamp - bossInstance.lastCircleShot > bossInstance.circleCooldown / m && bossInstance.y >= bossInstance.targetY) {
-                if (currentWave.id === 3 || currentWave.id === 4) {
-                    bossInstance.isUlting = true; bossInstance.lastCircleShot = timestamp;
-                    if (currentWave.id === 4) { bossInstance.laserTargetX = player.x; bossInstance.laserTimer = timestamp; playSound(bossBuf); }
-                    else { bossInstance.ultCount = 0; }
-                }
-            }
-            if (bossInstance.isUlting) {
-                if (currentWave.id === 4) {
-                    let timePassed = timestamp - bossInstance.laserTimer;
-                    let totalLaserTime = (bossInstance.laserWarmupDuration + bossInstance.laserFireDuration) / m;
-                    if (timePassed > totalLaserTime) { bossInstance.isUlting = false; bossInstance.lastCircleShot = timestamp; }
-                    else if (timePassed >= bossInstance.laserWarmupDuration / m) {
-                        if (timestamp % 7 === 0) {
-                            if (player.x > bossInstance.laserTargetX - 35 && player.x < bossInstance.laserTargetX + 35 && player.y > bossInstance.y) { takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ БОССА!"); if (!gameActive) return; }
-                        }
-                    }
-                } else if (currentWave.id === 3) {
-                    if (timestamp - bossInstance.lastCircleShot > 350 / m) {
-                        let numShots = 10, speed = 4.8, angleOffset = (bossInstance.ultCount * Math.PI) / 10;
-                        for (let i = 0; i < numShots; i++) { let angle = ((i * 2 * Math.PI) / numShots) + angleOffset; enemyBullets.push({ x: bossInstance.x, y: bossInstance.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }); }
-                        playSound(bossBuf); bossInstance.ultCount++; bossInstance.lastCircleShot = timestamp;
-                        if (bossInstance.ultCount >= 2) { bossInstance.isUlting = false; bossInstance.lastCircleShot = timestamp + 1000 / m; }
+            if(bossInstance.isUlting){
+                if(currentWave.id===4){
+                    let tp=ts-bossInstance.laserTimer,tlt=(bossInstance.laserWarmupDuration+bossInstance.laserFireDuration)/m;
+                    if(tp>tlt){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts;}
+                    else if(tp>=bossInstance.laserWarmupDuration/m){if(ts%7===0){if(player.x>bossInstance.laserTargetX-35&&player.x<bossInstance.laserTargetX+35&&player.y>bossInstance.y){takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ!");if(!gameActive)return;}}}
+                } else if(currentWave.id===3){
+                    if(ts-bossInstance.lastCircleShot>350/m){
+                        let ao=(bossInstance.ultCount*Math.PI)/10;
+                        for(let i=0;i<10;i++){let a=((i*2*Math.PI)/10)+ao;enemyBullets.push({x:bossInstance.x,y:bossInstance.y,vx:Math.cos(a)*4.8,vy:Math.sin(a)*4.8});}
+                        playSound(bossBuf);bossInstance.ultCount++;bossInstance.lastCircleShot=ts;
+                        if(bossInstance.ultCount>=2){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts+1000/m;}
                     }
                 }
             }
-            for(let j=bullets.length-1; j>=0; j--) {
-                if (bullets[j].x > bossInstance.x - bossInstance.w/2 && bullets[j].x < bossInstance.x + bossInstance.w/2 && bullets[j].y > bossInstance.y - bossInstance.h/2 && bullets[j].y < bossInstance.y + bossInstance.h/2) {
-                    bullets.splice(j, 1); bossInstance.hp--; playSound(crashBuf);
-                    if (bossInstance.hp <= 0) { bossInstance = null; kills++; document.getElementById('kills').innerText = kills; gameActive = false; endMission(); return; }
+            for(let j=bullets.length-1;j>=0;j--){
+                if(bullets[j].x>bossInstance.x-bossInstance.w/2&&bullets[j].x<bossInstance.x+bossInstance.w/2&&bullets[j].y>bossInstance.y-bossInstance.h/2&&bullets[j].y<bossInstance.y+bossInstance.h/2){
+                    bullets.splice(j,1);bossInstance.hp--;playSound(crashBuf);
+                    if(bossInstance.hp<=0){bossInstance=null;kills++;document.getElementById('kills').innerText=kills;gameActive=false;endMission();return;}
                 }
             }
-            if (Math.hypot(bossInstance.x - player.x, bossInstance.y - player.y) < 55) { takeDamage("БОСС ПРОТАРАНИВ ВАС!"); bossInstance.x = canvas.width / 2; if(!gameActive) return; }
+            if(Math.hypot(bossInstance.x-player.x,bossInstance.y-player.y)<55){takeDamage("БОСС ПРОТАРАНИВ ВАС!");bossInstance.x=canvas.width/2;if(!gameActive)return;}
         }
-        for(let i=enemies.length-1; i>=0; i--) {
-            let e = enemies[i]; e.y += e.speed * m;
-            for(let j=bullets.length-1; j>=0; j--) {
-                if(Math.hypot(e.x-bullets[j].x, e.y-bullets[j].y) < (e.size / 2 + 15)) {
-                    bullets.splice(j,1); e.hp--; playSound(crashBuf);
-                    if(e.hp <= 0) { enemies.splice(i,1); kills++; document.getElementById('kills').innerText = kills; if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; } }
+        for(let i=enemies.length-1;i>=0;i--){
+            let e=enemies[i];e.y+=e.speed*m;
+            for(let j=bullets.length-1;j>=0;j--){
+                if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y)<e.size/2+15){
+                    bullets.splice(j,1);e.hp--;playSound(crashBuf);
+                    if(e.hp<=0){enemies.splice(i,1);kills++;document.getElementById('kills').innerText=kills;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
                     break;
                 }
             }
-            if(e && Math.hypot(e.x-player.x, e.y-player.y) < (e.size / 2 + 18)) { enemies.splice(i, 1); takeDamage("ЗІТКНЕННЯ З ОРДОЮ!"); if(!gameActive) return; if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; } }
-            if(e && e.y > canvas.height + 50) { enemies.splice(i,1); missed++; if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !currentWave.hasBoss) { gameActive = false; endMission(); return; } }
+            if(e&&Math.hypot(e.x-player.x,e.y-player.y)<e.size/2+18){enemies.splice(i,1);takeDamage("ЗІТКНЕННЯ!");if(!gameActive)return;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
+            if(e&&e.y>canvas.height+50){enemies.splice(i,1);missed++;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
         }
     }
 
     function draw() {
-        ctx.fillStyle = '#000510'; ctx.fillRect(0,0,canvas.width, canvas.height);
-        ctx.fillStyle = '#666'; starsBg.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
-        let maxCols = 1, maxRows = 1;
-        shipGrid.forEach((cell, idx) => { if (cell !== null) { let r = Math.floor(idx / 4) + 1; let c = (idx % 4) + 1; if (c > maxCols) maxCols = c; if (r > maxRows) maxRows = r; } });
-        let cellW = 32, cellH = 25, shipW = maxCols * cellW, shipH = maxRows * cellH;
-        ctx.beginPath(); ctx.strokeStyle = godModeActive ? '#00cc44' : 'rgba(0, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(0, 255, 255, 0.05)';
-        ctx.roundRect(player.x - shipW/2, player.y - shipH/2, shipW, shipH, 8); ctx.fill(); ctx.stroke();
-        shipGrid.forEach((s, i) => {
-            if(s === 1) {
-                let r = Math.floor(i/4), c = i%4;
-                let gunX = player.x + (c - 1.5) * cellW, gunY = player.y - shipH/2 + r*cellH + 10;
-                ctx.fillStyle = '#ff0'; ctx.fillRect(gunX-4, gunY-12, 8, 16);
-                ctx.fillStyle = '#0ff'; ctx.fillRect(gunX-6, gunY-2, 12, 6);
-            }
+        ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
+        let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
+        let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
+        ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
+        ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();
+        shipGrid.forEach((s,i)=>{if(s===1){let r=Math.floor(i/4),c=i%4,gx=player.x+(c-1.5)*cW,gy=player.y-sH/2+r*cH+10;ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);}});
+        ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';ctx.fillText(activeSkin,player.x,player.y);ctx.restore();
+        enemies.forEach(e=>{
+            ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;ctx.fillText(e.i,e.x,e.y);ctx.restore();
+            if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
         });
-        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '36px Arial'; ctx.fillText(activeSkin, player.x, player.y); ctx.restore();
-        enemies.forEach(e => {
-            ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `${e.size}px Arial`; ctx.fillText(e.i, e.x, e.y); ctx.restore();
-            if (e.maxHp > 1) { let barW=e.size, barX=e.x-barW/2, barY=e.y-e.size/2-6; ctx.fillStyle='#333'; ctx.fillRect(barX,barY,barW,4); ctx.fillStyle='#0f0'; ctx.fillRect(barX,barY,barW*(e.hp/e.maxHp),4); }
-        });
-        if (bossInstance) {
-            if (currentWave.id === 4 && bossInstance.isUlting) {
-                ctx.save();
-                let laserAge = Date.now() - bossInstance.laserTimer;
-                let warmup = bossInstance.laserWarmupDuration / gameSpeedMultiplier;
-                if (laserAge < warmup) { ctx.strokeStyle = (Math.floor(laserAge/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)'; ctx.lineWidth=4; ctx.setLineDash([10,10]); }
-                else { ctx.strokeStyle='#ff0055'; ctx.lineWidth=60; ctx.shadowBlur=35; ctx.shadowColor='#ff00a0'; }
-                ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y+15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke();
-                if (laserAge >= warmup) { ctx.strokeStyle='#fff'; ctx.lineWidth=18; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(bossInstance.x, bossInstance.y+15); ctx.lineTo(bossInstance.laserTargetX, canvas.height); ctx.stroke(); }
+        if(bossInstance){
+            if(currentWave.id===4&&bossInstance.isUlting){
+                ctx.save();let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
+                if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);}
+                else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
+                ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
+                if(la>=w){ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
                 ctx.restore();
             }
-            ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='75px Arial'; ctx.fillText(bossInstance.i, bossInstance.x, bossInstance.y); ctx.restore();
-            let bBarW=canvas.width*0.6, bBarX=(canvas.width-bBarW)/2, bBarY=60;
-            ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.beginPath(); ctx.roundRect(bBarX,bBarY,bBarW,10,4); ctx.fill();
-            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055'; ctx.beginPath(); ctx.roundRect(bBarX,bBarY,bBarW*(bossInstance.hp/bossInstance.maxHp),10,4); ctx.fill();
-            ctx.save(); ctx.textAlign='center'; ctx.font='12px Segoe UI'; ctx.fillStyle='#fff';
-            let bossTitle = "КОСМІЧНИЙ ЗАГАРБНИК";
-            if (currentWave.id===3) bossTitle = bossInstance.isUlting ? "👺 БОСС: АКТИВАЦІЯ УЛЬТИ! 👺" : "ГЕНЕРАЛ ОРДИ (ULTRA)";
-            if (currentWave.id===4) { let la=Date.now()-bossInstance.laserTimer, w=bossInstance.laserWarmupDuration/gameSpeedMultiplier; bossTitle=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА... ТІКАЙТЕ!":"🔥 ЗАРЯД ГІПЕР-ЛАЗЕРА! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ"; }
-            ctx.fillText(`${bossTitle}: ${bossInstance.hp}/${bossInstance.maxHp} HP`, canvas.width/2, bBarY-6); ctx.restore();
+            ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
+            let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
+            ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
+            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
+            ctx.save();ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
+            let bt="КОСМІЧНИЙ ЗАГАРБНИК";
+            if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
+            if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
+            ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
         }
-        ctx.fillStyle='#0ff'; bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
-        ctx.fillStyle='#f00'; enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
+        ctx.fillStyle='#0ff';bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
+        ctx.fillStyle='#f00';enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
     }
 
     function endMission() {
-        if (shootInterval) clearInterval(shootInterval);
-        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
-        let starCount = 1;
-        if (playerHp === 3 && missed === 0) starCount = 3; else if (playerHp >= 2) starCount = 2;
-        if(starCount > currentWave.stars) currentWave.stars = starCount;
-        coins += currentWave.reward;
-        if(myNickname && globalPlayersDB[myNickname]) {
-            globalPlayersDB[myNickname].coins = (globalPlayersDB[myNickname].coins || 0) + currentWave.reward;
-            localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
-        }
-        if(currentWave.id < waveData.length) waveData[currentWave.id].unlocked = true;
-        saveProgress(); updateCoinsUI();
-        document.getElementById('ui').style.display = 'none';
-        document.getElementById('hp-display').style.display = 'none';
-        if (currentWave.id === 4) { document.getElementById('final-credits-screen').style.display = 'flex'; }
-        else {
-            document.getElementById('win-title').innerText = currentWave.hasBoss ? "БОССА ЗНИЩЕНО!" : "МІСІЯ ВИКОНАНА";
-            document.getElementById('win-stars').innerText = '★'.repeat(starCount) + '☆'.repeat(3-starCount);
-            document.getElementById('win-reward-text').innerText = `+${currentWave.reward} COINS`;
-            document.getElementById('win-screen').style.display = 'flex';
+        if(shootInterval) clearInterval(shootInterval);
+        if(enemySpawnInterval) clearInterval(enemySpawnInterval);
+        let sc=1;if(playerHp===3&&missed===0)sc=3;else if(playerHp>=2)sc=2;
+        if(sc>currentWave.stars) currentWave.stars=sc;
+        coins+=currentWave.reward;
+        if(!isOwner&&myNickname) db.ref('players/'+myNickname).update({coins});
+        if(currentWave.id<waveData.length) waveData[currentWave.id].unlocked=true;
+        saveProgress();updateCoinsUI();
+        document.getElementById('ui').style.display='none';
+        document.getElementById('hp-display').style.display='none';
+        if(currentWave.id===4){document.getElementById('final-credits-screen').style.display='flex';}
+        else{
+            document.getElementById('win-title').innerText=currentWave.hasBoss?"БОССА ЗНИЩЕНО!":"МІСІЯ ВИКОНАНА";
+            document.getElementById('win-stars').innerText='★'.repeat(sc)+'☆'.repeat(3-sc);
+            document.getElementById('win-reward-text').innerText=`+${currentWave.reward} COINS`;
+            document.getElementById('win-screen').style.display='flex';
         }
     }
 
