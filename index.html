@@ -909,46 +909,84 @@ function saveIndividualPlayerSettings() {
     }
 
 function draw() {
-        ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.setLineDash([]);
-        ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
-        let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
-        let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
-        ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
-        ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();
-        shipGrid.forEach((s,i)=>{if(s===1){let r=Math.floor(i/4),c=i%4,gx=player.x+(c-1.5)*cW,gy=player.y-sH/2+r*cH+10;ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);}});
-        ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';ctx.fillText(activeSkin,player.x,player.y);ctx.restore();
-        enemies.forEach(e=>{
-            ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;ctx.fillText(e.i,e.x,e.y);ctx.restore();
-            if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
-        });
-        if(bossInstance){
-            if(currentWave.id===4&&bossInstance.isUlting){
-                ctx.save();
-                let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
-                if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);}
-                else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
-                ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
-                if(la>=w){ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.setLineDash([]);ctx.shadowBlur=0;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
-                ctx.restore();
-                // Скидаємо тінь після лазера щоб не впливала на emoji
-                ctx.shadowBlur=0;ctx.shadowColor='transparent';
-            }
-            ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';
-            ctx.shadowBlur=0;ctx.shadowColor='transparent';
-            ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
-            let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
-            ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
-            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
-            ctx.save();ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
-            let bt="КОСМІЧНИЙ ЗАГАРБНИК";
-            if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
-            if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
-            ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
-        }
+    ctx.save();
+    ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.setLineDash([]); ctx.lineWidth=1;
+    ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+
+    ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
+
+    let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
+    let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
+
+    ctx.save();
+    ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+    ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
+    ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();
+    ctx.restore();
+
+    shipGrid.forEach((s,i)=>{if(s===1){let r=Math.floor(i/4),c=i%4,gx=player.x+(c-1.5)*cW,gy=player.y-sH/2+r*cH+10;ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);}});
+
+    ctx.save();
+    ctx.shadowBlur=0;ctx.shadowColor='transparent';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';
+    ctx.fillText(activeSkin,player.x,player.y);
+    ctx.restore();
+
+    enemies.forEach(e=>{
+        ctx.save();
         ctx.shadowBlur=0;ctx.shadowColor='transparent';
-        ctx.fillStyle='#0ff';bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
-        ctx.fillStyle='#f00';enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;
+        ctx.fillText(e.i,e.x,e.y);
+        ctx.restore();
+        if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
+    });
+
+    if(bossInstance){
+        if(currentWave.id===4&&bossInstance.isUlting){
+            ctx.save();
+            ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+            let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
+            if(la<w){
+                ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';
+                ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;
+            } else {
+                ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';
+            }
+            ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
+            if(la>=w){
+                ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+                ctx.strokeStyle='#fff';ctx.lineWidth=18;
+                ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        ctx.save();
+        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';
+        ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);
+        ctx.restore();
+
+        ctx.save();
+        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+        let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
+        ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
+        ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
+        ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
+        let bt="КОСМІЧНИЙ ЗАГАРБНИК";
+        if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
+        if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
+        ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);
+        ctx.restore();
     }
+
+    ctx.save();
+    ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+    ctx.fillStyle='#0ff';bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
+    ctx.fillStyle='#f00';enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
+    ctx.restore();
+}
 
     function endMission() {
         if(shootInterval) clearInterval(shootInterval);
