@@ -360,7 +360,18 @@
 
     function syncCurrentPlayerWithDB() {
     if (!myNickname || isOwner) { checkBanStatus(null); return; }
-    // Реалтайм слухач — спрацьовує одразу при будь-якій зміні в Firebase
+    // Завантажуємо актуальні групи з Firebase
+    db.ref('config/groups').once('value').then(snap => {
+        if (snap.exists()) {
+            let fbGroups = snap.val();
+            // Додаємо нові групи з Firebase але не видаляємо базові
+            Object.keys(fbGroups).forEach(gId => {
+                customGroups[gId] = fbGroups[gId];
+            });
+            localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+        }
+    });
+    // Реалтайм слухач на гравця
     db.ref('players/' + myNickname).on('value', snapshot => {
         let p = snapshot.exists() ? snapshot.val() : null;
         if (p) {
@@ -370,7 +381,6 @@
             activeSkin = p.activeSkin || '🚀';
             saveProgress();
             updateCoinsUI();
-            // Оновлюємо HP відображення якщо в грі
             if (gameActive) updateHpUI();
         }
         checkBanStatus(p);
@@ -521,31 +531,31 @@
         document.getElementById('admin-screen').style.display = 'flex';
     }
     function addNewCustomGroup() {
-        let nameInput = document.getElementById('new-group-name').value.trim();
-        let colorInput = document.getElementById('new-group-color').value;
-        if (!nameInput) return;
-        let id = nameInput.toLowerCase();
-        if (customGroups[id]) return;
-        customGroups[id] = { label: nameInput, color: colorInput };
-        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
-        document.getElementById('new-group-name').value = '';
-        renderGroupsAndPlayers();
-    }
+    let nameInput = document.getElementById('new-group-name').value.trim();
+    let colorInput = document.getElementById('new-group-color').value;
+    if (!nameInput) return;
+    let id = nameInput.toLowerCase();
+    if (customGroups[id]) return;
+    customGroups[id] = { label: nameInput, color: colorInput };
+    localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+    // Зберігаємо в Firebase щоб всі бачили
+    db.ref('config/groups').set(customGroups);
+    document.getElementById('new-group-name').value = '';
+    renderGroupsAndPlayers();
+}
 
 function deleteCustomGroup(groupId) {
     if (!isOwner) return;
     if (!confirm(`Видалити групу "${customGroups[groupId].label}"?\nГравці з неї перейдуть в "Ігроки".`)) return;
-    
-    // Переміщуємо всіх гравців групи в ігроки
     Object.keys(globalPlayersDB).forEach(nick => {
         if (globalPlayersDB[nick].group === groupId) {
             db.ref('players/' + nick).update({ group: 'ігроки' });
             globalPlayersDB[nick].group = 'ігроки';
         }
     });
-    
     delete customGroups[groupId];
     localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+    db.ref('config/groups').set(customGroups);
     renderGroupsAndPlayers();
 }
 
@@ -555,19 +565,16 @@ function renderGroupsAndPlayers() {
     db.ref('players').once('value').then(snapshot => {
         globalPlayersDB = {};
         if (snapshot.exists()) {
-            snapshot.forEach(child => {
-                let p = child.val();
-                if (!p.group) p.group = 'ігроки';
-                if (!p.nickname) p.nickname = child.key;
-                // Власник не потрапляє в БД гравців
-                if (child.key !== myNickname || !isOwner) {
-                    globalPlayersDB[child.key] = p;
-                }
-                if (!child.val().group || !child.val().nickname) {
-                    db.ref('players/' + child.key).update({ group: 'ігроки', nickname: child.key });
-                }
-            });
+    snapshot.forEach(child => {
+        let p = child.val();
+        if (!p.group) p.group = 'ігроки';
+        if (!p.nickname) p.nickname = child.key;
+        globalPlayersDB[child.key] = p; // просто додаємо всіх
+        if (!child.val().group || !child.val().nickname) {
+            db.ref('players/' + child.key).update({ group: 'ігроки', nickname: child.key });
         }
+    });
+}
         wrapper.innerHTML = '';
         const baseGroups = ['ігроки', 'читери', 'тестери'];
         Object.keys(customGroups).forEach(groupId => {
