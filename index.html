@@ -598,31 +598,38 @@ function renderGroupsAndPlayers() {
     }
     function closePlayerModal() { document.getElementById('player-settings-modal').style.display = 'none'; }
 
-    function saveIndividualPlayerSettings() {
-        let nick = currentModalTargetUser; if (!nick) return;
-        let targetGroup = document.getElementById('modal-edit-group').value;
-        let targetGod = document.getElementById('modal-edit-god').value === "true";
-        let targetSkin = document.getElementById('modal-edit-skin').value;
-        let targetCoins = Number(document.getElementById('modal-edit-coins').value) || 0;
-        let prevGroup = globalPlayersDB[nick] ? globalPlayersDB[nick].group : 'ігроки';
+function saveIndividualPlayerSettings() {
+    let nick = currentModalTargetUser; if (!nick) return;
+    let targetGroup = document.getElementById('modal-edit-group').value;
+    let targetGod = document.getElementById('modal-edit-god').value === "true";
+    let targetSkin = document.getElementById('modal-edit-skin').value;
+    let targetCoins = Number(document.getElementById('modal-edit-coins').value) || 0;
+    let prevGroup = globalPlayersDB[nick] ? globalPlayersDB[nick].group : 'ігроки';
 
-        db.ref('players/' + nick).update({
-            godMode: targetGod, activeSkin: targetSkin,
-            group: targetGroup, coins: targetCoins
-        });
-        if (globalPlayersDB[nick]) {
-            globalPlayersDB[nick].godMode = targetGod;
-            globalPlayersDB[nick].activeSkin = targetSkin;
-            globalPlayersDB[nick].group = targetGroup;
-            globalPlayersDB[nick].coins = targetCoins;
-        }
+    let updateData = {
+        godMode: targetGod,
+        activeSkin: targetSkin,
+        group: targetGroup,
+        coins: targetCoins,
+        nickname: nick
+    };
 
+    // Зберігаємо в Firebase
+    db.ref('players/' + nick).update(updateData).then(() => {
+        // Тільки після успішного збереження оновлюємо локально
+        if (!globalPlayersDB[nick]) globalPlayersDB[nick] = {};
+        Object.assign(globalPlayersDB[nick], updateData);
+        
         if (prevGroup !== targetGroup && (targetGroup === 'читери' || targetGroup === 'тестери')) {
             let groupName = customGroups[targetGroup] ? customGroups[targetGroup].label : targetGroup;
             alert(`✅ Гравця "${nick}" переміщено в групу "${groupName}"!\n\nТепер він може натиснути на сіру точку в правому нижньому куті головного меню.`);
         }
-        closePlayerModal(); renderGroupsAndPlayers();
-    }
+        closePlayerModal();
+        renderGroupsAndPlayers();
+    }).catch(err => {
+        alert('Помилка збереження: ' + err.message);
+    });
+}
 
     function openPlayerBanModal(nick) {
         currentModalTargetUser = nick;
