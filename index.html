@@ -160,7 +160,7 @@
             <button id="toggle-owner-visibility-btn" class="admin-btn-action" style="background:#5533ff; color:#fff; width:100%; padding:6px;" onclick="toggleOwnerInLists()">👁️ ПОКАЗАТИ ВЛАСНИКА В СПИСКАХ</button>
             <button class="admin-btn-action" style="background:#00aa44; color:#fff; width:100%; padding:6px;" onclick="forceRefreshGroups()">🔄 ОНОВИТИ ГРАВЦІВ З СЕРВЕРА</button>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px dashed #444; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left;">
+        <div id="create-group-block" style="background: rgba(255,255,255,0.03); border: 1px dashed #444; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left;">
             <div style="font-size:12px; font-weight:bold; color:#0ff; margin-bottom:5px;">➕ СТВОРИТИ ВЛАСНУ ГРУПУ:</div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <input type="text" id="new-group-name" style="background:#000; border:1px solid #333; color:#fff; padding:6px; border-radius:4px; flex:1; font-size:12px;" placeholder="Назва групи...">
@@ -441,20 +441,21 @@
     }
 
     function openAdminPanelUI(ownerAccess, currentGroup) {
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'flex';
-        document.getElementById('admin-active-name').innerText = myNickname;
-        const t = document.getElementById('admin-panel-title');
-        if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
-        else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
-        else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-        document.getElementById('owner-only-zone').style.display = ownerAccess ? 'block' : 'none';
-        document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
-        document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
-        document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
-        document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
-        panelCoinSign = 1; updatePanelCoinModeBtnUI();
-    }
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'flex';
+    document.getElementById('admin-active-name').innerText = myNickname;
+    const t = document.getElementById('admin-panel-title');
+    if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
+    else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
+    else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
+    // Власник і тестери бачать менеджер, читери — ні
+    document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
+    document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
+    document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
+    document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
+    document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
+    panelCoinSign = 1; updatePanelCoinModeBtnUI();
+}
 
     function togglePanelCoinMode() {
         panelCoinSign = panelCoinSign === 1 ? -1 : 1;
@@ -481,11 +482,19 @@
     // МЕНЕДЖЕР ГРАВЦІВ
     // ============================================================
     function openPlayerManagementUI() {
-        document.getElementById('admin-screen').style.display = 'none';
-        document.getElementById('player-manage-screen').style.display = 'flex';
-        updateOwnerVisibilityBtnUI();
-        renderGroupsAndPlayers();
-    }
+    document.getElementById('admin-screen').style.display = 'none';
+    document.getElementById('player-manage-screen').style.display = 'flex';
+    updateOwnerVisibilityBtnUI();
+    
+    let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+    let isTester = (currentGroup === 'тестери' && !isOwner);
+    
+    // Ховаємо кнопку власника і створення груп для тестерів
+    document.getElementById('toggle-owner-visibility-btn').style.display = isTester ? 'none' : 'block';
+    document.getElementById('create-group-block').style.display = isTester ? 'none' : 'flex';
+    
+    renderGroupsAndPlayers();
+}
 
     function forceRefreshGroups() {
         customGroups = JSON.parse(localStorage.getItem('space_custom_groups')) || {};
