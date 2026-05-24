@@ -532,6 +532,23 @@
         renderGroupsAndPlayers();
     }
 
+function deleteCustomGroup(groupId) {
+    if (!isOwner) return;
+    if (!confirm(`Видалити групу "${customGroups[groupId].label}"?\nГравці з неї перейдуть в "Ігроки".`)) return;
+    
+    // Переміщуємо всіх гравців групи в ігроки
+    Object.keys(globalPlayersDB).forEach(nick => {
+        if (globalPlayersDB[nick].group === groupId) {
+            db.ref('players/' + nick).update({ group: 'ігроки' });
+            globalPlayersDB[nick].group = 'ігроки';
+        }
+    });
+    
+    delete customGroups[groupId];
+    localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+    renderGroupsAndPlayers();
+}
+
 function renderGroupsAndPlayers() {
     const wrapper = document.getElementById('groups-wrapper');
     wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
@@ -540,31 +557,41 @@ function renderGroupsAndPlayers() {
         if (snapshot.exists()) {
             snapshot.forEach(child => {
                 let p = child.val();
-                // Якщо group немає — ставимо дефолтну
                 if (!p.group) p.group = 'ігроки';
                 if (!p.nickname) p.nickname = child.key;
-                globalPlayersDB[child.key] = p;
-                // Виправляємо в Firebase якщо даних не вистачає
+                // Власник не потрапляє в БД гравців
+                if (child.key !== myNickname || !isOwner) {
+                    globalPlayersDB[child.key] = p;
+                }
                 if (!child.val().group || !child.val().nickname) {
                     db.ref('players/' + child.key).update({ group: 'ігроки', nickname: child.key });
                 }
             });
         }
         wrapper.innerHTML = '';
+        const baseGroups = ['ігроки', 'читери', 'тестери'];
         Object.keys(customGroups).forEach(groupId => {
             let groupInfo = customGroups[groupId];
             let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
             if (showOwnerInLists && isOwner) {
                 if (!playersInGroup.some(p => p.nickname === myNickname)) {
-                    playersInGroup.push({ nickname: myNickname, coins: coins, timePlayed: 0 });
+                    playersInGroup.push({ nickname: myNickname, coins: coins, timePlayed: 0, _isOwnerDisplay: true });
                 }
             }
             const groupContainer = document.createElement('div');
+            let deleteBtnHtml = '';
+            // Кнопка видалення тільки для не-базових груп і тільки для власника
+            if (isOwner && !baseGroups.includes(groupId)) {
+                deleteBtnHtml = `<button onclick="deleteCustomGroup('${groupId}')" style="background:#cc0000;border:none;color:#fff;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:8px;">🗑 ВИДАЛИТИ ГРУПУ</button>`;
+            }
             groupContainer.innerHTML = `
-                <button class="group-collapse-btn" onclick="toggleGroupCollapse('${groupId}')">
-                    <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
-                    <span>▼</span>
-                </button>
+                <div style="display:flex;align-items:center;margin-top:5px;">
+                    <button class="group-collapse-btn" style="flex:1;" onclick="toggleGroupCollapse('${groupId}')">
+                        <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
+                        <span>▼</span>
+                    </button>
+                    ${deleteBtnHtml}
+                </div>
                 <div class="group-content" id="group-content-${groupId}">
                     <div id="player-list-holder-${groupId}"></div>
                 </div>`;
@@ -575,11 +602,13 @@ function renderGroupsAndPlayers() {
             }
             playersInGroup.forEach(p => {
                 const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
+                // Власника не можна редагувати/банити
+                let actionBtns = p._isOwnerDisplay
+                    ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
+                    : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
+                       <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
                 row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
-                <div class="player-actions">
-                    <button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
-                    <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>
-                </div>`;
+                <div class="player-actions">${actionBtns}</div>`;
                 holder.appendChild(row);
             });
         });
