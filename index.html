@@ -523,49 +523,59 @@
         renderGroupsAndPlayers();
     }
 
-    function renderGroupsAndPlayers() {
-        const wrapper = document.getElementById('groups-wrapper');
-        wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
-        db.ref('players').once('value').then(snapshot => {
-            globalPlayersDB = {};
-            if (snapshot.exists()) {
-                snapshot.forEach(child => { globalPlayersDB[child.key] = child.val(); });
+function renderGroupsAndPlayers() {
+    const wrapper = document.getElementById('groups-wrapper');
+    wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
+    db.ref('players').once('value').then(snapshot => {
+        globalPlayersDB = {};
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                let p = child.val();
+                // Якщо group немає — ставимо дефолтну
+                if (!p.group) p.group = 'ігроки';
+                if (!p.nickname) p.nickname = child.key;
+                globalPlayersDB[child.key] = p;
+                // Виправляємо в Firebase якщо даних не вистачає
+                if (!child.val().group || !child.val().nickname) {
+                    db.ref('players/' + child.key).update({ group: 'ігроки', nickname: child.key });
+                }
+            });
+        }
+        wrapper.innerHTML = '';
+        Object.keys(customGroups).forEach(groupId => {
+            let groupInfo = customGroups[groupId];
+            let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
+            if (showOwnerInLists && isOwner) {
+                if (!playersInGroup.some(p => p.nickname === myNickname)) {
+                    playersInGroup.push({ nickname: myNickname, coins: coins, timePlayed: 0 });
+                }
             }
-            wrapper.innerHTML = '';
-            Object.keys(customGroups).forEach(groupId => {
-                let groupInfo = customGroups[groupId];
-                let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
-                if (showOwnerInLists && isOwner) {
-                    if (!playersInGroup.some(p => p.nickname === myNickname)) {
-                        playersInGroup.push({ nickname: myNickname, coins: coins, timePlayed: 0 });
-                    }
-                }
-                const groupContainer = document.createElement('div');
-                groupContainer.innerHTML = `
-                    <button class="group-collapse-btn" onclick="toggleGroupCollapse('${groupId}')">
-                        <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
-                        <span>▼</span>
-                    </button>
-                    <div class="group-content" id="group-content-${groupId}">
-                        <div id="player-list-holder-${groupId}"></div>
-                    </div>`;
-                wrapper.appendChild(groupContainer);
-                const holder = document.getElementById(`player-list-holder-${groupId}`);
-                if (playersInGroup.length === 0) {
-                    holder.innerHTML = '<div style="color:#555;font-size:12px;padding:5px;">Гравців немає</div>';
-                }
-                playersInGroup.forEach(p => {
-                    const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
-                    row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
-                    <div class="player-actions">
-                        <button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
-                        <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>
-                    </div>`;
-                    holder.appendChild(row);
-                });
+            const groupContainer = document.createElement('div');
+            groupContainer.innerHTML = `
+                <button class="group-collapse-btn" onclick="toggleGroupCollapse('${groupId}')">
+                    <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
+                    <span>▼</span>
+                </button>
+                <div class="group-content" id="group-content-${groupId}">
+                    <div id="player-list-holder-${groupId}"></div>
+                </div>`;
+            wrapper.appendChild(groupContainer);
+            const holder = document.getElementById(`player-list-holder-${groupId}`);
+            if (playersInGroup.length === 0) {
+                holder.innerHTML = '<div style="color:#555;font-size:12px;padding:5px;">Гравців немає</div>';
+            }
+            playersInGroup.forEach(p => {
+                const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
+                row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
+                <div class="player-actions">
+                    <button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
+                    <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>
+                </div>`;
+                holder.appendChild(row);
             });
         });
-    }
+    });
+}
 
     function toggleGroupCollapse(id) {
         let el = document.getElementById(`group-content-${id}`);
