@@ -399,18 +399,29 @@
         document.getElementById('ban-time-left-text').innerText = timeText === "Назавжди" ? "Блокування: Назавжди" : timeText;
     }
 
-    function submitFirstRegistration() {
-        let input = document.getElementById('user-register-input').value.trim();
-        if (!input) { alert("Вхід не може бути порожнім!"); return; }
-        // Нік VLADIROBUS753 — звичайний нік, НЕ дає адмін-доступу
-        myNickname = input;
+function submitFirstRegistration() {
+    let input = document.getElementById('user-register-input').value.trim();
+    if (!input) { alert("Вхід не може бути порожнім!"); return; }
+    
+    // Якщо ввів пароль — заходиш як власник
+    if (input === MASTER_PASSWORD) {
+        myNickname = "VLADIROBUS753";
         localStorage.setItem('myRegisteredNickname', myNickname);
-        if (!globalPlayersDB[myNickname]) {
-            globalPlayersDB[myNickname] = { nickname: myNickname, group: 'ігроки', coins: 0, godMode: false, activeSkin: '🚀', timePlayed: 0, isBanned: false, banReason: '', banUntil: null };
-            localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
-        }
+        localStorage.setItem('isMasterAdmin', 'true');
+        alert("👑 Вітаємо! Доступ активовано.");
         location.reload();
+        return;
     }
+    
+    // Звичайний гравець — реєструємось по ніку
+    myNickname = input;
+    localStorage.setItem('myRegisteredNickname', myNickname);
+    if (!globalPlayersDB[myNickname]) {
+        globalPlayersDB[myNickname] = { nickname: myNickname, group: 'ігроки', coins: 0, godMode: false, activeSkin: '🚀', timePlayed: 0, isBanned: false, banReason: '', banUntil: null };
+        localStorage.setItem('space_players_db', JSON.stringify(globalPlayersDB));
+    }
+    location.reload();
+}
 
     function syncCurrentPlayerWithDB() {
         if (myNickname && globalPlayersDB[myNickname]) {
