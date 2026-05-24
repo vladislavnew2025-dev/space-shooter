@@ -359,23 +359,23 @@
     }
 
     function syncCurrentPlayerWithDB() {
-        if (!myNickname || isOwner) {
-            checkBanStatus(null);
-            return;
+    if (!myNickname || isOwner) { checkBanStatus(null); return; }
+    // Реалтайм слухач — спрацьовує одразу при будь-якій зміні в Firebase
+    db.ref('players/' + myNickname).on('value', snapshot => {
+        let p = snapshot.exists() ? snapshot.val() : null;
+        if (p) {
+            globalPlayersDB[myNickname] = p;
+            coins = p.coins || 0;
+            godModeActive = p.godMode || false;
+            activeSkin = p.activeSkin || '🚀';
+            saveProgress();
+            updateCoinsUI();
+            // Оновлюємо HP відображення якщо в грі
+            if (gameActive) updateHpUI();
         }
-        db.ref('players/' + myNickname).once('value').then(snapshot => {
-            let p = snapshot.exists() ? snapshot.val() : null;
-            if (p) {
-                globalPlayersDB[myNickname] = p;
-                coins = p.coins || coins;
-                godModeActive = p.godMode || false;
-                activeSkin = p.activeSkin || '🚀';
-                saveProgress();
-                updateCoinsUI();
-            }
-            checkBanStatus(p);
-        });
-    }
+        checkBanStatus(p);
+    });
+}
 
     function checkBanStatus(p) {
         if (!p) return;
@@ -908,7 +908,7 @@ function saveIndividualPlayerSettings() {
         }
     }
 
-    function draw() {
+function draw() {
         ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
         let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
@@ -923,14 +923,19 @@ function saveIndividualPlayerSettings() {
         });
         if(bossInstance){
             if(currentWave.id===4&&bossInstance.isUlting){
-                ctx.save();let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
+                ctx.save();
+                let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
                 if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);}
                 else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
                 ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
-                if(la>=w){ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
+                if(la>=w){ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.setLineDash([]);ctx.shadowBlur=0;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
                 ctx.restore();
+                // Скидаємо тінь після лазера щоб не впливала на emoji
+                ctx.shadowBlur=0;ctx.shadowColor='transparent';
             }
-            ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
+            ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';
+            ctx.shadowBlur=0;ctx.shadowColor='transparent';
+            ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
             let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
             ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
             ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
@@ -940,6 +945,7 @@ function saveIndividualPlayerSettings() {
             if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
             ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
         }
+        ctx.shadowBlur=0;ctx.shadowColor='transparent';
         ctx.fillStyle='#0ff';bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
         ctx.fillStyle='#f00';enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
     }
