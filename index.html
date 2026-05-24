@@ -115,6 +115,11 @@
             <span>🔊 Звук</span>
             <input type="range" id="volume-control" min="0" max="100" value="80" style="accent-color:#0ff; width:120px;" oninput="changeVolume(this.value)">
         </div>
+        <div class="dungeon-group" style="border-color:#ff9900; margin-top:15px;">
+            <div style="color:#ff9900; font-weight:bold; font-size:14px; margin-bottom:5px;">👤 ЗМІНИТИ НІК</div>
+            <input type="text" id="change-nick-input" style="background:#000; border:1px solid #ff9900; color:#fff; padding:8px; border-radius:6px; width:100%; text-align:center; font-size:14px; margin-bottom:8px;" placeholder="Новий нікнейм...">
+            <button onclick="changeNickname()" style="width:100%; padding:10px; background:#ff9900; color:#000; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">ЗМІНИТИ НІК</button>
+        </div>
         <div class="dungeon-group">
             <div style="color:#ff3333; font-weight:bold; font-size:15px; margin-bottom:5px;">⚠️ DUNGEON ZONE</div>
             <p style="font-size:11px; color:#888; margin: 0 0 10px 0;">Повне очищення локальних файлів збереження вашого профілю гравця.</p>
@@ -147,7 +152,7 @@
             <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
         </div>
         <div id="owner-only-zone" style="display:none; margin-top:10px;">
-            <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП (ВЛАСНИК)</button>
+            <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
         </div>
         <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
     </div>
@@ -230,6 +235,7 @@
             </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="admin-btn-action" style="background:#00cc44; color:#fff; padding:10px;" onclick="executePlayerUnban()">✅ РОЗБЛОКУВАТИ</button>
             <button class="admin-btn-action" style="background:#cc0000; color:#fff; padding:10px;" onclick="executePlayerBan(true)">🛑 ЗАБЛОКУВАТИ</button>
             <button class="admin-btn-action" style="background:#ffaa00; color:#000; padding:10px;" onclick="executePlayerBan(false)">🗑️ ВИДАТИ З ГРУПИ</button>
             <button class="admin-btn-action" style="background:#555; color:#fff; padding:6px;" onclick="closeBanModal()">СКАСУВАТИ</button>
@@ -281,12 +287,7 @@
 <canvas id="game"></canvas>
 
 <script>
-    // ============================================================
-    // FIREBASE
-    // ============================================================
-    const firebaseConfig = {
-        databaseURL: "https://space-shooter-game-9d55f-default-rtdb.europe-west1.firebasedatabase.app"
-    };
+    const firebaseConfig = { databaseURL: "https://space-shooter-game-9d55f-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -334,7 +335,6 @@
     let currentModalTargetUser = '';
     let sessionStartTime = Date.now();
 
-    // Авто-збереження часу в Firebase
     setInterval(() => {
         if (myNickname && !isOwner) {
             let elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
@@ -343,9 +343,6 @@
         }
     }, 5000);
 
-    // ============================================================
-    // ІНІЦІАЛІЗАЦІЯ
-    // ============================================================
     window.onload = function() {
         if (!myNickname) {
             document.getElementById('main-menu').style.display = 'none';
@@ -353,70 +350,64 @@
         } else {
             document.getElementById('menu-player-nick').innerText = myNickname;
             syncCurrentPlayerWithDB();
-            if (isOwner && myNickname) {
-    db.ref('players/' + myNickname).once('value').then(snap => {
-        if (!snap.exists()) {
-            db.ref('players/' + myNickname).set({
-                nickname: myNickname, group: 'ігроки', coins: 0,
-                godMode: false, activeSkin: '🚀', timePlayed: 0,
-                isBanned: false, banReason: '', banUntil: null,
-                isOwner: true
-            });
-        }
-    });
-}
+            // Власник зберігається в Firebase для відображення
+            if (isOwner) {
+                db.ref('players/' + myNickname).once('value').then(snap => {
+                    if (!snap.exists()) {
+                        db.ref('players/' + myNickname).set({
+                            nickname: myNickname, group: 'ігроки', coins: 0,
+                            godMode: false, activeSkin: '🚀', timePlayed: 0,
+                            isBanned: false, banReason: '', banUntil: null, isOwner: true
+                        });
+                    }
+                });
+            }
         }
         document.getElementById('volume-control').value = globalVolume;
         updateCoinsUI();
     }
 
     function syncCurrentPlayerWithDB() {
-    if (!myNickname || isOwner) { checkBanStatus(null); return; }
-    
-    // Реалтайм слухач на групи — оновлюється одразу як власник щось змінив
-    db.ref('config/groups').on('value', snap => {
-        if (snap.exists()) {
-            let fbGroups = snap.val();
-            Object.keys(fbGroups).forEach(gId => {
-                customGroups[gId] = fbGroups[gId];
-            });
-            localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
-        }
-    });
-
-    // Реалтайм слухач на гравця
-    db.ref('players/' + myNickname).on('value', snapshot => {
-        let p = snapshot.exists() ? snapshot.val() : null;
-        if (p) {
-            globalPlayersDB[myNickname] = p;
-            coins = p.coins || 0;
-            godModeActive = p.godMode || false;
-            activeSkin = p.activeSkin || '🚀';
-            saveProgress();
-            updateCoinsUI();
-            if (gameActive) updateHpUI();
-        }
-        checkBanStatus(p);
-    });
-}
+        if (!myNickname || isOwner) { checkBanStatus(null); return; }
+        // Реалтайм слухач на групи
+        db.ref('config/groups').on('value', snap => {
+            if (snap.exists()) {
+                let fbGroups = snap.val();
+                Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
+                localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+            }
+        });
+        // Реалтайм слухач на гравця
+        db.ref('players/' + myNickname).on('value', snapshot => {
+            let p = snapshot.exists() ? snapshot.val() : null;
+            if (p) {
+                globalPlayersDB[myNickname] = p;
+                coins = p.coins || 0;
+                godModeActive = p.godMode || false;
+                activeSkin = p.activeSkin || '🚀';
+                saveProgress();
+                updateCoinsUI();
+                if (gameActive) updateHpUI();
+            }
+            checkBanStatus(p);
+        });
+    }
 
     function checkBanStatus(p) {
-        if (!p) return;
-        if (p.isBanned) {
-            if (p.banUntil === 'permanent') {
-                showBanScreen(p.banReason, "Назавжди");
+        if (!p || !p.isBanned) return;
+        if (p.banUntil === 'permanent') {
+            showBanScreen(p.banReason, "Назавжди");
+        } else {
+            let timeLeft = Math.floor((p.banUntil - Date.now()) / 1000);
+            if (timeLeft > 0) {
+                showBanScreen(p.banReason, '');
+                let banTimer = setInterval(() => {
+                    let rem = Math.floor((p.banUntil - Date.now()) / 1000);
+                    if (rem <= 0) { clearInterval(banTimer); location.reload(); }
+                    else { document.getElementById('ban-time-left-text').innerText = `Розблокування через: ${rem} сек.`; }
+                }, 1000);
             } else {
-                let timeLeft = Math.floor((p.banUntil - Date.now()) / 1000);
-                if (timeLeft > 0) {
-                    showBanScreen(p.banReason, '');
-                    let banTimer = setInterval(() => {
-                        let rem = Math.floor((p.banUntil - Date.now()) / 1000);
-                        if (rem <= 0) { clearInterval(banTimer); location.reload(); }
-                        else { document.getElementById('ban-time-left-text').innerText = `Розблокування через: ${rem} сек.`; }
-                    }, 1000);
-                } else {
-                    db.ref('players/' + myNickname).update({ isBanned: false });
-                }
+                db.ref('players/' + myNickname).update({ isBanned: false });
             }
         }
     }
@@ -453,37 +444,46 @@
         });
     }
 
-    // ============================================================
-    // АДМІН
-    // ============================================================
+    function changeNickname() {
+        let newNick = document.getElementById('change-nick-input').value.trim();
+        if (!newNick) { alert('Введіть нікнейм!'); return; }
+        if (newNick === myNickname) { alert('Це вже ваш нік!'); return; }
+        if (!confirm(`Змінити нік з "${myNickname}" на "${newNick}"?`)) return;
+        db.ref('players/' + myNickname).once('value').then(snap => {
+            let oldData = snap.exists() ? snap.val() : {};
+            oldData.nickname = newNick;
+            db.ref('players/' + newNick).set(oldData).then(() => {
+                db.ref('players/' + myNickname).remove();
+                localStorage.setItem('myRegisteredNickname', newNick);
+                alert(`✅ Нік змінено на "${newNick}"!`);
+                location.reload();
+            });
+        });
+    }
+
     function tryOpenAdminPanel() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
         if (isOwner) { openAdminPanelUI(true, currentGroup); }
         else if (currentGroup === 'читери' || currentGroup === 'тестери') { openAdminPanelUI(false, currentGroup); }
-        // Звичайні гравці — нічого не відбувається
     }
 
     function openAdminPanelUI(ownerAccess, currentGroup) {
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('admin-screen').style.display = 'flex';
-    document.getElementById('admin-active-name').innerText = myNickname;
-    const t = document.getElementById('admin-panel-title');
-    if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
-    else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
-    else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-    // Власник і тестери бачать менеджер, читери — ні
-    document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
-    document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
-    document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
-    document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
-    document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
-    panelCoinSign = 1; updatePanelCoinModeBtnUI();
-}
-
-    function togglePanelCoinMode() {
-        panelCoinSign = panelCoinSign === 1 ? -1 : 1;
-        updatePanelCoinModeBtnUI();
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('admin-screen').style.display = 'flex';
+        document.getElementById('admin-active-name').innerText = myNickname;
+        const t = document.getElementById('admin-panel-title');
+        if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
+        else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
+        else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
+        document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
+        document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
+        document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
+        document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
+        document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
+        panelCoinSign = 1; updatePanelCoinModeBtnUI();
     }
+
+    function togglePanelCoinMode() { panelCoinSign = panelCoinSign === 1 ? -1 : 1; updatePanelCoinModeBtnUI(); }
     function updatePanelCoinModeBtnUI() {
         const btn = document.getElementById('panel-coin-toggle-btn');
         if (panelCoinSign === 1) { btn.innerText = "[ + ]"; btn.style.background = "#00cc44"; }
@@ -495,37 +495,33 @@
         let finalValue = amount * panelCoinSign;
         coins = Math.max(0, coins + finalValue);
         saveProgress(); updateCoinsUI();
-        if (myNickname && !isOwner) {
-            db.ref('players/' + myNickname).update({ coins: coins });
-        }
+        if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins });
         alert(`Ваш баланс змінено на ${finalValue} монет!`);
     }
 
-    // ============================================================
-    // МЕНЕДЖЕР ГРАВЦІВ
-    // ============================================================
     function openPlayerManagementUI() {
-    document.getElementById('admin-screen').style.display = 'none';
-    document.getElementById('player-manage-screen').style.display = 'flex';
-    updateOwnerVisibilityBtnUI();
-    
-    let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-    let isTester = (currentGroup === 'тестери' && !isOwner);
-    
-    // Ховаємо кнопку власника і створення груп для тестерів
-    document.getElementById('toggle-owner-visibility-btn').style.display = isTester ? 'none' : 'block';
-    document.getElementById('create-group-block').style.display = isTester ? 'none' : 'flex';
-    
-    renderGroupsAndPlayers();
-}
+        document.getElementById('admin-screen').style.display = 'none';
+        document.getElementById('player-manage-screen').style.display = 'flex';
+        updateOwnerVisibilityBtnUI();
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        let isTester = (currentGroup === 'тестери' && !isOwner);
+        document.getElementById('toggle-owner-visibility-btn').style.display = isTester ? 'none' : 'block';
+        document.getElementById('create-group-block').style.display = isTester ? 'none' : 'flex';
+        renderGroupsAndPlayers();
+    }
 
     function forceRefreshGroups() {
-        customGroups = JSON.parse(localStorage.getItem('space_custom_groups')) || {};
-        if (!customGroups['ігроки']) customGroups['ігроки'] = { label: 'Ігроки', color: '#bbb' };
-        if (!customGroups['читери']) customGroups['читери'] = { label: 'Читери', color: '#a0522d' };
-        if (!customGroups['тестери']) customGroups['тестери'] = { label: 'Тестери', color: '#9933ff' };
-        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
-        renderGroupsAndPlayers();
+        db.ref('config/groups').once('value').then(snap => {
+            if (snap.exists()) {
+                let fbGroups = snap.val();
+                Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
+            }
+            if (!customGroups['ігроки']) customGroups['ігроки'] = { label: 'Ігроки', color: '#bbb' };
+            if (!customGroups['читери']) customGroups['читери'] = { label: 'Читери', color: '#a0522d' };
+            if (!customGroups['тестери']) customGroups['тестери'] = { label: 'Тестери', color: '#9933ff' };
+            localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+            renderGroupsAndPlayers();
+        });
     }
 
     function toggleOwnerInLists() {
@@ -543,97 +539,95 @@
         document.getElementById('player-manage-screen').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
     }
+
     function addNewCustomGroup() {
-    let nameInput = document.getElementById('new-group-name').value.trim();
-    let colorInput = document.getElementById('new-group-color').value;
-    if (!nameInput) return;
-    let id = nameInput.toLowerCase();
-    if (customGroups[id]) return;
-    customGroups[id] = { label: nameInput, color: colorInput };
-    localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
-    // Зберігаємо в Firebase щоб всі бачили
-    db.ref('config/groups').set(customGroups);
-    document.getElementById('new-group-name').value = '';
-    renderGroupsAndPlayers();
-}
+        let nameInput = document.getElementById('new-group-name').value.trim();
+        let colorInput = document.getElementById('new-group-color').value;
+        if (!nameInput) return;
+        let id = nameInput.toLowerCase();
+        if (customGroups[id]) return;
+        customGroups[id] = { label: nameInput, color: colorInput };
+        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+        db.ref('config/groups').set(customGroups);
+        document.getElementById('new-group-name').value = '';
+        renderGroupsAndPlayers();
+    }
 
-function deleteCustomGroup(groupId) {
-    if (!isOwner) return;
-    if (!confirm(`Видалити групу "${customGroups[groupId].label}"?\nГравці з неї перейдуть в "Ігроки".`)) return;
-    Object.keys(globalPlayersDB).forEach(nick => {
-        if (globalPlayersDB[nick].group === groupId) {
-            db.ref('players/' + nick).update({ group: 'ігроки' });
-            globalPlayersDB[nick].group = 'ігроки';
-        }
-    });
-    delete customGroups[groupId];
-    localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
-    db.ref('config/groups').set(customGroups);
-    renderGroupsAndPlayers();
-}
+    function deleteCustomGroup(groupId) {
+        if (!isOwner) return;
+        if (!confirm(`Видалити групу "${customGroups[groupId].label}"?\nГравці перейдуть в "Ігроки".`)) return;
+        Object.keys(globalPlayersDB).forEach(nick => {
+            if (globalPlayersDB[nick].group === groupId) {
+                db.ref('players/' + nick).update({ group: 'ігроки' });
+                globalPlayersDB[nick].group = 'ігроки';
+            }
+        });
+        delete customGroups[groupId];
+        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+        db.ref('config/groups').set(customGroups);
+        renderGroupsAndPlayers();
+    }
 
-function renderGroupsAndPlayers() {
-    const wrapper = document.getElementById('groups-wrapper');
-    wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
-    db.ref('players').once('value').then(snapshot => {
-        globalPlayersDB = {};
-        if (snapshot.exists()) {
-    snapshot.forEach(child => {
-        let p = child.val();
-        if (!p.group) p.group = 'ігроки';
-        if (!p.nickname) p.nickname = child.key;
-        globalPlayersDB[child.key] = p; // просто додаємо всіх
-        if (!child.val().group || !child.val().nickname) {
-            db.ref('players/' + child.key).update({ group: 'ігроки', nickname: child.key });
-        }
-    });
-}
-        wrapper.innerHTML = '';
+    function renderGroupsAndPlayers() {
+        const wrapper = document.getElementById('groups-wrapper');
+        wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
         const baseGroups = ['ігроки', 'читери', 'тестери'];
-        Object.keys(customGroups).forEach(groupId => {
-            let groupInfo = customGroups[groupId];
-            let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
-            if (showOwnerInLists && isOwner) {
-                if (!playersInGroup.some(p => p.nickname === myNickname)) {
-                    playersInGroup.push({ nickname: myNickname, coins: coins, timePlayed: 0, _isOwnerDisplay: true });
+        db.ref('players').once('value').then(snapshot => {
+            globalPlayersDB = {};
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    let p = child.val();
+                    if (!p.group) p.group = 'ігроки';
+                    if (!p.nickname) p.nickname = child.key;
+                    globalPlayersDB[child.key] = p;
+                    if (!child.val().group || !child.val().nickname) {
+                        db.ref('players/' + child.key).update({ group: 'ігроки', nickname: child.key });
+                    }
+                });
+            }
+            wrapper.innerHTML = '';
+            Object.keys(customGroups).forEach(groupId => {
+                let groupInfo = customGroups[groupId];
+                let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
+                if (!showOwnerInLists) {
+                    playersInGroup = playersInGroup.filter(p => !p.isOwner);
                 }
-            }
-            const groupContainer = document.createElement('div');
-            let deleteBtnHtml = '';
-            // Кнопка видалення тільки для не-базових груп і тільки для власника
-            if (isOwner && !baseGroups.includes(groupId)) {
-                deleteBtnHtml = `<button onclick="deleteCustomGroup('${groupId}')" style="background:#cc0000;border:none;color:#fff;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:8px;">🗑 ВИДАЛИТИ ГРУПУ</button>`;
-            }
-            groupContainer.innerHTML = `
-                <div style="display:flex;align-items:center;margin-top:5px;">
-                    <button class="group-collapse-btn" style="flex:1;" onclick="toggleGroupCollapse('${groupId}')">
-                        <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
-                        <span>▼</span>
-                    </button>
-                    ${deleteBtnHtml}
-                </div>
-                <div class="group-content" id="group-content-${groupId}">
-                    <div id="player-list-holder-${groupId}"></div>
-                </div>`;
-            wrapper.appendChild(groupContainer);
-            const holder = document.getElementById(`player-list-holder-${groupId}`);
-            if (playersInGroup.length === 0) {
-                holder.innerHTML = '<div style="color:#555;font-size:12px;padding:5px;">Гравців немає</div>';
-            }
-            playersInGroup.forEach(p => {
-                const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
-                // Власника не можна редагувати/банити
-                let actionBtns = (p.isOwner || p.nickname === myNickname)
-    ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
-    : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
-       <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
-                row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
-                <div class="player-actions">${actionBtns}</div>`;
-                holder.appendChild(row);
+                const groupContainer = document.createElement('div');
+                let deleteBtnHtml = '';
+                if (isOwner && !baseGroups.includes(groupId)) {
+                    deleteBtnHtml = `<button onclick="deleteCustomGroup('${groupId}')" style="background:#cc0000;border:none;color:#fff;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:8px;">🗑 ВИДАЛИТИ</button>`;
+                }
+                groupContainer.innerHTML = `
+                    <div style="display:flex;align-items:center;margin-top:5px;">
+                        <button class="group-collapse-btn" style="flex:1;" onclick="toggleGroupCollapse('${groupId}')">
+                            <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
+                            <span>▼</span>
+                        </button>
+                        ${deleteBtnHtml}
+                    </div>
+                    <div class="group-content" id="group-content-${groupId}">
+                        <div id="player-list-holder-${groupId}"></div>
+                    </div>`;
+                wrapper.appendChild(groupContainer);
+                const holder = document.getElementById(`player-list-holder-${groupId}`);
+                if (playersInGroup.length === 0) {
+                    holder.innerHTML = '<div style="color:#555;font-size:12px;padding:5px;">Гравців немає</div>';
+                }
+                playersInGroup.forEach(p => {
+                    const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
+                    let isOwnerEntry = p.isOwner === true;
+                    let actionBtns = isOwnerEntry
+                        ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
+                        : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
+                           <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
+                    let banBadge = p.isBanned ? '<span style="color:#f00;font-size:10px;margin-left:4px;">🛑БАН</span>' : '';
+                    row.innerHTML = `<div><b>${p.nickname}</b>${banBadge}<br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
+                    <div class="player-actions">${actionBtns}</div>`;
+                    holder.appendChild(row);
+                });
             });
         });
-    });
-}
+    }
 
     function toggleGroupCollapse(id) {
         let el = document.getElementById(`group-content-${id}`);
@@ -656,38 +650,24 @@ function renderGroupsAndPlayers() {
     }
     function closePlayerModal() { document.getElementById('player-settings-modal').style.display = 'none'; }
 
-function saveIndividualPlayerSettings() {
-    let nick = currentModalTargetUser; if (!nick) return;
-    let targetGroup = document.getElementById('modal-edit-group').value;
-    let targetGod = document.getElementById('modal-edit-god').value === "true";
-    let targetSkin = document.getElementById('modal-edit-skin').value;
-    let targetCoins = Number(document.getElementById('modal-edit-coins').value) || 0;
-    let prevGroup = globalPlayersDB[nick] ? globalPlayersDB[nick].group : 'ігроки';
-
-    let updateData = {
-        godMode: targetGod,
-        activeSkin: targetSkin,
-        group: targetGroup,
-        coins: targetCoins,
-        nickname: nick
-    };
-
-    // Зберігаємо в Firebase
-    db.ref('players/' + nick).update(updateData).then(() => {
-        // Тільки після успішного збереження оновлюємо локально
-        if (!globalPlayersDB[nick]) globalPlayersDB[nick] = {};
-        Object.assign(globalPlayersDB[nick], updateData);
-        
-        if (prevGroup !== targetGroup && (targetGroup === 'читери' || targetGroup === 'тестери')) {
-            let groupName = customGroups[targetGroup] ? customGroups[targetGroup].label : targetGroup;
-            alert(`✅ Гравця "${nick}" переміщено в групу "${groupName}"!\n\nТепер він може натиснути на сіру точку в правому нижньому куті головного меню.`);
-        }
-        closePlayerModal();
-        renderGroupsAndPlayers();
-    }).catch(err => {
-        alert('Помилка збереження: ' + err.message);
-    });
-}
+    function saveIndividualPlayerSettings() {
+        let nick = currentModalTargetUser; if (!nick) return;
+        let targetGroup = document.getElementById('modal-edit-group').value;
+        let targetGod = document.getElementById('modal-edit-god').value === "true";
+        let targetSkin = document.getElementById('modal-edit-skin').value;
+        let targetCoins = Number(document.getElementById('modal-edit-coins').value) || 0;
+        let prevGroup = globalPlayersDB[nick] ? globalPlayersDB[nick].group : 'ігроки';
+        let updateData = { godMode: targetGod, activeSkin: targetSkin, group: targetGroup, coins: targetCoins, nickname: nick };
+        db.ref('players/' + nick).update(updateData).then(() => {
+            if (!globalPlayersDB[nick]) globalPlayersDB[nick] = {};
+            Object.assign(globalPlayersDB[nick], updateData);
+            if (prevGroup !== targetGroup && (targetGroup === 'читери' || targetGroup === 'тестери')) {
+                let groupName = customGroups[targetGroup] ? customGroups[targetGroup].label : targetGroup;
+                alert(`✅ Гравця "${nick}" переміщено в групу "${groupName}"!\n\nТепер він може натиснути на сіру точку в правому нижньому куті головного меню.`);
+            }
+            closePlayerModal(); renderGroupsAndPlayers();
+        }).catch(err => { alert('Помилка: ' + err.message); });
+    }
 
     function openPlayerBanModal(nick) {
         currentModalTargetUser = nick;
@@ -695,6 +675,14 @@ function saveIndividualPlayerSettings() {
         document.getElementById('player-ban-modal').style.display = 'flex';
     }
     function closeBanModal() { document.getElementById('player-ban-modal').style.display = 'none'; }
+
+    function executePlayerUnban() {
+        let nick = currentModalTargetUser; if (!nick) return;
+        db.ref('players/' + nick).update({ isBanned: false, banReason: '', banUntil: null });
+        if (globalPlayersDB[nick]) { globalPlayersDB[nick].isBanned = false; globalPlayersDB[nick].banReason = ''; globalPlayersDB[nick].banUntil = null; }
+        closeBanModal(); renderGroupsAndPlayers();
+        alert(`✅ Гравця "${nick}" розблоковано!`);
+    }
 
     function executePlayerBan(shouldBan) {
         let nick = currentModalTargetUser; if (!nick) return;
@@ -709,9 +697,6 @@ function saveIndividualPlayerSettings() {
         closeBanModal(); renderGroupsAndPlayers();
     }
 
-    // ============================================================
-    // СТАНДАРТНІ ФУНКЦІЇ
-    // ============================================================
     function changeVolume(val) { globalVolume = Number(val); localStorage.setItem('gameVolume', globalVolume); }
     function toggleGodMode() {
         godModeActive = !godModeActive;
@@ -727,28 +712,16 @@ function saveIndividualPlayerSettings() {
     }
     function unlockAllAdminWaves() { waveData.forEach(w => w.unlocked = true); saveProgress(); alert("Усі місії розблоковані!"); }
     function triggerWipeProgress() {
-    if (confirm("💥 Збити весь ігровий прогрес?\n(Монети, хвилі, магазин — скинуться. Нік залишиться)")) {
-        // Скидаємо тільки ігровий прогрес
-        coins = 0;
-        unlockedUpgrades = { fastFire: false };
-        unlockedSkins = { phoenix: false };
-        activeSkin = '🚀';
-        shipGrid = Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
-        shipInventory = [1];
-        unlockedCells = 4;
-        waveData = JSON.parse(JSON.stringify(defaultWaves));
-        
-        saveProgress();
-        
-        // Оновлюємо монети в Firebase якщо не власник
-        if (myNickname && !isOwner) {
-            db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
+        if (confirm("💥 Збити весь ігровий прогрес?\n(Монети, хвилі, магазин — скинуться. Нік залишиться)")) {
+            coins = 0; unlockedUpgrades = { fastFire: false }; unlockedSkins = { phoenix: false };
+            activeSkin = '🚀'; shipGrid = Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
+            shipInventory = [1]; unlockedCells = 4; waveData = JSON.parse(JSON.stringify(defaultWaves));
+            saveProgress();
+            if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
+            alert("✅ Прогрес скинуто! Нік збережено.");
+            location.reload();
         }
-        
-        alert("✅ Прогрес скинуто! Нік збережено.");
-        location.reload();
     }
-}
     function updateCoinsUI() { document.getElementById('main-coins').innerText = coins; document.getElementById('shop-coins').innerText = coins; }
     function updateHpUI() { document.getElementById('hp-display').innerText = godModeActive ? '🛡️ INFINITY' : ('❤️'.repeat(playerHp) + '🖤'.repeat(3-playerHp)); }
     function showWaves() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); }
@@ -759,14 +732,10 @@ function saveIndividualPlayerSettings() {
     function exitGame() { if (confirm("Вийти?")) window.location.href = "https://google.com"; }
 
     function saveProgress() {
-        localStorage.setItem('coins', coins);
-        localStorage.setItem('upgrades', JSON.stringify(unlockedUpgrades));
-        localStorage.setItem('skins', JSON.stringify(unlockedSkins));
-        localStorage.setItem('activeSkin', activeSkin);
-        localStorage.setItem('shipGrid', JSON.stringify(shipGrid));
-        localStorage.setItem('shipInventory', JSON.stringify(shipInventory));
-        localStorage.setItem('unlockedCells', unlockedCells);
-        localStorage.setItem('waveData', JSON.stringify(waveData));
+        localStorage.setItem('coins', coins); localStorage.setItem('upgrades', JSON.stringify(unlockedUpgrades));
+        localStorage.setItem('skins', JSON.stringify(unlockedSkins)); localStorage.setItem('activeSkin', activeSkin);
+        localStorage.setItem('shipGrid', JSON.stringify(shipGrid)); localStorage.setItem('shipInventory', JSON.stringify(shipInventory));
+        localStorage.setItem('unlockedCells', unlockedCells); localStorage.setItem('waveData', JSON.stringify(waveData));
     }
 
     function playSound(buffer) {
@@ -789,9 +758,6 @@ function saveIndividualPlayerSettings() {
         }
     }
 
-    // ============================================================
-    // МАГАЗИН
-    // ============================================================
     function switchTab(tab) {
         ['upgrades','skins','ship'].forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===tab));
         renderShopItems(tab);
@@ -823,28 +789,11 @@ function saveIndividualPlayerSettings() {
         }
     }
 
-    function buyUpgrade(type, price) {
-        if (!unlockedUpgrades[type] && coins >= price) {
-            coins -= price; unlockedUpgrades[type] = true; saveProgress();
-            if (!isOwner) db.ref('players/'+myNickname).update({coins});
-            switchTab('upgrades');
-        }
-    }
-    function buySkin(id, icon, price) {
-        if (unlockedSkins[id]) { activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:icon}); switchTab('skins'); }
-        else if (coins >= price) { coins-=price; unlockedSkins[id]=true; activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins,activeSkin:icon}); switchTab('skins'); }
-    }
-    function buyShipItem(type, price) {
-        if(coins<price) return;
-        if(type==='gun') shipInventory.push(1);
-        if(type==='cell'&&unlockedCells<16){shipGrid[unlockedCells]=0;unlockedCells++;}
-        coins-=price; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship');
-    }
+    function buyUpgrade(type, price) { if (!unlockedUpgrades[type] && coins >= price) { coins -= price; unlockedUpgrades[type] = true; saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins}); switchTab('upgrades'); } }
+    function buySkin(id, icon, price) { if (unlockedSkins[id]) { activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:icon}); switchTab('skins'); } else if (coins >= price) { coins-=price; unlockedSkins[id]=true; activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins,activeSkin:icon}); switchTab('skins'); } }
+    function buyShipItem(type, price) { if(coins<price) return; if(type==='gun') shipInventory.push(1); if(type==='cell'&&unlockedCells<16){shipGrid[unlockedCells]=0;unlockedCells++;} coins-=price; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship'); }
     function useDefault() { activeSkin='🚀'; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:'🚀'}); switchTab('skins'); }
 
-    // ============================================================
-    // ХВИЛІ
-    // ============================================================
     function renderWaves() {
         const list = document.getElementById('wave-list'); list.innerHTML = '';
         waveData.forEach(w => {
@@ -988,85 +937,49 @@ function saveIndividualPlayerSettings() {
         }
     }
 
-function draw() {
-    ctx.save();
-    ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.setLineDash([]); ctx.lineWidth=1;
-    ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.restore();
-
-    ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
-
-    let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
-    let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
-
-    ctx.save();
-    ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-    ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
-    ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();
-    ctx.restore();
-
-    shipGrid.forEach((s,i)=>{if(s===1){let r=Math.floor(i/4),c=i%4,gx=player.x+(c-1.5)*cW,gy=player.y-sH/2+r*cH+10;ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);}});
-
-    ctx.save();
-    ctx.shadowBlur=0;ctx.shadowColor='transparent';
-    ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';
-    ctx.fillText(activeSkin,player.x,player.y);
-    ctx.restore();
-
-    enemies.forEach(e=>{
+    function draw() {
         ctx.save();
-        ctx.shadowBlur=0;ctx.shadowColor='transparent';
-        ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;
-        ctx.fillText(e.i,e.x,e.y);
+        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.lineWidth=1;
+        ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.restore();
-        if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
-    });
-
-    if(bossInstance){
-        if(currentWave.id===4&&bossInstance.isUlting){
-            ctx.save();
-            ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-            let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
-            if(la<w){
-                ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';
-                ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;
-            } else {
-                ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';
-            }
-            ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
-            if(la>=w){
-                ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-                ctx.strokeStyle='#fff';ctx.lineWidth=18;
+        ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
+        let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
+        let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
+        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+        ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
+        ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();ctx.restore();
+        shipGrid.forEach((s,i)=>{if(s===1){let r=Math.floor(i/4),c=i%4,gx=player.x+(c-1.5)*cW,gy=player.y-sH/2+r*cH+10;ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);}});
+        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';ctx.fillText(activeSkin,player.x,player.y);ctx.restore();
+        enemies.forEach(e=>{
+            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;ctx.fillText(e.i,e.x,e.y);ctx.restore();
+            if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
+        });
+        if(bossInstance){
+            if(currentWave.id===4&&bossInstance.isUlting){
+                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+                let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
+                if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;}
+                else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
                 ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
+                if(la>=w){ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
+                ctx.restore();
             }
-            ctx.restore();
+            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
+            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+            let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
+            ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
+            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
+            ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
+            let bt="КОСМІЧНИЙ ЗАГАРБНИК";
+            if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
+            if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
+            ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
         }
-
-        ctx.save();
-        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-        ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';
-        ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);
-        ctx.restore();
-
-        ctx.save();
-        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-        let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
-        ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
-        ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
-        ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
-        let bt="КОСМІЧНИЙ ЗАГАРБНИК";
-        if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
-        if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
-        ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);
+        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+        ctx.fillStyle='#0ff';bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
+        ctx.fillStyle='#f00';enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
         ctx.restore();
     }
-
-    ctx.save();
-    ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-    ctx.fillStyle='#0ff';bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,20));
-    ctx.fillStyle='#f00';enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
-    ctx.restore();
-}
 
     function endMission() {
         if(shootInterval) clearInterval(shootInterval);
