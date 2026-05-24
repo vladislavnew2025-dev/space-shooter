@@ -677,7 +677,29 @@ function saveIndividualPlayerSettings() {
         if (gameActive) startIntervals();
     }
     function unlockAllAdminWaves() { waveData.forEach(w => w.unlocked = true); saveProgress(); alert("Усі місії розблоковані!"); }
-    function triggerWipeProgress() { if (confirm("💥 Збити весь ігровий прогрес?")) { localStorage.clear(); location.reload(); } }
+    function triggerWipeProgress() {
+    if (confirm("💥 Збити весь ігровий прогрес?\n(Монети, хвилі, магазин — скинуться. Нік залишиться)")) {
+        // Скидаємо тільки ігровий прогрес
+        coins = 0;
+        unlockedUpgrades = { fastFire: false };
+        unlockedSkins = { phoenix: false };
+        activeSkin = '🚀';
+        shipGrid = Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
+        shipInventory = [1];
+        unlockedCells = 4;
+        waveData = JSON.parse(JSON.stringify(defaultWaves));
+        
+        saveProgress();
+        
+        // Оновлюємо монети в Firebase якщо не власник
+        if (myNickname && !isOwner) {
+            db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
+        }
+        
+        alert("✅ Прогрес скинуто! Нік збережено.");
+        location.reload();
+    }
+}
     function updateCoinsUI() { document.getElementById('main-coins').innerText = coins; document.getElementById('shop-coins').innerText = coins; }
     function updateHpUI() { document.getElementById('hp-display').innerText = godModeActive ? '🛡️ INFINITY' : ('❤️'.repeat(playerHp) + '🖤'.repeat(3-playerHp)); }
     function showWaves() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); }
