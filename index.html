@@ -353,6 +353,18 @@
         } else {
             document.getElementById('menu-player-nick').innerText = myNickname;
             syncCurrentPlayerWithDB();
+            if (isOwner && myNickname) {
+    db.ref('players/' + myNickname).once('value').then(snap => {
+        if (!snap.exists()) {
+            db.ref('players/' + myNickname).set({
+                nickname: myNickname, group: 'ігроки', coins: 0,
+                godMode: false, activeSkin: '🚀', timePlayed: 0,
+                isBanned: false, banReason: '', banUntil: null,
+                isOwner: true
+            });
+        }
+    });
+}
         }
         document.getElementById('volume-control').value = globalVolume;
         updateCoinsUI();
@@ -360,17 +372,18 @@
 
     function syncCurrentPlayerWithDB() {
     if (!myNickname || isOwner) { checkBanStatus(null); return; }
-    // Завантажуємо актуальні групи з Firebase
-    db.ref('config/groups').once('value').then(snap => {
+    
+    // Реалтайм слухач на групи — оновлюється одразу як власник щось змінив
+    db.ref('config/groups').on('value', snap => {
         if (snap.exists()) {
             let fbGroups = snap.val();
-            // Додаємо нові групи з Firebase але не видаляємо базові
             Object.keys(fbGroups).forEach(gId => {
                 customGroups[gId] = fbGroups[gId];
             });
             localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
         }
     });
+
     // Реалтайм слухач на гравця
     db.ref('players/' + myNickname).on('value', snapshot => {
         let p = snapshot.exists() ? snapshot.val() : null;
@@ -610,10 +623,10 @@ function renderGroupsAndPlayers() {
             playersInGroup.forEach(p => {
                 const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
                 // Власника не можна редагувати/банити
-                let actionBtns = p._isOwnerDisplay
-                    ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
-                    : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
-                       <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
+                let actionBtns = (p.isOwner || p.nickname === myNickname)
+    ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
+    : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
+       <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
                 row.innerHTML = `<div><b>${p.nickname}</b><br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
                 <div class="player-actions">${actionBtns}</div>`;
                 holder.appendChild(row);
