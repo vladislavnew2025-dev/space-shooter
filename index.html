@@ -909,8 +909,8 @@ function saveIndividualPlayerSettings() {
     }
 
 function draw() {
+        ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.setLineDash([]);
         ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
         let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
         let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
         ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
