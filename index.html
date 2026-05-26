@@ -351,31 +351,18 @@
             document.getElementById('menu-player-nick').innerText = myNickname;
             syncCurrentPlayerWithDB();
             // Власник зберігається в Firebase для відображення
-if (isOwner) {
-    // Власник теж слухає групи реалтайм
-    db.ref('config/groups').on('value', snap => {
-        if (snap.exists()) {
-            let fbGroups = snap.val();
-            // Видаляємо групи яких вже немає в Firebase
-            Object.keys(customGroups).forEach(gId => {
-                if (!fbGroups[gId] && !['ігроки','читери','тестери'].includes(gId)) {
-                    delete customGroups[gId];
-                }
-            });
-            Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
-            localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+            if (isOwner) {
+                db.ref('players/' + myNickname).once('value').then(snap => {
+                    if (!snap.exists()) {
+                        db.ref('players/' + myNickname).set({
+                            nickname: myNickname, group: 'ігроки', coins: 0,
+                            godMode: false, activeSkin: '🚀', timePlayed: 0,
+                            isBanned: false, banReason: '', banUntil: null, isOwner: true
+                        });
+                    }
+                });
+            }
         }
-    });
-    db.ref('players/' + myNickname).once('value').then(snap => {
-        if (!snap.exists()) {
-            db.ref('players/' + myNickname).set({
-                nickname: myNickname, group: 'ігроки', coins: 0,
-                godMode: false, activeSkin: '🚀', timePlayed: 0,
-                isBanned: false, banReason: '', banUntil: null, isOwner: true
-            });
-        }
-    });
-}
         document.getElementById('volume-control').value = globalVolume;
         updateCoinsUI();
     }
@@ -383,18 +370,13 @@ if (isOwner) {
     function syncCurrentPlayerWithDB() {
         if (!myNickname || isOwner) { checkBanStatus(null); return; }
         // Реалтайм слухач на групи
-db.ref('config/groups').on('value', snap => {
-    if (snap.exists()) {
-        let fbGroups = snap.val();
-        Object.keys(customGroups).forEach(gId => {
-            if (!fbGroups[gId] && !['ігроки','читери','тестери'].includes(gId)) {
-                delete customGroups[gId];
+        db.ref('config/groups').on('value', snap => {
+            if (snap.exists()) {
+                let fbGroups = snap.val();
+                Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
+                localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
             }
         });
-        Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
-        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
-    }
-});
         // Реалтайм слухач на гравця
         db.ref('players/' + myNickname).on('value', snapshot => {
             let p = snapshot.exists() ? snapshot.val() : null;
@@ -702,21 +684,18 @@ db.ref('config/groups').on('value', snap => {
         alert(`✅ Гравця "${nick}" розблоковано!`);
     }
 
-function executePlayerBan(shouldBan) {
-    let nick = currentModalTargetUser; if (!nick) return;
-    if (shouldBan) {
-        let reason = document.getElementById('ban-modal-reason').value;
-        let timeVal = document.getElementById('ban-modal-time').value;
-        let banUntil = timeVal === 'permanent' ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
-        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        let bannerRole = isOwner ? 'Адмін' : (currentGroup === 'тестери' ? 'Тестер' : 'Адмін');
-        let fullReason = `[${bannerRole}: ${myNickname}] ${reason}`;
-        db.ref('players/' + nick).update({ isBanned: true, banReason: fullReason, banUntil: banUntil });
-    } else {
-        db.ref('players/' + nick).update({ group: 'ігроки' });
+    function executePlayerBan(shouldBan) {
+        let nick = currentModalTargetUser; if (!nick) return;
+        if (shouldBan) {
+            let reason = document.getElementById('ban-modal-reason').value;
+            let timeVal = document.getElementById('ban-modal-time').value;
+            let banUntil = timeVal === 'permanent' ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
+            db.ref('players/' + nick).update({ isBanned: true, banReason: reason, banUntil: banUntil });
+        } else {
+            db.ref('players/' + nick).update({ group: 'ігроки' });
+        }
+        closeBanModal(); renderGroupsAndPlayers();
     }
-    closeBanModal(); renderGroupsAndPlayers();
-}
 
     function changeVolume(val) { globalVolume = Number(val); localStorage.setItem('gameVolume', globalVolume); }
     function toggleGodMode() {
