@@ -351,7 +351,7 @@
             document.getElementById('menu-player-nick').innerText = myNickname;
             syncCurrentPlayerWithDB();
             // Власник зберігається в Firebase для відображення
-            if (isOwner) {
+if (isOwner) {
     // Власник теж слухає групи реалтайм
     db.ref('config/groups').on('value', snap => {
         if (snap.exists()) {
@@ -383,7 +383,7 @@
     function syncCurrentPlayerWithDB() {
         if (!myNickname || isOwner) { checkBanStatus(null); return; }
         // Реалтайм слухач на групи
-        db.ref('config/groups').on('value', snap => {
+db.ref('config/groups').on('value', snap => {
     if (snap.exists()) {
         let fbGroups = snap.val();
         Object.keys(customGroups).forEach(gId => {
@@ -702,7 +702,7 @@
         alert(`✅ Гравця "${nick}" розблоковано!`);
     }
 
-    function executePlayerBan(shouldBan) {
+function executePlayerBan(shouldBan) {
     let nick = currentModalTargetUser; if (!nick) return;
     if (shouldBan) {
         let reason = document.getElementById('ban-modal-reason').value;
