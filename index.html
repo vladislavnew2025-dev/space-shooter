@@ -41,7 +41,7 @@
         .p-btn-ban { background: #ff3366; color: #fff; }
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index: 100; display:none; justify-content:center; align-items:center; }
         .modal-box { background: #0f0f1c; border: 2px solid #0ff; border-radius: 15px; padding: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 25px rgba(0,255,255,0.3); }
-        .settings-box { width: 90%; max-width: 400px; background: #0a0a14; border: 2px solid #0ff; border-radius: 20px; padding: 25px; text-align: center; }
+        .settings-box { width: 90%; max-width: 400px; background: #0a0a14; border: 2px solid #0ff; border-radius: 20px; padding: 25px; text-align: center; overflow-y: auto; max-height: 90vh; }
         .settings-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding-bottom: 10px; border-bottom: 1px solid #222; }
         .dungeon-group { border: 2px dashed #ff3333; border-radius: 15px; padding: 15px; margin-top: 25px; }
         .wipe-btn { width: 100%; padding: 12px; background: #cc0000; color: #fff; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
@@ -161,6 +161,9 @@
 <div id="player-manage-screen" class="screen" style="display:none;">
     <div class="admin-panel-box" style="max-width: 550px;">
         <h2 style="color:#ffcc00; margin:0 0 5px 0;">👑 КЕРУВАННЯ ГРУПАМИ ТА ГРАВЦЯМИ</h2>
+        <div id="online-stats-bar" style="background:rgba(0,255,0,0.08); border:1px solid #0f0; border-radius:8px; padding:6px 12px; margin-bottom:10px; font-size:12px; color:#0f0; text-align:center;">
+            🟢 Онлайн: <span id="online-total">0</span> | Всього гравців: <span id="total-players">0</span>
+        </div>
         <div style="margin-bottom: 12px; display:flex; flex-direction:column; gap:8px;">
             <button id="toggle-owner-visibility-btn" class="admin-btn-action" style="background:#5533ff; color:#fff; width:100%; padding:6px;" onclick="toggleOwnerInLists()">👁️ ПОКАЗАТИ ВЛАСНИКА В СПИСКАХ</button>
             <button class="admin-btn-action" style="background:#00aa44; color:#fff; width:100%; padding:6px;" onclick="forceRefreshGroups()">🔄 ОНОВИТИ ГРАВЦІВ З СЕРВЕРА</button>
@@ -335,6 +338,7 @@
     let currentModalTargetUser = '';
     let sessionStartTime = Date.now();
 
+    // Авто-збереження часу
     setInterval(() => {
         if (myNickname && !isOwner) {
             let elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
@@ -343,15 +347,48 @@
         }
     }, 5000);
 
+    // ============================================================
+    // ОНЛАЙН СТАТУС
+    // ============================================================
+    function setOnlineStatus(online) {
+        if (!myNickname) return;
+        let key = isOwner ? 'online/owner' : ('online/' + myNickname);
+        if (online) {
+            db.ref(key).set({ nickname: myNickname, ts: Date.now() });
+            db.ref(key).onDisconnect().remove();
+        } else {
+            db.ref(key).remove();
+        }
+    }
+
+    function getGroupKeyForOnline(nickname) {
+        if (globalPlayersDB[nickname]) return globalPlayersDB[nickname].group || 'ігроки';
+        return 'ігроки';
+    }
+
+    // ============================================================
+    // ІНІЦІАЛІЗАЦІЯ
+    // ============================================================
     window.onload = function() {
         if (!myNickname) {
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('register-screen').style.display = 'flex';
         } else {
             document.getElementById('menu-player-nick').innerText = myNickname;
+            setOnlineStatus(true);
             syncCurrentPlayerWithDB();
-            // Власник зберігається в Firebase для відображення
+
             if (isOwner) {
+                db.ref('config/groups').on('value', snap => {
+                    if (snap.exists()) {
+                        let fbGroups = snap.val();
+                        Object.keys(customGroups).forEach(gId => {
+                            if (!fbGroups[gId] && !['ігроки','читери','тестери'].includes(gId)) delete customGroups[gId];
+                        });
+                        Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
+                        localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
+                    }
+                });
                 db.ref('players/' + myNickname).once('value').then(snap => {
                     if (!snap.exists()) {
                         db.ref('players/' + myNickname).set({
@@ -367,17 +404,20 @@
         updateCoinsUI();
     }
 
+    window.addEventListener('beforeunload', () => setOnlineStatus(false));
+
     function syncCurrentPlayerWithDB() {
         if (!myNickname || isOwner) { checkBanStatus(null); return; }
-        // Реалтайм слухач на групи
         db.ref('config/groups').on('value', snap => {
             if (snap.exists()) {
                 let fbGroups = snap.val();
+                Object.keys(customGroups).forEach(gId => {
+                    if (!fbGroups[gId] && !['ігроки','читери','тестери'].includes(gId)) delete customGroups[gId];
+                });
                 Object.keys(fbGroups).forEach(gId => { customGroups[gId] = fbGroups[gId]; });
                 localStorage.setItem('space_custom_groups', JSON.stringify(customGroups));
             }
         });
-        // Реалтайм слухач на гравця
         db.ref('players/' + myNickname).on('value', snapshot => {
             let p = snapshot.exists() ? snapshot.val() : null;
             if (p) {
@@ -454,6 +494,7 @@
             oldData.nickname = newNick;
             db.ref('players/' + newNick).set(oldData).then(() => {
                 db.ref('players/' + myNickname).remove();
+                setOnlineStatus(false);
                 localStorage.setItem('myRegisteredNickname', newNick);
                 alert(`✅ Нік змінено на "${newNick}"!`);
                 location.reload();
@@ -461,6 +502,9 @@
         });
     }
 
+    // ============================================================
+    // АДМІН
+    // ============================================================
     function tryOpenAdminPanel() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
         if (isOwner) { openAdminPanelUI(true, currentGroup); }
@@ -499,6 +543,9 @@
         alert(`Ваш баланс змінено на ${finalValue} монет!`);
     }
 
+    // ============================================================
+    // МЕНЕДЖЕР ГРАВЦІВ
+    // ============================================================
     function openPlayerManagementUI() {
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
@@ -572,10 +619,15 @@
         const wrapper = document.getElementById('groups-wrapper');
         wrapper.innerHTML = '<div style="color:#ffcc00; text-align:center; padding:10px;">⏳ Завантаження з сервера...</div>';
         const baseGroups = ['ігроки', 'читери', 'тестери'];
-        db.ref('players').once('value').then(snapshot => {
+
+        // Завантажуємо гравців і онлайн-статуси паралельно
+        Promise.all([
+            db.ref('players').once('value'),
+            db.ref('online').once('value')
+        ]).then(([playersSnap, onlineSnap]) => {
             globalPlayersDB = {};
-            if (snapshot.exists()) {
-                snapshot.forEach(child => {
+            if (playersSnap.exists()) {
+                playersSnap.forEach(child => {
                     let p = child.val();
                     if (!p.group) p.group = 'ігроки';
                     if (!p.nickname) p.nickname = child.key;
@@ -585,13 +637,29 @@
                     }
                 });
             }
+
+            // Збираємо хто онлайн
+            let onlineNicks = new Set();
+            if (onlineSnap.exists()) {
+                onlineSnap.forEach(child => {
+                    let d = child.val();
+                    if (d && d.nickname) onlineNicks.add(d.nickname);
+                });
+            }
+
+            // Загальна статистика
+            let totalPlayers = Object.keys(globalPlayersDB).filter(n => !globalPlayersDB[n].isOwner).length;
+            let totalOnline = onlineNicks.size;
+            document.getElementById('online-total').innerText = totalOnline;
+            document.getElementById('total-players').innerText = totalPlayers;
+
             wrapper.innerHTML = '';
             Object.keys(customGroups).forEach(groupId => {
                 let groupInfo = customGroups[groupId];
                 let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
-                if (!showOwnerInLists) {
-                    playersInGroup = playersInGroup.filter(p => !p.isOwner);
-                }
+                if (!showOwnerInLists) playersInGroup = playersInGroup.filter(p => !p.isOwner);
+                let onlineInGroup = playersInGroup.filter(p => onlineNicks.has(p.nickname)).length;
+
                 const groupContainer = document.createElement('div');
                 let deleteBtnHtml = '';
                 if (isOwner && !baseGroups.includes(groupId)) {
@@ -601,7 +669,7 @@
                     <div style="display:flex;align-items:center;margin-top:5px;">
                         <button class="group-collapse-btn" style="flex:1;" onclick="toggleGroupCollapse('${groupId}')">
                             <span style="color:${groupInfo.color}">⬤ ${groupInfo.label.toUpperCase()} (${playersInGroup.length})</span>
-                            <span>▼</span>
+                            <span style="font-size:11px;color:#0f0;">🟢${onlineInGroup} онлайн ▼</span>
                         </button>
                         ${deleteBtnHtml}
                     </div>
@@ -616,12 +684,13 @@
                 playersInGroup.forEach(p => {
                     const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
                     let isOwnerEntry = p.isOwner === true;
+                    let onlineDot = onlineNicks.has(p.nickname) ? '<span style="color:#0f0;font-size:10px;margin-left:4px;">🟢</span>' : '<span style="color:#555;font-size:10px;margin-left:4px;">⚫</span>';
                     let actionBtns = isOwnerEntry
                         ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
                         : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button>
                            <button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
                     let banBadge = p.isBanned ? '<span style="color:#f00;font-size:10px;margin-left:4px;">🛑БАН</span>' : '';
-                    row.innerHTML = `<div><b>${p.nickname}</b>${banBadge}<br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
+                    row.innerHTML = `<div><b>${p.nickname}</b>${onlineDot}${banBadge}<br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div>
                     <div class="player-actions">${actionBtns}</div>`;
                     holder.appendChild(row);
                 });
@@ -690,13 +759,19 @@
             let reason = document.getElementById('ban-modal-reason').value;
             let timeVal = document.getElementById('ban-modal-time').value;
             let banUntil = timeVal === 'permanent' ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
-            db.ref('players/' + nick).update({ isBanned: true, banReason: reason, banUntil: banUntil });
+            let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+            let bannerRole = isOwner ? 'Адмін' : (currentGroup === 'тестери' ? 'Тестер' : 'Адмін');
+            let fullReason = `[${bannerRole}: ${myNickname}] ${reason}`;
+            db.ref('players/' + nick).update({ isBanned: true, banReason: fullReason, banUntil: banUntil });
         } else {
             db.ref('players/' + nick).update({ group: 'ігроки' });
         }
         closeBanModal(); renderGroupsAndPlayers();
     }
 
+    // ============================================================
+    // СТАНДАРТНІ ФУНКЦІЇ
+    // ============================================================
     function changeVolume(val) { globalVolume = Number(val); localStorage.setItem('gameVolume', globalVolume); }
     function toggleGodMode() {
         godModeActive = !godModeActive;
@@ -729,7 +804,7 @@
     function showSettings() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('settings-screen').style.display = 'flex'; document.getElementById('volume-control').value = globalVolume; }
     function backToMain() { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById('main-menu').style.display = 'flex'; updateCoinsUI(); }
     function backToWaves() { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); }
-    function exitGame() { if (confirm("Вийти?")) window.location.href = "https://google.com"; }
+    function exitGame() { if (confirm("Вийти?")) { setOnlineStatus(false); window.location.href = "https://google.com"; } }
 
     function saveProgress() {
         localStorage.setItem('coins', coins); localStorage.setItem('upgrades', JSON.stringify(unlockedUpgrades));
@@ -758,6 +833,9 @@
         }
     }
 
+    // ============================================================
+    // МАГАЗИН
+    // ============================================================
     function switchTab(tab) {
         ['upgrades','skins','ship'].forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===tab));
         renderShopItems(tab);
@@ -794,6 +872,9 @@
     function buyShipItem(type, price) { if(coins<price) return; if(type==='gun') shipInventory.push(1); if(type==='cell'&&unlockedCells<16){shipGrid[unlockedCells]=0;unlockedCells++;} coins-=price; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship'); }
     function useDefault() { activeSkin='🚀'; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:'🚀'}); switchTab('skins'); }
 
+    // ============================================================
+    // ХВИЛІ
+    // ============================================================
     function renderWaves() {
         const list = document.getElementById('wave-list'); list.innerHTML = '';
         waveData.forEach(w => {
