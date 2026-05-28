@@ -154,6 +154,9 @@
         <div id="owner-only-zone" style="display:none; margin-top:10px;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
         </div>
+        <div id="owner-full-reset" style="display:none; margin-top:8px;">
+    <button class="admin-btn-action" style="width:150px; background:#cc0000; color:#fff; padding:6px; font-size:12px;" onclick="ownerFullReset()">💥 ПОВНИЙ СКИД</button>
+</div>
         <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
     </div>
 </div>
@@ -287,6 +290,18 @@
     <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
 </div>
 
+    <div id="pause-btn" style="display:none; position:absolute; top:15px; left:50%; transform:translateX(-50%); z-index:6;">
+    <button onclick="togglePause()" style="background:rgba(0,0,0,0.7); border:2px solid #0ff; color:#0ff; padding:6px 18px; border-radius:20px; font-size:14px; cursor:pointer;">⏸ ПАУЗА</button>
+</div>
+
+<div id="pause-menu" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:8; flex-direction:column; justify-content:center; align-items:center;">
+    <div style="background:#070710; border:2px solid #0ff; border-radius:20px; padding:30px; text-align:center; min-width:250px;">
+        <h2 style="color:#0ff; margin:0 0 20px 0;">⏸ ПАУЗА</h2>
+        <button onclick="togglePause()" class="main-btn" style="border-color:#0f0; color:#0f0; width:200px;">▶ ПРОДОВЖИТИ</button>
+        <button onclick="exitToWaves()" class="main-btn" style="border-color:#f00; color:#f00; width:200px;">🚪 ВИЙТИ З МІСІЇ</button>
+    </div>
+</div>
+
 <canvas id="game"></canvas>
 
 <script>
@@ -406,6 +421,27 @@
 
     window.addEventListener('beforeunload', () => setOnlineStatus(false));
 
+    let isPaused = false;
+
+function togglePause() {
+    isPaused = !isPaused;
+    document.getElementById('pause-menu').style.display = isPaused ? 'flex' : 'none';
+    document.getElementById('pause-btn').querySelector('button').innerText = isPaused ? '▶ ПАУЗА' : '⏸ ПАУЗА';
+    if (!isPaused) requestAnimationFrame(gameLoop);
+}
+
+function exitToWaves() {
+    isPaused = false;
+    gameActive = false;
+    if(shootInterval) clearInterval(shootInterval);
+    if(enemySpawnInterval) clearInterval(enemySpawnInterval);
+    document.getElementById('pause-menu').style.display = 'none';
+    document.getElementById('pause-btn').style.display = 'none';
+    document.getElementById('ui').style.display = 'none';
+    document.getElementById('hp-display').style.display = 'none';
+    backToWaves();
+}
+
     function syncCurrentPlayerWithDB() {
         if (!myNickname || isOwner) { checkBanStatus(null); return; }
         db.ref('config/groups').on('value', snap => {
@@ -485,23 +521,31 @@
     }
 
     function changeNickname() {
-        let newNick = document.getElementById('change-nick-input').value.trim();
-        if (!newNick) { alert('Введіть нікнейм!'); return; }
-        if (newNick === myNickname) { alert('Це вже ваш нік!'); return; }
-        if (!confirm(`Змінити нік з "${myNickname}" на "${newNick}"?`)) return;
-        db.ref('players/' + myNickname).once('value').then(snap => {
-            let oldData = snap.exists() ? snap.val() : {};
-            oldData.nickname = newNick;
-            db.ref('players/' + newNick).set(oldData).then(() => {
-                db.ref('players/' + myNickname).remove();
-                setOnlineStatus(false);
-                localStorage.setItem('myRegisteredNickname', newNick);
-                alert(`✅ Нік змінено на "${newNick}"!`);
-                location.reload();
-            });
-        });
+    let newNick = document.getElementById('change-nick-input').value.trim();
+    if (!newNick) { alert('Введіть нікнейм!'); return; }
+    if (newNick === myNickname) { alert('Це вже ваш нік!'); return; }
+
+    // Перевірка — всі хвилі на 3 зірки
+    let allPerfect = waveData.every(w => w.stars === 3);
+    if (!allPerfect) {
+        let notDone = waveData.filter(w => w.stars < 3).map(w => w.name).join(', ');
+        alert(`❌ Зміна ніку заблокована!\n\nТреба пройти всі хвилі на ⭐⭐⭐\nНе пройдено: ${notDone}`);
+        return;
     }
 
+    if (!confirm(`Змінити нік з "${myNickname}" на "${newNick}"?`)) return;
+    db.ref('players/' + myNickname).once('value').then(snap => {
+        let oldData = snap.exists() ? snap.val() : {};
+        oldData.nickname = newNick;
+        db.ref('players/' + newNick).set(oldData).then(() => {
+            db.ref('players/' + myNickname).remove();
+            setOnlineStatus(false);
+            localStorage.setItem('myRegisteredNickname', newNick);
+            alert(`✅ Нік змінено на "${newNick}"!`);
+            location.reload();
+        });
+    });
+}
     // ============================================================
     // АДМІН
     // ============================================================
@@ -510,6 +554,13 @@
         if (isOwner) { openAdminPanelUI(true, currentGroup); }
         else if (currentGroup === 'читери' || currentGroup === 'тестери') { openAdminPanelUI(false, currentGroup); }
     }
+
+    function ownerFullReset() {
+    if (!confirm("💥 ПОВНІСТЮ скинути ВСЕ — монети, хвилі, нік, прогрес?\nВас викине на екран входу!")) return;
+    setOnlineStatus(false);
+    localStorage.clear();
+    location.reload();
+}
 
     function openAdminPanelUI(ownerAccess, currentGroup) {
         document.getElementById('main-menu').style.display = 'none';
@@ -524,6 +575,7 @@
         document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
         document.getElementById('speed-btn').style.background = gameSpeedMultiplier > 1 ? '#00aaee' : '#444';
         document.getElementById('speed-btn').innerText = `⚡ ШВИДКІСТЬ ГРИ: x${gameSpeedMultiplier}`;
+        document.getElementById('owner-full-reset').style.display = ownerAccess ? 'block' : 'none';
         panelCoinSign = 1; updatePanelCoinModeBtnUI();
     }
 
@@ -895,6 +947,8 @@
         document.querySelectorAll('.screen').forEach(s=>s.style.display='none');
         document.getElementById('ui').style.display='block';
         document.getElementById('hp-display').style.display='block';
+        document.getElementById('pause-btn').style.display = 'block';
+isPaused = false;
         document.getElementById('kills').innerText='0';
         document.getElementById('required-kills').innerText=w.spawnCount+(w.hasBoss?1:0);
         kills=0; missed=0; spawnedThisWave=0;
@@ -957,7 +1011,10 @@
         }
     }
 
-    function gameLoop(){if(!gameActive) return; update(); draw(); requestAnimationFrame(gameLoop);}
+    function gameLoop() {
+    if(!gameActive || isPaused) return;
+    update(); draw(); requestAnimationFrame(gameLoop);
+}
 
     function update() {
         let m=gameSpeedMultiplier;
@@ -1073,6 +1130,8 @@
         saveProgress();updateCoinsUI();
         document.getElementById('ui').style.display='none';
         document.getElementById('hp-display').style.display='none';
+        document.getElementById('pause-btn').style.display = 'none';
+document.getElementById('pause-menu').style.display = 'none';
         if(currentWave.id===4){document.getElementById('final-credits-screen').style.display='flex';}
         else{
             document.getElementById('win-title').innerText=currentWave.hasBoss?"БОССА ЗНИЩЕНО!":"МІСІЯ ВИКОНАНА";
