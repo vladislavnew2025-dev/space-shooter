@@ -68,6 +68,7 @@
         .credits-box { text-align: center; border: 2px dashed #0ff; padding: 20px 40px; margin: 15px 0; background: rgba(0,255,255,0.03); border-radius: 15px; }
         .credits-box h3 { margin: 8px 0 2px 0; font-size: 13px; color: #88ff88; }
         .credits-box p { margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #fff; }
+        .badge { display: inline-block; background: #ff9900; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 12px; margin-left: 6px; }
     </style>
 </head>
 <body>
@@ -88,7 +89,7 @@
     <div style="text-align: center; padding: 20px; max-width: 500px;">
         <h1 style="color: #ff3366; font-size: 45px; margin-bottom: 10px;">🛑 ВАС ЗАБЛОКОВАНО!</h1>
         <div style="border: 2px dashed #ff3366; padding: 20px; border-radius: 15px; background: rgba(255,0,0,0.05); margin-bottom: 25px;">
-            <p style="font-size: 18px; margin: 0 0 10px 0;">Обмеження накладено Головним Адміністратором.</p>
+            <p style="font-size: 18px; margin: 0 0 10px 0;" id="ban-header-text">Обмеження накладено Головним Адміністратором.</p>
             <p style="color: #ff8888; font-weight: bold;">Причина: <span id="ban-reason-text">Порушення правил гри</span></p>
             <p style="color: #ffcc00; font-size: 14px;" id="ban-time-left-text"></p>
         </div>
@@ -223,7 +224,7 @@
 
 <div id="player-ban-modal" class="modal-overlay">
     <div class="modal-box" style="border-color:#ff3366;">
-        <h3 style="color:#ff3366; margin-top:0;">🛑 БЛОКУВАННЯ / ВИДАЛЕННЯ</h3>
+        <h3 style="color:#ff3366; margin-top:0;">🛑 БЛОКУВАННЯ / РОЗБЛОКУВАННЯ</h3>
         <p style="font-size:13px;">Дія для гравця <b id="ban-modal-target-nick"></b>:</p>
         <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
             <div>
@@ -242,8 +243,7 @@
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
             <button class="admin-btn-action" style="background:#00cc44; color:#fff; padding:10px;" onclick="executePlayerUnban()">✅ РОЗБЛОКУВАТИ</button>
-            <button class="admin-btn-action" style="background:#cc0000; color:#fff; padding:10px;" onclick="executePlayerBan(true)">🛑 ЗАБЛОКУВАТИ</button>
-            <button class="admin-btn-action" style="background:#ffaa00; color:#000; padding:10px;" onclick="executePlayerBan(false)">🗑️ ВИДАТИ З ГРУПИ</button>
+            <button class="admin-btn-action" style="background:#cc0000; color:#fff; padding:10px;" onclick="executePlayerBan()">🛑 ЗАБЛОКУВАТИ</button>
             <button class="admin-btn-action" style="background:#555; color:#fff; padding:6px;" onclick="closeBanModal()">СКАСУВАТИ</button>
         </div>
     </div>
@@ -360,9 +360,14 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
+    // Зміна сітки: 8 клітинок (2x4). Розблоковано 2 центральні (індекси 1 та 2? Простіше: перші 2 розблоковані)
+    let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
+        let arr = Array(8).fill(null);
+        for(let i=0; i<2; i++) arr[i] = 0; // 2 розблоковані клітинки
+        return arr;
+    })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
-    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 4;
+    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 2; // початково 2 клітинки
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
     let godModeActive = false;
@@ -516,7 +521,22 @@
     function showBanScreen(reason, timeText) {
         document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
         document.getElementById('banned-screen').style.display = 'flex';
-        document.getElementById('ban-reason-text').innerText = reason;
+        let headerElem = document.getElementById('ban-header-text');
+        let reasonElem = document.getElementById('ban-reason-text');
+        // reason вже містить "Обмеження накладено [група: нік]. Причина: ..."
+        if (reason.includes('Обмеження накладено')) {
+            let parts = reason.split('. Причина: ');
+            if (parts.length === 2) {
+                headerElem.innerText = parts[0];
+                reasonElem.innerText = parts[1];
+            } else {
+                headerElem.innerText = 'Обмеження накладено Адміністратором.';
+                reasonElem.innerText = reason;
+            }
+        } else {
+            headerElem.innerText = 'Обмеження накладено Адміністратором.';
+            reasonElem.innerText = reason;
+        }
         document.getElementById('ban-time-left-text').innerText = timeText;
     }
 
@@ -579,7 +599,7 @@
         if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
         else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
         else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-        document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
+        document.getElementById('owner-only-zone').style.display = (ownerAccess) ? 'block' : 'none'; // тестери не бачать менеджер груп
         document.getElementById('owner-full-reset').style.display = ownerAccess ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
         document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
@@ -605,10 +625,11 @@
     }
 
     function openPlayerManagementUI() {
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; } // тільки owner або читери
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
         updateOwnerVisibilityBtnUI();
-        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
         let isTester = (currentGroup === 'тестери' && !isOwner);
         document.getElementById('toggle-owner-visibility-btn').style.display = isTester ? 'none' : 'block';
         document.getElementById('create-group-block').style.display = isTester ? 'none' : 'flex';
@@ -725,6 +746,8 @@
     function toggleGroupCollapse(id) { let el = document.getElementById(`group-content-${id}`); el.style.display = el.style.display === 'flex' ? 'none' : 'flex'; }
 
     function openPlayerSettingsModal(nick) {
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick;
         let p = globalPlayersDB[nick] || { godMode: false, activeSkin: '🚀', group: 'ігроки', coins: 0 };
         document.getElementById('modal-target-nick').innerText = nick;
@@ -741,6 +764,8 @@
     function closePlayerModal() { document.getElementById('player-settings-modal').style.display = 'none'; }
 
     function saveIndividualPlayerSettings() {
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); closePlayerModal(); return; }
         let nick = currentModalTargetUser; if (!nick) return;
         let targetGroup = document.getElementById('modal-edit-group').value;
         let targetGod = document.getElementById('modal-edit-god').value === "true";
@@ -759,7 +784,13 @@
         }).catch(err => { alert('Помилка: ' + err.message); });
     }
 
-    function openPlayerBanModal(nick) { currentModalTargetUser = nick; document.getElementById('ban-modal-target-nick').innerText = nick; document.getElementById('player-ban-modal').style.display = 'flex'; }
+    function openPlayerBanModal(nick) { 
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
+        currentModalTargetUser = nick; 
+        document.getElementById('ban-modal-target-nick').innerText = nick; 
+        document.getElementById('player-ban-modal').style.display = 'flex'; 
+    }
     function closeBanModal() { document.getElementById('player-ban-modal').style.display = 'none'; }
 
     function executePlayerUnban() {
@@ -770,16 +801,16 @@
         alert(`✅ Гравця "${nick}" розблоковано!`);
     }
 
-    function executePlayerBan(shouldBan) {
+    function executePlayerBan() {
         let nick = currentModalTargetUser; if (!nick) return;
-        if (shouldBan) {
-            let reason = document.getElementById('ban-modal-reason').value;
-            let timeVal = document.getElementById('ban-modal-time').value;
-            let banUntil = timeVal === 'permanent' ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
-            let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-            let bannerRole = isOwner ? 'Адмін' : (currentGroup === 'тестери' ? 'Тестер' : 'Адмін');
-            db.ref('players/' + nick).update({ isBanned: true, banReason: `[${bannerRole}: ${myNickname}] ${reason}`, banUntil });
-        } else { db.ref('players/' + nick).update({ group: 'ігроки' }); }
+        let reason = document.getElementById('ban-modal-reason').value;
+        let timeVal = document.getElementById('ban-modal-time').value;
+        let banUntil = timeVal === 'permanent' ? 'permanent' : (Date.now() + Number(timeVal) * 1000);
+        let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        let bannerRole = isOwner ? 'Адмін' : (currentGroup === 'тестери' ? 'Тестер' : 'Адмін');
+        let groupLabel = customGroups[currentGroup] ? customGroups[currentGroup].label : currentGroup;
+        let banText = `Обмеження накладено [${groupLabel}: ${myNickname}]. Причина: ${reason}`;
+        db.ref('players/' + nick).update({ isBanned: true, banReason: banText, banUntil });
         closeBanModal(); renderGroupsAndPlayers();
     }
 
@@ -800,8 +831,8 @@
     function triggerWipeProgress() {
         if (confirm("💥 Збити весь ігровий прогрес?\n(Монети, хвилі, магазин — скинуться. Нік залишиться)")) {
             coins = 0; unlockedUpgrades = { fastFire: 0 }; unlockedSkins = { phoenix: false };
-            activeSkin = '🚀'; shipGrid = Array(16).fill(null).map((_, i) => i < 4 ? 0 : null);
-            shipInventory = []; unlockedCells = 4; waveData = JSON.parse(JSON.stringify(defaultWaves));
+            activeSkin = '🚀'; shipGrid = Array(8).fill(null); for(let i=0;i<2;i++) shipGrid[i]=0;
+            shipInventory = []; unlockedCells = 2; waveData = JSON.parse(JSON.stringify(defaultWaves));
             saveProgress();
             if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
             alert("✅ Прогрес скинуто! Нік збережено.");
@@ -850,12 +881,44 @@
     }
     function switchSideTab(side, tab) { if(side==='left') currentLeftTab=tab; renderShopItems('ship'); }
 
+    function buyGunType(typeId) {
+        let gun = GUN_TYPES[typeId];
+        if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
+        // Знайти першу вільну клітинку в shipGrid (значення 0)
+        let freeSlot = shipGrid.findIndex(cell => cell === 0);
+        if (freeSlot !== -1) {
+            shipGrid[freeSlot] = Number(typeId);
+        } else {
+            // Якщо немає вільних клітинок, додати в інвентар
+            shipInventory.push(Number(typeId));
+        }
+        coins -= gun.price;
+        saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
+        renderShopItems('ship');
+        alert(`✅ Ви придбали ${gun.name}! ${freeSlot !== -1 ? 'Встановлено на корабель.' : 'Додано в інвентар.'}`);
+    }
+
+    function buyShipItem(type, price) {
+        if(coins<price) return;
+        if(type==='cell') {
+            let nextIdx = unlockedCells;
+            if(nextIdx >= shipGrid.length) { alert('Всі клітинки вже розблоковано!'); return; }
+            let cellPrices = [410, 500, 620, 800, 910, 1100];
+            let required = cellPrices[nextIdx - 2]; // індекси: 2->410, 3->500, 4->620, 5->800, 6->910, 7->1100
+            if(price !== required) { alert('Ціна не відповідає!'); return; }
+            shipGrid[nextIdx] = 0;
+            unlockedCells++;
+            coins -= price;
+        }
+        saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship');
+    }
+
     function renderShopItems(tab) {
         const content = document.getElementById('shop-content'); content.innerHTML = '';
         if (tab === 'upgrades') {
             let lvl = unlockedUpgrades.fastFire || 0;
             let levels = [
-                { cost: 200, label: 'FAST FIRE LVL 1', desc: 'Трохи збільшує швидкість стрільби' },
+                { cost: 200, label: 'FAST FIRE LVL 1', desc: 'Трохи збільшує швидкість стрільби корабля' },
                 { cost: 320, label: 'FAST FIRE LVL 2', desc: 'Ще більше збільшує швидкість' },
                 { cost: 410, label: 'FAST FIRE LVL 3', desc: 'Максимальна швидкість стрільби' }
             ];
@@ -900,23 +963,35 @@
                     </button>`
                 ).join('');
             } else {
-                ll.innerHTML = `<button onclick="buyShipItem('cell',3000)" class="side-shop-btn" ${unlockedCells>=16?'disabled':''}>BUY CELL 3000💰</button>`;
+                let nextIdx = unlockedCells;
+                let cellPrices = [410, 500, 620, 800, 910, 1100];
+                let price = cellPrices[nextIdx - 2] || 0;
+                ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn" ${unlockedCells>=shipGrid.length?'disabled':''}>${unlockedCells>=shipGrid.length?'ВСІ КЛІТИНКИ ВІДКРИТІ':`КУПИТИ КЛІТИНКУ ${price}💰 (${unlockedCells}/${shipGrid.length})`}</button>`;
             }
 
-            const gDiv = document.getElementById('g-ui');
-            shipGrid.forEach((s, i) => {
+            const gDiv = document.getElementById('g-ui'); gDiv.innerHTML = '';
+            for (let i=0; i<shipGrid.length; i++) {
+                let s = shipGrid[i];
                 const c = document.createElement('div');
-                c.className = 'cell-ui' + (s===null?' locked':'');
-                c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null?'🔒':'');
-                c.title = s >= 1 ? (GUN_TYPES[s]?.name || '') : '';
-                c.onclick = () => {
-                    if(s===null) return;
-                    if(selectedGunIdx!==null && s===0) { shipGrid[i]=shipInventory[selectedGunIdx]; shipInventory.splice(selectedGunIdx,1); selectedGunIdx=null; }
-                    else if(s >= 1) { shipInventory.push(s); shipGrid[i]=0; }
-                    saveProgress(); renderShopItems('ship');
-                };
+                c.className = 'cell-ui' + (s===null ? ' locked' : (i>=unlockedCells ? ' locked' : ''));
+                c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null || i>=unlockedCells ? '🔒' : '⚪');
+                c.title = s >= 1 ? (GUN_TYPES[s]?.name || '') : (i>=unlockedCells ? 'Заблоковано, купіть клітинку' : 'Порожньо');
+                if (i<unlockedCells && s!==null) {
+                    c.onclick = () => {
+                        if(selectedGunIdx!==null && s===0) { 
+                            shipGrid[i]=shipInventory[selectedGunIdx]; 
+                            shipInventory.splice(selectedGunIdx,1); 
+                            selectedGunIdx=null; 
+                        }
+                        else if(s >= 1) { 
+                            shipInventory.push(s); 
+                            shipGrid[i]=0; 
+                        }
+                        saveProgress(); renderShopItems('ship');
+                    };
+                }
                 gDiv.appendChild(c);
-            });
+            }
 
             const rl = document.getElementById('right-side-list');
             if (shipInventory.length === 0) { rl.innerHTML = '<div style="color:#555;font-size:10px;text-align:center;padding:5px;">Немає зброї</div>'; }
@@ -938,20 +1013,6 @@
             saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
             switchTab('upgrades');
         } else { alert('Недостатньо монет або попередній рівень не куплений!'); }
-    }
-
-    function buyGunType(typeId) {
-        let gun = GUN_TYPES[typeId];
-        if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
-        coins -= gun.price; shipInventory.push(Number(typeId));
-        saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
-        renderShopItems('ship');
-    }
-
-    function buyShipItem(type, price) {
-        if(coins<price) return;
-        if(type==='cell'&&unlockedCells<16){shipGrid[unlockedCells]=0;unlockedCells++;}
-        coins-=price; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship');
     }
 
     function buySkin(id, icon, price) {
@@ -991,18 +1052,23 @@
     function startIntervals() {
         if(shootInterval) clearInterval(shootInterval);
         if(enemySpawnInterval) clearInterval(enemySpawnInterval);
-        const fireRates = [280, 220, 170, 130];
+        // Повільніші рівні: базовий fireRate 550, потім 430, 350, 280
+        const fireRates = [550, 430, 350, 280];
         let fireRate = fireRates[unlockedUpgrades.fastFire || 0] / gameSpeedMultiplier;
         shootInterval=setInterval(()=>{
             if(gameActive && !isPaused){
                 let hasGuns=false;
-                shipGrid.forEach((s,i)=>{
+                for(let i=0; i<shipGrid.length; i++){
+                    let s = shipGrid[i];
                     if(s >= 1){
                         hasGuns=true;
-                        let r=Math.floor(i/4),c=i%4;
-                        bullets.push({x:player.x+(c-1.5)*32, y:player.y-45+r*20, type:s});
+                        let r = Math.floor(i / 4); // 2 рядки (0,1)
+                        let c = i % 4; // 0-3
+                        let offsetX = (c - 1.5) * 32;
+                        let offsetY = (r * 20);
+                        bullets.push({x:player.x + offsetX, y:player.y - 45 + offsetY, type:s});
                     }
-                });
+                }
                 if(!hasGuns) bullets.push({x:player.x, y:player.y-20, type:1});
                 playSound(shootBuf);
             }
@@ -1101,35 +1167,18 @@
         }
         for(let i=enemies.length-1;i>=0;i--){
             let e=enemies[i]; e.y+=e.speed*m;
-
-            // Ефекти
-            if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) {
-                e.hp -= 0.34; e.poisonTicks--; e.poisonTimer = Date.now();
-                if(e.poisonTicks <= 0) e.poisoned = false;
-            }
+            if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) { e.hp -= 0.34; e.poisonTicks--; e.poisonTimer = Date.now(); if(e.poisonTicks <= 0) e.poisoned = false; }
             if(e.slowed && Date.now() > e.slowEnd) { e.speed *= 2; e.slowed = false; }
-
             for(let j=bullets.length-1;j>=0;j--){
                 if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y)<e.size/2+15){
                     let bType = bullets[j].type || 1;
                     bullets.splice(j,1); e.hp--; playSound(crashBuf);
-
-                    // Блискавка
                     if(bType === 2 && Math.random() < 0.35) {
-                        let targets = enemies.filter(en => en !== e)
-                            .sort((a,b) => Math.hypot(a.x-e.x,a.y-e.y) - Math.hypot(b.x-e.x,b.y-e.y))
-                            .slice(0,3);
+                        let targets = enemies.filter(en => en !== e).sort((a,b)=>Math.hypot(a.x-e.x,a.y-e.y)-Math.hypot(b.x-e.x,b.y-e.y)).slice(0,3);
                         targets.forEach(en => { en.hp = Math.max(0, en.hp - 1); });
                     }
-                    // Отрута
-                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) {
-                        e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now();
-                    }
-                    // Плазма
-                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) {
-                        e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000;
-                    }
-
+                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); }
+                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) { e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; }
                     if(e.hp <= 0){
                         enemies.splice(i,1); kills++; document.getElementById('kills').innerText=kills;
                         if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}
@@ -1148,16 +1197,24 @@
         ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.restore();
         ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
-        let mC=1,mR=1;shipGrid.forEach((cell,idx)=>{if(cell!==null){let r=Math.floor(idx/4)+1,c=(idx%4)+1;if(c>mC)mC=c;if(r>mR)mR=r;}});
+        let mC=4,mR=2;
         let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
         ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
         ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
         ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();ctx.restore();
-        shipGrid.forEach((s,i)=>{if(s>=1){let r=Math.floor(i/4),c=i%4,gx=player.x+(c-1.5)*cW,gy=player.y-sH/2+r*cH+10;ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);}});
+        for(let i=0;i<shipGrid.length;i++){
+            let s=shipGrid[i];
+            if(s>=1){
+                let r=Math.floor(i/4),c=i%4;
+                let gx=player.x+(c-1.5)*cW;
+                let gy=player.y-sH/2+r*cH+10;
+                ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);
+                ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);
+            }
+        }
         ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';ctx.fillText(activeSkin,player.x,player.y);ctx.restore();
 
         enemies.forEach(e=>{
-            // Ефекти під ворогом
             if(e.poisoned){ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#00ff44';ctx.beginPath();ctx.arc(e.x,e.y,e.size/2+4,0,Math.PI*2);ctx.fill();ctx.restore();}
             if(e.slowed){ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#ff6600';ctx.beginPath();ctx.arc(e.x,e.y,e.size/2+4,0,Math.PI*2);ctx.fill();ctx.restore();}
             ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;ctx.fillText(e.i,e.x,e.y);ctx.restore();
