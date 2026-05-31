@@ -360,15 +360,15 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    // Сітка 2x4: індекси 0-3 верхній ряд, 4-7 нижній ряд. Початково розблоковані 1 та 2 (друга і третя клітинка верхнього ряду)
+    // Початкові клітинки: відкриті тільки 2-га та 3-тя (індекси 2 і 3)
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
         let arr = Array(8).fill(null);
-        arr[1] = 0; // друга клітинка верхнього ряду
-        arr[2] = 0; // третя клітинка верхнього ряду
+        arr[2] = 0;
+        arr[3] = 0;
         return arr;
     })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
-    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 2; // початково 2 розблоковані клітинки
+    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 4; // перші 4 клітинки вважаються розблокованими
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
     let godModeActive = false;
@@ -626,7 +626,8 @@
 
     function openPlayerManagementUI() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
+        // Дозволяємо доступ тестерам
+        if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
         updateOwnerVisibilityBtnUI();
@@ -747,7 +748,7 @@
 
     function openPlayerSettingsModal(nick) {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
+        if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick;
         let p = globalPlayersDB[nick] || { godMode: false, activeSkin: '🚀', group: 'ігроки', coins: 0 };
         document.getElementById('modal-target-nick').innerText = nick;
@@ -765,7 +766,7 @@
 
     function saveIndividualPlayerSettings() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); closePlayerModal(); return; }
+        if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); closePlayerModal(); return; }
         let nick = currentModalTargetUser; if (!nick) return;
         let targetGroup = document.getElementById('modal-edit-group').value;
         let targetGod = document.getElementById('modal-edit-god').value === "true";
@@ -786,7 +787,7 @@
 
     function openPlayerBanModal(nick) { 
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
+        if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick; 
         document.getElementById('ban-modal-target-nick').innerText = nick; 
         document.getElementById('player-ban-modal').style.display = 'flex'; 
@@ -833,9 +834,9 @@
             coins = 0; unlockedUpgrades = { fastFire: 0 }; unlockedSkins = { phoenix: false };
             activeSkin = '🚀'; 
             let arr = Array(8).fill(null);
-            arr[1] = 0; arr[2] = 0;
+            arr[2] = 0; arr[3] = 0;
             shipGrid = arr;
-            shipInventory = []; unlockedCells = 2; waveData = JSON.parse(JSON.stringify(defaultWaves));
+            shipInventory = []; unlockedCells = 4; waveData = JSON.parse(JSON.stringify(defaultWaves));
             saveProgress();
             if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
             alert("✅ Прогрес скинуто! Нік збережено.");
@@ -911,7 +912,7 @@
             let nextIdx = unlockedCells;
             if(nextIdx >= shipGrid.length) { alert('Всі клітинки вже розблоковано!'); return; }
             let cellPrices = [410, 500, 620, 800, 910, 1100];
-            let required = cellPrices[nextIdx - 2];
+            let required = cellPrices[nextIdx - 4];
             if(price !== required) { alert('Ціна не відповідає!'); return; }
             shipGrid[nextIdx] = 0;
             unlockedCells++;
@@ -969,7 +970,7 @@
             } else {
                 let nextIdx = unlockedCells;
                 let cellPrices = [410, 500, 620, 800, 910, 1100];
-                let price = cellPrices[nextIdx - 2] || 0;
+                let price = cellPrices[nextIdx - 4] || 0;
                 ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn" ${unlockedCells>=shipGrid.length?'disabled':''}>${unlockedCells>=shipGrid.length?'ВСІ КЛІТИНКИ ВІДКРИТІ':`КУПИТИ КЛІТИНКУ ${price}💰 (${unlockedCells}/${shipGrid.length})`}</button>`;
             }
 
