@@ -360,14 +360,15 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    // Зміна сітки: 8 клітинок (2x4). Розблоковано 2 центральні (індекси 1 та 2? Простіше: перші 2 розблоковані)
+    // Сітка 2x4: індекси 0-3 верхній ряд, 4-7 нижній ряд. Початково розблоковані 1 та 2 (друга і третя клітинка верхнього ряду)
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
         let arr = Array(8).fill(null);
-        for(let i=0; i<2; i++) arr[i] = 0; // 2 розблоковані клітинки
+        arr[1] = 0; // друга клітинка верхнього ряду
+        arr[2] = 0; // третя клітинка верхнього ряду
         return arr;
     })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
-    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 2; // початково 2 клітинки
+    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 2; // початково 2 розблоковані клітинки
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
     let godModeActive = false;
@@ -523,7 +524,6 @@
         document.getElementById('banned-screen').style.display = 'flex';
         let headerElem = document.getElementById('ban-header-text');
         let reasonElem = document.getElementById('ban-reason-text');
-        // reason вже містить "Обмеження накладено [група: нік]. Причина: ..."
         if (reason.includes('Обмеження накладено')) {
             let parts = reason.split('. Причина: ');
             if (parts.length === 2) {
@@ -599,7 +599,7 @@
         if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
         else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
         else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-        document.getElementById('owner-only-zone').style.display = (ownerAccess) ? 'block' : 'none'; // тестери не бачать менеджер груп
+        document.getElementById('owner-only-zone').style.display = (ownerAccess) ? 'block' : 'none';
         document.getElementById('owner-full-reset').style.display = ownerAccess ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
         document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
@@ -626,7 +626,7 @@
 
     function openPlayerManagementUI() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; } // тільки owner або читери
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
         updateOwnerVisibilityBtnUI();
@@ -831,7 +831,10 @@
     function triggerWipeProgress() {
         if (confirm("💥 Збити весь ігровий прогрес?\n(Монети, хвилі, магазин — скинуться. Нік залишиться)")) {
             coins = 0; unlockedUpgrades = { fastFire: 0 }; unlockedSkins = { phoenix: false };
-            activeSkin = '🚀'; shipGrid = Array(8).fill(null); for(let i=0;i<2;i++) shipGrid[i]=0;
+            activeSkin = '🚀'; 
+            let arr = Array(8).fill(null);
+            arr[1] = 0; arr[2] = 0;
+            shipGrid = arr;
             shipInventory = []; unlockedCells = 2; waveData = JSON.parse(JSON.stringify(defaultWaves));
             saveProgress();
             if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
@@ -884,18 +887,22 @@
     function buyGunType(typeId) {
         let gun = GUN_TYPES[typeId];
         if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
-        // Знайти першу вільну клітинку в shipGrid (значення 0)
-        let freeSlot = shipGrid.findIndex(cell => cell === 0);
+        let freeSlot = -1;
+        for(let i=0; i<shipGrid.length; i++) {
+            if(shipGrid[i] === 0 && i < unlockedCells) {
+                freeSlot = i;
+                break;
+            }
+        }
         if (freeSlot !== -1) {
             shipGrid[freeSlot] = Number(typeId);
         } else {
-            // Якщо немає вільних клітинок, додати в інвентар
             shipInventory.push(Number(typeId));
         }
         coins -= gun.price;
         saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
         renderShopItems('ship');
-        alert(`✅ Ви придбали ${gun.name}! ${freeSlot !== -1 ? 'Встановлено на корабель.' : 'Додано в інвентар.'}`);
+        alert(`✅ Ви придбали ${gun.name}! ${freeSlot !== -1 ? 'Встановлено на вільну клітинку корабля.' : 'Додано в інвентар.'}`);
     }
 
     function buyShipItem(type, price) {
@@ -904,7 +911,7 @@
             let nextIdx = unlockedCells;
             if(nextIdx >= shipGrid.length) { alert('Всі клітинки вже розблоковано!'); return; }
             let cellPrices = [410, 500, 620, 800, 910, 1100];
-            let required = cellPrices[nextIdx - 2]; // індекси: 2->410, 3->500, 4->620, 5->800, 6->910, 7->1100
+            let required = cellPrices[nextIdx - 2];
             if(price !== required) { alert('Ціна не відповідає!'); return; }
             shipGrid[nextIdx] = 0;
             unlockedCells++;
@@ -922,19 +929,16 @@
                 { cost: 320, label: 'FAST FIRE LVL 2', desc: 'Ще більше збільшує швидкість' },
                 { cost: 410, label: 'FAST FIRE LVL 3', desc: 'Максимальна швидкість стрільби' }
             ];
-            let html = '';
-            levels.forEach((l, idx) => {
-                let bought = lvl > idx;
-                let canBuy = lvl === idx;
-                html += `<div class="shop-item">
-                    <div style="color:#0ff;font-weight:bold">⚡ ${l.label}</div>
-                    <p style="font-size:11px;color:#777;margin:3px 0">${l.desc}</p>
-                    <button class="main-btn" style="width:160px;font-size:12px" ${canBuy?`onclick="buyFastFire(${idx+1},${l.cost})"`:''}>
-                        ${bought ? '✅ КУПЛЕНО' : canBuy ? `КУПИТИ ${l.cost}💰` : '🔒 ЗАБЛОКОВАНО'}
-                    </button>
+            if (lvl >= 3) {
+                content.innerHTML = `<div class="shop-item"><div style="color:#0ff;font-weight:bold">⚡ FAST FIRE MAX</div><p style="font-size:11px;color:#777">Максимальний рівень досягнуто</p><button class="main-btn" style="width:160px;font-size:12px" disabled>✅ МАКСИМУМ</button></div>`;
+            } else {
+                let cur = levels[lvl];
+                content.innerHTML = `<div class="shop-item">
+                    <div style="color:#0ff;font-weight:bold">⚡ ${cur.label}</div>
+                    <p style="font-size:11px;color:#777;margin:3px 0">${cur.desc}</p>
+                    <button class="main-btn" style="width:160px;font-size:12px" onclick="buyFastFire(${lvl+1},${cur.cost})">КУПИТИ ${cur.cost}💰</button>
                 </div>`;
-            });
-            content.innerHTML = html;
+            }
         } else if (tab === 'skins') {
             content.innerHTML = `<div class="shop-item"><div style="color:gold">🐥 PHOENIX</div><button class="main-btn" style="width:160px;font-size:12px" onclick="buySkin('phoenix','🐥',500)">${unlockedSkins.phoenix?(activeSkin==='🐥'?'EQUIPPED':'EQUIP'):'BUY 500💰'}</button></div><div class="shop-item"><div>🚀 DEFAULT</div><button class="main-btn" style="width:160px;font-size:12px" onclick="useDefault()">USE</button></div>`;
         } else if (tab === 'ship') {
@@ -1052,7 +1056,6 @@
     function startIntervals() {
         if(shootInterval) clearInterval(shootInterval);
         if(enemySpawnInterval) clearInterval(enemySpawnInterval);
-        // Повільніші рівні: базовий fireRate 550, потім 430, 350, 280
         const fireRates = [550, 430, 350, 280];
         let fireRate = fireRates[unlockedUpgrades.fastFire || 0] / gameSpeedMultiplier;
         shootInterval=setInterval(()=>{
@@ -1062,8 +1065,8 @@
                     let s = shipGrid[i];
                     if(s >= 1){
                         hasGuns=true;
-                        let r = Math.floor(i / 4); // 2 рядки (0,1)
-                        let c = i % 4; // 0-3
+                        let r = Math.floor(i / 4);
+                        let c = i % 4;
                         let offsetX = (c - 1.5) * 32;
                         let offsetY = (r * 20);
                         bullets.push({x:player.x + offsetX, y:player.y - 45 + offsetY, type:s});
