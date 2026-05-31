@@ -339,7 +339,7 @@
 
     const GUN_TYPES = {
         1: { name: 'ЗВИЧАЙНА', icon: '🔫', price: 150, desc: 'Стріляє звичайними кулями. Базова зброя.' },
-        2: { name: 'БЛИСКАВКА', icon: '⚡', price: 320, desc: '35% шанс — блискавка б\'є 3 найближчих вороги (-1 HP кожному).' },
+        2: { name: 'БЛИСКАВКА', icon: '⚡', price: 320, desc: '35% шанс — ланцюг блискавки (до 3 ворогів).' },
         3: { name: 'ОТРУТА', icon: '☠️', price: 400, desc: '40% шанс — отруює ворога (2 шкоди за 3 сек).' },
         4: { name: 'ПЛАЗМА', icon: '🔥', price: 550, desc: '25% шанс — підпалює та сповільнює ворога на 50% на 3 сек.' }
     };
@@ -386,7 +386,6 @@
     let sessionStartTime = Date.now();
     let isPaused = false;
     
-    // Масив для візуальних ефектів блискавки (спалах)
     let lightningFlashes = []; // {x, y, timer}
 
     setInterval(() => {
@@ -904,7 +903,6 @@
     function startIntervals() {
         stopAllIntervals();
         
-        // Інтервал для центрального корабля (залежить від апгрейду FAST FIRE)
         const fireRates = [550, 430, 350, 280];
         let shipFireRate = fireRates[unlockedUpgrades.fastFire || 0] / gameSpeedMultiplier;
         shipShootInterval = setInterval(() => {
@@ -914,7 +912,6 @@
             }
         }, shipFireRate);
         
-        // Інтервал для встановлених пушок (фіксована швидкість 550 мс, не залежить від апгрейду)
         const GUNS_FIRE_RATE = 550 / gameSpeedMultiplier;
         gunsShootInterval = setInterval(() => {
             if (gameActive && !isPaused) {
@@ -932,7 +929,6 @@
             }
         }, GUNS_FIRE_RATE);
         
-        // Інтервал спавну ворогів
         enemySpawnInterval = setInterval(() => {
             if (!gameActive || isPaused) return;
             if (spawnedThisWave < currentWave.spawnCount) { if (Math.random() < 0.6) spawnEnemy(); }
@@ -978,6 +974,42 @@
         }
     }
 
+    // Функція для ланцюга блискавки (не більше 3 цілей разом з першою)
+    function lightningChain(startEnemy, allEnemies, maxChain = 3) {
+        let hitSet = new Set(); // унікальні вороги
+        let hitList = [startEnemy];
+        hitSet.add(startEnemy);
+        
+        let current = startEnemy;
+        for (let step = 1; step < maxChain; step++) {
+            let closest = null;
+            let minDist = Infinity;
+            for (let e of allEnemies) {
+                if (!hitSet.has(e) && e !== current) {
+                    let dist = Math.hypot(e.x - current.x, e.y - current.y);
+                    if (dist < minDist && dist < 150) { // радіус перестрибування 150
+                        minDist = dist;
+                        closest = e;
+                    }
+                }
+            }
+            if (!closest) break;
+            hitSet.add(closest);
+            hitList.push(closest);
+            current = closest;
+        }
+        
+        // Застосовуємо шкоду та візуальні ефекти для всіх, крім першого (йому шкоду вже завдали)
+        for (let i = 1; i < hitList.length; i++) {
+            let enemy = hitList[i];
+            enemy.hp--;
+            lightningFlashes.push({x: enemy.x, y: enemy.y, timer: 200});
+            // Якщо ворог помер – kills збільшимо пізніше у видаленні
+        }
+        // Додаємо візуал на першого ворога (затримка 0)
+        lightningFlashes.push({x: startEnemy.x, y: startEnemy.y, timer: 200});
+    }
+
     function gameLoop(){if(!gameActive||isPaused) return; update(); draw(); requestAnimationFrame(gameLoop);}
 
     function update() {
@@ -985,7 +1017,6 @@
         player.x+=(player.targetX-player.x)*0.2*m;
         starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
         
-        // Оновлення таймерів ефектів блискавки
         for (let i=0; i<lightningFlashes.length; i++) {
             lightningFlashes[i].timer -= 16;
             if (lightningFlashes[i].timer <= 0) {
@@ -994,18 +1025,13 @@
             }
         }
         
-        // Рух куль
         for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
-        
-        // Ворожі кулі
         for(let i=enemyBullets.length-1;i>=0;i--){
             enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
             enemyBullets[i].y+=(enemyBullets[i].vy||7.5)*m;
             if(enemyBullets[i].y>canvas.height||enemyBullets[i].y<-50||enemyBullets[i].x<-50||enemyBullets[i].x>canvas.width+50){enemyBullets.splice(i,1);continue;}
             if(Math.hypot(enemyBullets[i].x-player.x,enemyBullets[i].y-player.y)<28){enemyBullets.splice(i,1);takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");if(!gameActive)return;}
         }
-        
-        // Бос
         if(bossInstance){
             if(bossInstance.y<bossInstance.targetY) bossInstance.y+=2.5*m;
             if(!(currentWave.id===4&&bossInstance.isUlting)){bossInstance.x+=bossInstance.speedX*m;if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2)bossInstance.speedX*=-1;}
@@ -1046,20 +1072,12 @@
             let e=enemies[i];
             e.y+=e.speed*m;
             
-            // Отрута
             if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) { 
-                e.hp -= 0.34; 
-                e.poisonTicks--; 
-                e.poisonTimer = Date.now(); 
+                e.hp -= 0.34; e.poisonTicks--; e.poisonTimer = Date.now(); 
                 if(e.poisonTicks <= 0) e.poisoned = false; 
             }
-            // Уповільнення
-            if(e.slowed && Date.now() > e.slowEnd) { 
-                e.speed *= 2; 
-                e.slowed = false; 
-            }
+            if(e.slowed && Date.now() > e.slowEnd) { e.speed *= 2; e.slowed = false; }
             
-            // Перевірка попадань куль
             let hit = false;
             for(let j=bullets.length-1;j>=0;j--){
                 if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y) < e.size/2+15){
@@ -1068,42 +1086,23 @@
                     e.hp--;
                     playSound(crashBuf);
                     
-                    // Блискавка: ланцюжок у радіусі 150
+                    // Блискавка (тип 2) – ланцюг до 3 ворогів
                     if(bType === 2 && Math.random() < 0.35) {
-                        const RADIUS = 150;
-                        lightningFlashes.push({x: e.x, y: e.y, timer: 200});
-                        for(let k=0; k<enemies.length; k++) {
-                            let other = enemies[k];
-                            if(other !== e) {
-                                let dx = other.x - e.x;
-                                let dy = other.y - e.y;
-                                if(Math.hypot(dx,dy) < RADIUS) {
-                                    other.hp--;
-                                    lightningFlashes.push({x: other.x, y: other.y, timer: 150});
-                                }
-                            }
-                        }
+                        lightningChain(e, enemies, 3);
                     }
                     
-                    // Отрута (тип 3)
-                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) {
-                        e.poisoned = true;
-                        e.poisonTicks = 6;
-                        e.poisonTimer = Date.now();
+                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { 
+                        e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); 
                     }
-                    // Плазма (тип 4)
-                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) {
-                        e.slowed = true;
-                        e.speed *= 0.5;
-                        e.slowEnd = Date.now() + 3000;
+                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) { 
+                        e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; 
                     }
                     
                     hit = true;
-                    break; // виходимо з циклу куль, далі обробимо смерть ворога
+                    break;
                 }
             }
             
-            // Якщо ворог помер – видаляємо та збільшуємо kills
             if(e.hp <= 0) {
                 enemies.splice(i,1);
                 kills++;
@@ -1111,7 +1110,6 @@
                 continue;
             }
             
-            // Зіткнення з гравцем
             if(Math.hypot(e.x-player.x, e.y-player.y) < e.size/2+18){
                 enemies.splice(i,1);
                 takeDamage("ЗІТКНЕННЯ!");
@@ -1119,7 +1117,6 @@
                 continue;
             }
             
-            // Пропущений ворог (вилетів за нижню межу)
             if(e.y > canvas.height+50){
                 enemies.splice(i,1);
                 missed++;
@@ -1127,7 +1124,6 @@
             }
         }
         
-        // Перевірка завершення хвилі
         if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && !currentWave.hasBoss){
             gameActive = false;
             endMission();
@@ -1152,7 +1148,6 @@
         ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
         ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();ctx.restore();
         
-        // Малюємо іконки зброї на кораблі
         for(let i=0;i<shipGrid.length;i++){
             let s=shipGrid[i];
             if(s>=1){
@@ -1212,7 +1207,6 @@
         });
         ctx.fillStyle='#f00'; enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
         
-        // Малюємо ефекти блискавки (спалахи)
         for (let fl of lightningFlashes) {
             let alpha = Math.min(1, fl.timer / 100);
             ctx.beginPath();
