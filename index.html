@@ -376,7 +376,10 @@
     let globalVolume = Number(localStorage.getItem('gameVolume')) || 80;
     let gameActive = false, currentWave = null, playerHp = 3, kills = 0, missed = 0, spawnedThisWave = 0;
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
-    let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf, shootInterval, enemySpawnInterval;
+    let audioCtx, shootBuf, crashBuf, hurtBuf, bossBuf;
+    let shipShootInterval = null;    // інтервал для центрального корабля
+    let gunsShootInterval = null;    // інтервал для встановлених пушок
+    let enemySpawnInterval;
     let bossInstance = null;
     let currentLeftTab = 'guns', selectedGunIdx = null;
     let currentModalTargetUser = '';
@@ -447,8 +450,7 @@
 
     function exitToWaves() {
         isPaused = false; gameActive = false;
-        if(shootInterval) clearInterval(shootInterval);
-        if(enemySpawnInterval) clearInterval(enemySpawnInterval);
+        stopAllIntervals();
         document.getElementById('pause-menu').style.display = 'none';
         document.getElementById('pause-btn').style.display = 'none';
         document.getElementById('ui').style.display = 'none';
@@ -835,7 +837,10 @@
         gameSpeedMultiplier = gameSpeedMultiplier === 1 ? 4 : 1;
         let cg = globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки';
         openAdminPanelUI(isOwner, cg);
-        if (gameActive) startIntervals();
+        if (gameActive) {
+            // перезапускаємо інтервали з новою швидкістю тільки для ворогів, стрільба центрального корабля не змінюється
+            startIntervals();
+        }
     }
     function unlockAllAdminWaves() { waveData.forEach(w => w.unlocked = true); saveProgress(); alert("Усі місії розблоковані!"); }
     function triggerWipeProgress() {
@@ -888,6 +893,258 @@
         }
     }
 
+    function stopAllIntervals() {
+        if (shipShootInterval) clearInterval(shipShootInterval);
+        if (gunsShootInterval) clearInterval(gunsShootInterval);
+        if (enemySpawnInterval) clearInterval(enemySpawnInterval);
+    }
+
+    function startIntervals() {
+        stopAllIntervals();
+        
+        // Інтервал для центрального корабля (залежить від апгрейду FAST FIRE)
+        const fireRates = [550, 430, 350, 280];
+        let shipFireRate = fireRates[unlockedUpgrades.fastFire || 0] / gameSpeedMultiplier;
+        shipShootInterval = setInterval(() => {
+            if (gameActive && !isPaused) {
+                bullets.push({x: player.x, y: player.y - 20, type: 1});
+                playSound(shootBuf);
+            }
+        }, shipFireRate);
+        
+        // Інтервал для встановлених пушок (фіксована швидкість 550 мс, не залежить від апгрейду)
+        const GUNS_FIRE_RATE = 550 / gameSpeedMultiplier;
+        gunsShootInterval = setInterval(() => {
+            if (gameActive && !isPaused) {
+                for (let i = 0; i < shipGrid.length; i++) {
+                    let s = shipGrid[i];
+                    if (s >= 1) {
+                        let r = Math.floor(i / 4);
+                        let c = i % 4;
+                        let offsetX = (c - 1.5) * 32;
+                        let offsetY = (r * 20);
+                        bullets.push({x: player.x + offsetX, y: player.y - 45 + offsetY, type: s});
+                    }
+                }
+                // Звук стрільби для пушок (можна зробити окремий, але поки залишимо той самий)
+                if (shipGrid.some(s => s >= 1)) playSound(shootBuf);
+            }
+        }, GUNS_FIRE_RATE);
+        
+        // Інтервал спавну ворогів
+        enemySpawnInterval = setInterval(() => {
+            if (!gameActive || isPaused) return;
+            if (spawnedThisWave < currentWave.spawnCount) { if (Math.random() < 0.6) spawnEnemy(); }
+            else if (enemies.length === 0) {
+                if (currentWave.hasBoss && !bossInstance && kills < currentWave.spawnCount + 1) spawnBoss();
+                else if (!currentWave.hasBoss) { gameActive = false; endMission(); }
+            }
+        }, 900 / gameSpeedMultiplier);
+    }
+
+    function spawnEnemy() {
+        let t=currentWave.spawnTypes[Math.floor(Math.random()*currentWave.spawnTypes.length)];
+        if(t==='normal') enemies.push({x:Math.random()*canvas.width,y:-50,hp:1,maxHp:1,speed:3.2,size:35,i:'👾'});
+        else if(t==='fast') enemies.push({x:Math.random()*canvas.width,y:-50,hp:1,maxHp:1,speed:6.5,size:30,i:'🚀'});
+        else if(t==='heavy') enemies.push({x:Math.random()*canvas.width,y:-50,hp:4,maxHp:4,speed:1.8,size:50,i:'🛸'});
+        spawnedThisWave++;
+    }
+
+    function spawnBoss() {
+        bossInstance={x:canvas.width/2,y:-100,targetY:110,w:130,h:70,hp:currentWave.bossHp,maxHp:currentWave.bossHp,speedX:currentWave.id===4?4:3,lastShot:0,shootCooldown:currentWave.bossCooldown,lastCircleShot:0,circleCooldown:currentWave.id===4?5000:4000,ultCount:0,isUlting:false,i:currentWave.bossSkin,laserTargetX:0,laserWarmupDuration:1000,laserFireDuration:2000,laserTimer:0};
+    }
+
+    function init() {
+        canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+        player.x=canvas.width/2; player.targetX=player.x; player.y=canvas.height-100;
+        starsBg=[]; for(let i=0;i<30;i++) starsBg.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,s:Math.random()*2});
+    }
+
+    window.addEventListener('pointermove',(e)=>{if(gameActive&&!isPaused) player.targetX=e.clientX;});
+    window.addEventListener('touchmove',(e)=>{if(gameActive&&!isPaused&&e.touches.length>0) player.targetX=e.touches[0].clientX;});
+
+    function takeDamage(reason) {
+        if(godModeActive) return;
+        playerHp--; updateHpUI(); playSound(hurtBuf);
+        if(playerHp<=0){
+            gameActive=false;
+            document.getElementById('fail-title').innerText=reason;
+            document.getElementById('fail-screen').style.display='flex';
+            document.getElementById('ui').style.display='none';
+            document.getElementById('hp-display').style.display='none';
+            document.getElementById('pause-btn').style.display='none';
+            document.getElementById('pause-menu').style.display='none';
+        }
+    }
+
+    function gameLoop(){if(!gameActive||isPaused) return; update(); draw(); requestAnimationFrame(gameLoop);}
+
+    function update() {
+        let m=gameSpeedMultiplier;
+        player.x+=(player.targetX-player.x)*0.2*m;
+        starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
+        for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
+        for(let i=enemyBullets.length-1;i>=0;i--){
+            enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
+            enemyBullets[i].y+=(enemyBullets[i].vy||7.5)*m;
+            if(enemyBullets[i].y>canvas.height||enemyBullets[i].y<-50||enemyBullets[i].x<-50||enemyBullets[i].x>canvas.width+50){enemyBullets.splice(i,1);continue;}
+            if(Math.hypot(enemyBullets[i].x-player.x,enemyBullets[i].y-player.y)<28){enemyBullets.splice(i,1);takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");if(!gameActive)return;}
+        }
+        if(bossInstance){
+            if(bossInstance.y<bossInstance.targetY) bossInstance.y+=2.5*m;
+            if(!(currentWave.id===4&&bossInstance.isUlting)){bossInstance.x+=bossInstance.speedX*m;if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2)bossInstance.speedX*=-1;}
+            let ts=Date.now();
+            if(!bossInstance.isUlting&&ts-bossInstance.lastShot>bossInstance.shootCooldown/m&&bossInstance.y>=bossInstance.targetY){
+                enemyBullets.push({x:bossInstance.x-25,y:bossInstance.y+20,vx:0,vy:7.5});
+                enemyBullets.push({x:bossInstance.x+25,y:bossInstance.y+20,vx:0,vy:7.5});
+                playSound(bossBuf);bossInstance.lastShot=ts;
+            }
+            if(!bossInstance.isUlting&&ts-bossInstance.lastCircleShot>bossInstance.circleCooldown/m&&bossInstance.y>=bossInstance.targetY){
+                if(currentWave.id===3||currentWave.id===4){bossInstance.isUlting=true;bossInstance.lastCircleShot=ts;if(currentWave.id===4){bossInstance.laserTargetX=player.x;bossInstance.laserTimer=ts;playSound(bossBuf);}else bossInstance.ultCount=0;}
+            }
+            if(bossInstance.isUlting){
+                if(currentWave.id===4){
+                    let tp=ts-bossInstance.laserTimer,tlt=(bossInstance.laserWarmupDuration+bossInstance.laserFireDuration)/m;
+                    if(tp>tlt){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts;}
+                    else if(tp>=bossInstance.laserWarmupDuration/m){if(ts%7===0){if(player.x>bossInstance.laserTargetX-35&&player.x<bossInstance.laserTargetX+35&&player.y>bossInstance.y){takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ!");if(!gameActive)return;}}}
+                } else if(currentWave.id===3){
+                    if(ts-bossInstance.lastCircleShot>350/m){
+                        let ao=(bossInstance.ultCount*Math.PI)/10;
+                        for(let i=0;i<10;i++){let a=((i*2*Math.PI)/10)+ao;enemyBullets.push({x:bossInstance.x,y:bossInstance.y,vx:Math.cos(a)*4.8,vy:Math.sin(a)*4.8});}
+                        playSound(bossBuf);bossInstance.ultCount++;bossInstance.lastCircleShot=ts;
+                        if(bossInstance.ultCount>=2){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts+1000/m;}
+                    }
+                }
+            }
+            for(let j=bullets.length-1;j>=0;j--){
+                if(bullets[j].x>bossInstance.x-bossInstance.w/2&&bullets[j].x<bossInstance.x+bossInstance.w/2&&bullets[j].y>bossInstance.y-bossInstance.h/2&&bullets[j].y<bossInstance.y+bossInstance.h/2){
+                    bullets.splice(j,1);bossInstance.hp--;playSound(crashBuf);
+                    if(bossInstance.hp<=0){bossInstance=null;kills++;document.getElementById('kills').innerText=kills;gameActive=false;endMission();return;}
+                }
+            }
+            if(Math.hypot(bossInstance.x-player.x,bossInstance.y-player.y)<55){takeDamage("БОСС ПРОТАРАНИВ ВАС!");bossInstance.x=canvas.width/2;if(!gameActive)return;}
+        }
+        for(let i=enemies.length-1;i>=0;i--){
+            let e=enemies[i]; e.y+=e.speed*m;
+            if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) { e.hp -= 0.34; e.poisonTicks--; e.poisonTimer = Date.now(); if(e.poisonTicks <= 0) e.poisoned = false; }
+            if(e.slowed && Date.now() > e.slowEnd) { e.speed *= 2; e.slowed = false; }
+            for(let j=bullets.length-1;j>=0;j--){
+                if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y)<e.size/2+15){
+                    let bType = bullets[j].type || 1;
+                    bullets.splice(j,1); e.hp--; playSound(crashBuf);
+                    if(bType === 2 && Math.random() < 0.35) {
+                        let targets = enemies.filter(en => en !== e).sort((a,b)=>Math.hypot(a.x-e.x,a.y-e.y)-Math.hypot(b.x-e.x,b.y-e.y)).slice(0,3);
+                        targets.forEach(en => { en.hp = Math.max(0, en.hp - 1); });
+                    }
+                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); }
+                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) { e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; }
+                    if(e.hp <= 0){
+                        enemies.splice(i,1); kills++; document.getElementById('kills').innerText=kills;
+                        if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}
+                    }
+                    break;
+                }
+            }
+            if(e&&Math.hypot(e.x-player.x,e.y-player.y)<e.size/2+18){enemies.splice(i,1);takeDamage("ЗІТКНЕННЯ!");if(!gameActive)return;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
+            if(e&&e.y>canvas.height+50){enemies.splice(i,1);missed++;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
+        }
+    }
+
+    function draw() {
+        ctx.save();
+        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.lineWidth=1;
+        ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.restore();
+        ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
+        let mC=4,mR=2;
+        let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
+        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+        ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
+        ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();ctx.restore();
+        
+        // Малюємо іконки зброї на кораблі замість прямокутників
+        for(let i=0;i<shipGrid.length;i++){
+            let s=shipGrid[i];
+            if(s>=1){
+                let r=Math.floor(i/4),c=i%4;
+                let gx=player.x+(c-1.5)*cW;
+                let gy=player.y-sH/2+r*cH+10;
+                ctx.save();
+                ctx.font='26px Arial';
+                ctx.fillStyle='#fff';
+                ctx.shadowBlur=0;
+                ctx.textAlign='center';
+                ctx.textBaseline='middle';
+                ctx.fillText(GUN_TYPES[s]?.icon || '🔫', gx, gy);
+                ctx.restore();
+            }
+        }
+        
+        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';ctx.fillText(activeSkin,player.x,player.y);ctx.restore();
+
+        enemies.forEach(e=>{
+            if(e.poisoned){ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#00ff44';ctx.beginPath();ctx.arc(e.x,e.y,e.size/2+4,0,Math.PI*2);ctx.fill();ctx.restore();}
+            if(e.slowed){ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#ff6600';ctx.beginPath();ctx.arc(e.x,e.y,e.size/2+4,0,Math.PI*2);ctx.fill();ctx.restore();}
+            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;ctx.fillText(e.i,e.x,e.y);ctx.restore();
+            if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
+        });
+
+        if(bossInstance){
+            if(currentWave.id===4&&bossInstance.isUlting){
+                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+                let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
+                if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;}
+                else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
+                ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
+                if(la>=w){ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
+                ctx.restore();
+            }
+            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
+            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+            let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
+            ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
+            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
+            ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
+            let bt="КОСМІЧНИЙ ЗАГАРБНИК";
+            if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
+            if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
+            ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
+        }
+
+        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+        bullets.forEach(b => {
+            let bType = b.type || 1;
+            if(bType===1) ctx.fillStyle='#0ff';
+            else if(bType===2) ctx.fillStyle='#ffff00';
+            else if(bType===3) ctx.fillStyle='#00ff44';
+            else if(bType===4) ctx.fillStyle='#ff6600';
+            ctx.fillRect(b.x-2, b.y, 4, 20);
+        });
+        ctx.fillStyle='#f00'; enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
+        ctx.restore();
+    }
+
+    function endMission() {
+        stopAllIntervals();
+        let sc=1;if(playerHp===3&&missed===0)sc=3;else if(playerHp>=2)sc=2;
+        if(sc>currentWave.stars) currentWave.stars=sc;
+        coins+=currentWave.reward;
+        if(!isOwner&&myNickname) db.ref('players/'+myNickname).update({coins});
+        if(currentWave.id<waveData.length) waveData[currentWave.id].unlocked=true;
+        saveProgress();updateCoinsUI();
+        document.getElementById('ui').style.display='none';
+        document.getElementById('hp-display').style.display='none';
+        document.getElementById('pause-btn').style.display='none';
+        document.getElementById('pause-menu').style.display='none';
+        if(currentWave.id===4){document.getElementById('final-credits-screen').style.display='flex';}
+        else{
+            document.getElementById('win-title').innerText=currentWave.hasBoss?"БОССА ЗНИЩЕНО!":"МІСІЯ ВИКОНАНА";
+            document.getElementById('win-stars').innerText='★'.repeat(sc)+'☆'.repeat(3-sc);
+            document.getElementById('win-reward-text').innerText=`+${currentWave.reward} COINS`;
+            document.getElementById('win-screen').style.display='flex';
+        }
+    }
+
     function switchTab(tab) {
         ['upgrades','skins','ship'].forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===tab));
         renderShopItems(tab);
@@ -914,7 +1171,6 @@
         if(type==='cell') {
             let nextIdx = shipGrid.findIndex(cell => cell === null);
             if (nextIdx === -1) { alert('Всі клітинки вже розблоковано!'); return; }
-            // Ціни для клітинок у порядку індексів: 0→410, 3→500, 4→620, 5→800, 6→910, 7→1100
             const pricesMap = { 0:410, 3:500, 4:620, 5:800, 6:910, 7:1100 };
             let required = pricesMap[nextIdx];
             if (!required) { alert('Помилка: ціна не визначена!'); return; }
@@ -1060,234 +1316,6 @@
         kills=0; missed=0; spawnedThisWave=0;
         bullets=[]; enemyBullets=[]; enemies=[]; bossInstance=null;
         init(); updateHpUI(); startIntervals(); requestAnimationFrame(gameLoop);
-    }
-
-    function startIntervals() {
-        if(shootInterval) clearInterval(shootInterval);
-        if(enemySpawnInterval) clearInterval(enemySpawnInterval);
-        const fireRates = [550, 430, 350, 280];
-        let fireRate = fireRates[unlockedUpgrades.fastFire || 0] / gameSpeedMultiplier;
-        shootInterval=setInterval(()=>{
-            if(gameActive && !isPaused){
-                let hasGuns=false;
-                for(let i=0; i<shipGrid.length; i++){
-                    let s = shipGrid[i];
-                    if(s >= 1){
-                        hasGuns=true;
-                        let r = Math.floor(i / 4);
-                        let c = i % 4;
-                        let offsetX = (c - 1.5) * 32;
-                        let offsetY = (r * 20);
-                        bullets.push({x:player.x + offsetX, y:player.y - 45 + offsetY, type:s});
-                    }
-                }
-                if(!hasGuns) bullets.push({x:player.x, y:player.y-20, type:1});
-                playSound(shootBuf);
-            }
-        }, fireRate);
-        enemySpawnInterval=setInterval(()=>{
-            if(!gameActive||isPaused) return;
-            if(spawnedThisWave<currentWave.spawnCount){if(Math.random()<0.6) spawnEnemy();}
-            else if(enemies.length===0){
-                if(currentWave.hasBoss&&!bossInstance&&kills<currentWave.spawnCount+1) spawnBoss();
-                else if(!currentWave.hasBoss){gameActive=false;endMission();}
-            }
-        }, 900/gameSpeedMultiplier);
-    }
-
-    function spawnEnemy() {
-        let t=currentWave.spawnTypes[Math.floor(Math.random()*currentWave.spawnTypes.length)];
-        if(t==='normal') enemies.push({x:Math.random()*canvas.width,y:-50,hp:1,maxHp:1,speed:3.2,size:35,i:'👾'});
-        else if(t==='fast') enemies.push({x:Math.random()*canvas.width,y:-50,hp:1,maxHp:1,speed:6.5,size:30,i:'🚀'});
-        else if(t==='heavy') enemies.push({x:Math.random()*canvas.width,y:-50,hp:4,maxHp:4,speed:1.8,size:50,i:'🛸'});
-        spawnedThisWave++;
-    }
-
-    function spawnBoss() {
-        bossInstance={x:canvas.width/2,y:-100,targetY:110,w:130,h:70,hp:currentWave.bossHp,maxHp:currentWave.bossHp,speedX:currentWave.id===4?4:3,lastShot:0,shootCooldown:currentWave.bossCooldown,lastCircleShot:0,circleCooldown:currentWave.id===4?5000:4000,ultCount:0,isUlting:false,i:currentWave.bossSkin,laserTargetX:0,laserWarmupDuration:1000,laserFireDuration:2000,laserTimer:0};
-    }
-
-    function init() {
-        canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-        player.x=canvas.width/2; player.targetX=player.x; player.y=canvas.height-100;
-        starsBg=[]; for(let i=0;i<30;i++) starsBg.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,s:Math.random()*2});
-    }
-
-    window.addEventListener('pointermove',(e)=>{if(gameActive&&!isPaused) player.targetX=e.clientX;});
-    window.addEventListener('touchmove',(e)=>{if(gameActive&&!isPaused&&e.touches.length>0) player.targetX=e.touches[0].clientX;});
-
-    function takeDamage(reason) {
-        if(godModeActive) return;
-        playerHp--; updateHpUI(); playSound(hurtBuf);
-        if(playerHp<=0){
-            gameActive=false;
-            document.getElementById('fail-title').innerText=reason;
-            document.getElementById('fail-screen').style.display='flex';
-            document.getElementById('ui').style.display='none';
-            document.getElementById('hp-display').style.display='none';
-            document.getElementById('pause-btn').style.display='none';
-            document.getElementById('pause-menu').style.display='none';
-        }
-    }
-
-    function gameLoop(){if(!gameActive||isPaused) return; update(); draw(); requestAnimationFrame(gameLoop);}
-
-    function update() {
-        let m=gameSpeedMultiplier;
-        player.x+=(player.targetX-player.x)*0.2*m;
-        starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
-        for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
-        for(let i=enemyBullets.length-1;i>=0;i--){
-            enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
-            enemyBullets[i].y+=(enemyBullets[i].vy||7.5)*m;
-            if(enemyBullets[i].y>canvas.height||enemyBullets[i].y<-50||enemyBullets[i].x<-50||enemyBullets[i].x>canvas.width+50){enemyBullets.splice(i,1);continue;}
-            if(Math.hypot(enemyBullets[i].x-player.x,enemyBullets[i].y-player.y)<28){enemyBullets.splice(i,1);takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");if(!gameActive)return;}
-        }
-        if(bossInstance){
-            if(bossInstance.y<bossInstance.targetY) bossInstance.y+=2.5*m;
-            if(!(currentWave.id===4&&bossInstance.isUlting)){bossInstance.x+=bossInstance.speedX*m;if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2)bossInstance.speedX*=-1;}
-            let ts=Date.now();
-            if(!bossInstance.isUlting&&ts-bossInstance.lastShot>bossInstance.shootCooldown/m&&bossInstance.y>=bossInstance.targetY){
-                enemyBullets.push({x:bossInstance.x-25,y:bossInstance.y+20,vx:0,vy:7.5});
-                enemyBullets.push({x:bossInstance.x+25,y:bossInstance.y+20,vx:0,vy:7.5});
-                playSound(bossBuf);bossInstance.lastShot=ts;
-            }
-            if(!bossInstance.isUlting&&ts-bossInstance.lastCircleShot>bossInstance.circleCooldown/m&&bossInstance.y>=bossInstance.targetY){
-                if(currentWave.id===3||currentWave.id===4){bossInstance.isUlting=true;bossInstance.lastCircleShot=ts;if(currentWave.id===4){bossInstance.laserTargetX=player.x;bossInstance.laserTimer=ts;playSound(bossBuf);}else bossInstance.ultCount=0;}
-            }
-            if(bossInstance.isUlting){
-                if(currentWave.id===4){
-                    let tp=ts-bossInstance.laserTimer,tlt=(bossInstance.laserWarmupDuration+bossInstance.laserFireDuration)/m;
-                    if(tp>tlt){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts;}
-                    else if(tp>=bossInstance.laserWarmupDuration/m){if(ts%7===0){if(player.x>bossInstance.laserTargetX-35&&player.x<bossInstance.laserTargetX+35&&player.y>bossInstance.y){takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ!");if(!gameActive)return;}}}
-                } else if(currentWave.id===3){
-                    if(ts-bossInstance.lastCircleShot>350/m){
-                        let ao=(bossInstance.ultCount*Math.PI)/10;
-                        for(let i=0;i<10;i++){let a=((i*2*Math.PI)/10)+ao;enemyBullets.push({x:bossInstance.x,y:bossInstance.y,vx:Math.cos(a)*4.8,vy:Math.sin(a)*4.8});}
-                        playSound(bossBuf);bossInstance.ultCount++;bossInstance.lastCircleShot=ts;
-                        if(bossInstance.ultCount>=2){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts+1000/m;}
-                    }
-                }
-            }
-            for(let j=bullets.length-1;j>=0;j--){
-                if(bullets[j].x>bossInstance.x-bossInstance.w/2&&bullets[j].x<bossInstance.x+bossInstance.w/2&&bullets[j].y>bossInstance.y-bossInstance.h/2&&bullets[j].y<bossInstance.y+bossInstance.h/2){
-                    bullets.splice(j,1);bossInstance.hp--;playSound(crashBuf);
-                    if(bossInstance.hp<=0){bossInstance=null;kills++;document.getElementById('kills').innerText=kills;gameActive=false;endMission();return;}
-                }
-            }
-            if(Math.hypot(bossInstance.x-player.x,bossInstance.y-player.y)<55){takeDamage("БОСС ПРОТАРАНИВ ВАС!");bossInstance.x=canvas.width/2;if(!gameActive)return;}
-        }
-        for(let i=enemies.length-1;i>=0;i--){
-            let e=enemies[i]; e.y+=e.speed*m;
-            if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) { e.hp -= 0.34; e.poisonTicks--; e.poisonTimer = Date.now(); if(e.poisonTicks <= 0) e.poisoned = false; }
-            if(e.slowed && Date.now() > e.slowEnd) { e.speed *= 2; e.slowed = false; }
-            for(let j=bullets.length-1;j>=0;j--){
-                if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y)<e.size/2+15){
-                    let bType = bullets[j].type || 1;
-                    bullets.splice(j,1); e.hp--; playSound(crashBuf);
-                    if(bType === 2 && Math.random() < 0.35) {
-                        let targets = enemies.filter(en => en !== e).sort((a,b)=>Math.hypot(a.x-e.x,a.y-e.y)-Math.hypot(b.x-e.x,b.y-e.y)).slice(0,3);
-                        targets.forEach(en => { en.hp = Math.max(0, en.hp - 1); });
-                    }
-                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); }
-                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) { e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; }
-                    if(e.hp <= 0){
-                        enemies.splice(i,1); kills++; document.getElementById('kills').innerText=kills;
-                        if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}
-                    }
-                    break;
-                }
-            }
-            if(e&&Math.hypot(e.x-player.x,e.y-player.y)<e.size/2+18){enemies.splice(i,1);takeDamage("ЗІТКНЕННЯ!");if(!gameActive)return;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
-            if(e&&e.y>canvas.height+50){enemies.splice(i,1);missed++;if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}}
-        }
-    }
-
-    function draw() {
-        ctx.save();
-        ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.lineWidth=1;
-        ctx.fillStyle='#000510';ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.restore();
-        ctx.fillStyle='#666';starsBg.forEach(s=>ctx.fillRect(s.x,s.y,s.s,s.s));
-        let mC=4,mR=2;
-        let cW=32,cH=25,sW=mC*cW,sH=mR*cH;
-        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-        ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
-        ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();ctx.restore();
-        for(let i=0;i<shipGrid.length;i++){
-            let s=shipGrid[i];
-            if(s>=1){
-                let r=Math.floor(i/4),c=i%4;
-                let gx=player.x+(c-1.5)*cW;
-                let gy=player.y-sH/2+r*cH+10;
-                ctx.fillStyle='#ff0';ctx.fillRect(gx-4,gy-12,8,16);
-                ctx.fillStyle='#0ff';ctx.fillRect(gx-6,gy-2,12,6);
-            }
-        }
-        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='36px Arial';ctx.fillText(activeSkin,player.x,player.y);ctx.restore();
-
-        enemies.forEach(e=>{
-            if(e.poisoned){ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#00ff44';ctx.beginPath();ctx.arc(e.x,e.y,e.size/2+4,0,Math.PI*2);ctx.fill();ctx.restore();}
-            if(e.slowed){ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#ff6600';ctx.beginPath();ctx.arc(e.x,e.y,e.size/2+4,0,Math.PI*2);ctx.fill();ctx.restore();}
-            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${e.size}px Arial`;ctx.fillText(e.i,e.x,e.y);ctx.restore();
-            if(e.maxHp>1){let bW=e.size,bX=e.x-bW/2,bY=e.y-e.size/2-6;ctx.fillStyle='#333';ctx.fillRect(bX,bY,bW,4);ctx.fillStyle='#0f0';ctx.fillRect(bX,bY,bW*(e.hp/e.maxHp),4);}
-        });
-
-        if(bossInstance){
-            if(currentWave.id===4&&bossInstance.isUlting){
-                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-                let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
-                if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;}
-                else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
-                ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
-                if(la>=w){ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
-                ctx.restore();
-            }
-            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
-            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-            let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
-            ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
-            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
-            ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
-            let bt="КОСМІЧНИЙ ЗАГАРБНИК";
-            if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
-            if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
-            ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
-        }
-
-        ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-        bullets.forEach(b => {
-            let bType = b.type || 1;
-            if(bType===1) ctx.fillStyle='#0ff';
-            else if(bType===2) ctx.fillStyle='#ffff00';
-            else if(bType===3) ctx.fillStyle='#00ff44';
-            else if(bType===4) ctx.fillStyle='#ff6600';
-            ctx.fillRect(b.x-2, b.y, 4, 20);
-        });
-        ctx.fillStyle='#f00'; enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
-        ctx.restore();
-    }
-
-    function endMission() {
-        if(shootInterval) clearInterval(shootInterval);
-        if(enemySpawnInterval) clearInterval(enemySpawnInterval);
-        let sc=1;if(playerHp===3&&missed===0)sc=3;else if(playerHp>=2)sc=2;
-        if(sc>currentWave.stars) currentWave.stars=sc;
-        coins+=currentWave.reward;
-        if(!isOwner&&myNickname) db.ref('players/'+myNickname).update({coins});
-        if(currentWave.id<waveData.length) waveData[currentWave.id].unlocked=true;
-        saveProgress();updateCoinsUI();
-        document.getElementById('ui').style.display='none';
-        document.getElementById('hp-display').style.display='none';
-        document.getElementById('pause-btn').style.display='none';
-        document.getElementById('pause-menu').style.display='none';
-        if(currentWave.id===4){document.getElementById('final-credits-screen').style.display='flex';}
-        else{
-            document.getElementById('win-title').innerText=currentWave.hasBoss?"БОССА ЗНИЩЕНО!":"МІСІЯ ВИКОНАНА";
-            document.getElementById('win-stars').innerText='★'.repeat(sc)+'☆'.repeat(3-sc);
-            document.getElementById('win-reward-text').innerText=`+${currentWave.reward} COINS`;
-            document.getElementById('win-screen').style.display='flex';
-        }
     }
 
     updateCoinsUI();
