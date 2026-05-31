@@ -978,17 +978,6 @@
         }
     }
 
-    // Функція для видалення мертвих ворогів та оновлення лічильника
-    function removeDeadEnemies() {
-        for (let i = enemies.length-1; i >= 0; i--) {
-            if (enemies[i].hp <= 0) {
-                enemies.splice(i,1);
-                kills++;
-                document.getElementById('kills').innerText = kills;
-            }
-        }
-    }
-
     function gameLoop(){if(!gameActive||isPaused) return; update(); draw(); requestAnimationFrame(gameLoop);}
 
     function update() {
@@ -998,20 +987,25 @@
         
         // Оновлення таймерів ефектів блискавки
         for (let i=0; i<lightningFlashes.length; i++) {
-            lightningFlashes[i].timer -= 16; // приблизно на кадр
+            lightningFlashes[i].timer -= 16;
             if (lightningFlashes[i].timer <= 0) {
                 lightningFlashes.splice(i,1);
                 i--;
             }
         }
         
+        // Рух куль
         for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
+        
+        // Ворожі кулі
         for(let i=enemyBullets.length-1;i>=0;i--){
             enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
             enemyBullets[i].y+=(enemyBullets[i].vy||7.5)*m;
             if(enemyBullets[i].y>canvas.height||enemyBullets[i].y<-50||enemyBullets[i].x<-50||enemyBullets[i].x>canvas.width+50){enemyBullets.splice(i,1);continue;}
             if(Math.hypot(enemyBullets[i].x-player.x,enemyBullets[i].y-player.y)<28){enemyBullets.splice(i,1);takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");if(!gameActive)return;}
         }
+        
+        // Бос
         if(bossInstance){
             if(bossInstance.y<bossInstance.targetY) bossInstance.y+=2.5*m;
             if(!(currentWave.id===4&&bossInstance.isUlting)){bossInstance.x+=bossInstance.speedX*m;if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2)bossInstance.speedX*=-1;}
@@ -1046,71 +1040,103 @@
             }
             if(Math.hypot(bossInstance.x-player.x,bossInstance.y-player.y)<55){takeDamage("БОСС ПРОТАРАНИВ ВАС!");bossInstance.x=canvas.width/2;if(!gameActive)return;}
         }
+        
+        // Основний цикл по ворогах
         for(let i=enemies.length-1;i>=0;i--){
-            let e=enemies[i]; e.y+=e.speed*m;
-            if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) { e.hp -= 0.34; e.poisonTicks--; e.poisonTimer = Date.now(); if(e.poisonTicks <= 0) e.poisoned = false; }
-            if(e.slowed && Date.now() > e.slowEnd) { e.speed *= 2; e.slowed = false; }
+            let e=enemies[i];
+            e.y+=e.speed*m;
+            
+            // Отрута
+            if(e.poisoned && e.poisonTicks > 0 && Date.now() - e.poisonTimer > 500) { 
+                e.hp -= 0.34; 
+                e.poisonTicks--; 
+                e.poisonTimer = Date.now(); 
+                if(e.poisonTicks <= 0) e.poisoned = false; 
+            }
+            // Уповільнення
+            if(e.slowed && Date.now() > e.slowEnd) { 
+                e.speed *= 2; 
+                e.slowed = false; 
+            }
+            
+            // Перевірка попадань куль
+            let hit = false;
             for(let j=bullets.length-1;j>=0;j--){
-                if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y)<e.size/2+15){
+                if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y) < e.size/2+15){
                     let bType = bullets[j].type || 1;
-                    bullets.splice(j,1); 
-                    e.hp--; 
+                    bullets.splice(j,1);
+                    e.hp--;
                     playSound(crashBuf);
                     
-                    // НОВА ПОКРАЩЕНА МЕХАНІКА БЛИСКАВКИ (тип 2)
+                    // Блискавка: ланцюжок у радіусі 150
                     if(bType === 2 && Math.random() < 0.35) {
-                        const LIGHTNING_RADIUS = 150; // збільшений радіус
-                        // Додаємо спалах на місці ураженого ворога
+                        const RADIUS = 150;
                         lightningFlashes.push({x: e.x, y: e.y, timer: 200});
-                        // Шкода всім іншим ворогам у радіусі
-                        for (let k = 0; k < enemies.length; k++) {
+                        for(let k=0; k<enemies.length; k++) {
                             let other = enemies[k];
-                            if (other !== e) {
+                            if(other !== e) {
                                 let dx = other.x - e.x;
                                 let dy = other.y - e.y;
-                                let dist = Math.hypot(dx, dy);
-                                if (dist < LIGHTNING_RADIUS) {
+                                if(Math.hypot(dx,dy) < RADIUS) {
                                     other.hp--;
-                                    // Додаємо візуальний спалах і для ураженого сусіда
                                     lightningFlashes.push({x: other.x, y: other.y, timer: 150});
-                                    // Якщо ворог помер, збільшуємо kills (але видалимо пізніше)
-                                    if (other.hp <= 0) {
-                                        // kills++ зробимо у removeDeadEnemies
-                                    }
                                 }
                             }
                         }
                     }
                     
-                    // Отрута та плазма без змін
-                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); }
-                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) { e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; }
+                    // Отрута (тип 3)
+                    if(bType === 3 && Math.random() < 0.40 && !e.poisoned) {
+                        e.poisoned = true;
+                        e.poisonTicks = 6;
+                        e.poisonTimer = Date.now();
+                    }
+                    // Плазма (тип 4)
+                    if(bType === 4 && Math.random() < 0.25 && !e.slowed) {
+                        e.slowed = true;
+                        e.speed *= 0.5;
+                        e.slowEnd = Date.now() + 3000;
+                    }
                     
-                    break; // виходимо з циклу куль після першого попадання
+                    hit = true;
+                    break; // виходимо з циклу куль, далі обробимо смерть ворога
                 }
             }
+            
+            // Якщо ворог помер – видаляємо та збільшуємо kills
+            if(e.hp <= 0) {
+                enemies.splice(i,1);
+                kills++;
+                document.getElementById('kills').innerText = kills;
+                continue;
+            }
+            
+            // Зіткнення з гравцем
+            if(Math.hypot(e.x-player.x, e.y-player.y) < e.size/2+18){
+                enemies.splice(i,1);
+                takeDamage("ЗІТКНЕННЯ!");
+                if(!gameActive) return;
+                continue;
+            }
+            
+            // Пропущений ворог (вилетів за нижню межу)
+            if(e.y > canvas.height+50){
+                enemies.splice(i,1);
+                missed++;
+                continue;
+            }
         }
-        
-        // Видаляємо всіх мертвих ворогів (включаючи тих, хто загинув від блискавки)
-        removeDeadEnemies();
         
         // Перевірка завершення хвилі
-        if (spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && !currentWave.hasBoss) {
+        if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && !currentWave.hasBoss){
             gameActive = false;
             endMission();
             return;
         }
-        if (spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && currentWave.hasBoss && kills >= currentWave.spawnCount+1) {
+        if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && currentWave.hasBoss && kills >= currentWave.spawnCount+1){
             gameActive = false;
             endMission();
             return;
-        }
-        if (e && e.y > canvas.height + 50) { // пропущені вороги
-            enemies.splice(i,1);
-            missed++;
-            if(spawnedThisWave>=currentWave.spawnCount && enemies.length===0 && !bossInstance && !currentWave.hasBoss) {
-                gameActive=false; endMission(); return;
-            }
         }
     }
 
