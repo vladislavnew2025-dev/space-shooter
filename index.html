@@ -360,11 +360,11 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    // Початкові клітинки: тільки індекси 2 і 3 порожні (0), решта null
+    // Початкові клітинки: тільки друга та третя верхнього ряду (індекси 1 і 2) порожні, решта заблоковані (null)
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
         let arr = Array(8).fill(null);
-        arr[2] = 0;
-        arr[3] = 0;
+        arr[1] = 0;  // клітинка №2 (верхня друга)
+        arr[2] = 0;  // клітинка №3 (верхня третя)
         return arr;
     })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
@@ -598,7 +598,6 @@
         if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
         else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
         else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-        // Показуємо менеджер груп для власника та тестерів
         document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
         document.getElementById('owner-full-reset').style.display = ownerAccess ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
@@ -708,7 +707,6 @@
             document.getElementById('online-total').innerText = onlineNicks.size;
             document.getElementById('total-players').innerText = totalPlayers;
             wrapper.innerHTML = '';
-            // Отримуємо групу поточного користувача для обмеження прав тестерів
             let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
             let isTesterUser = (!isOwner && currentGroup === 'тестери');
             
@@ -741,7 +739,6 @@
                     if (isOwnerEntry) {
                         actionBtns = '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>';
                     } else {
-                        // Для тестерів показуємо тільки кнопку бану (без редагування)
                         if (isTesterUser) {
                             actionBtns = `<button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
                         } else {
@@ -760,7 +757,6 @@
 
     function openPlayerSettingsModal(nick) {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        // Тестери не можуть редагувати інших
         if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick;
         let p = globalPlayersDB[nick] || { godMode: false, activeSkin: '🚀', group: 'ігроки', coins: 0 };
@@ -800,7 +796,6 @@
 
     function openPlayerBanModal(nick) { 
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        // Тестерам дозволено бан (як і читерам та власнику)
         if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick; 
         document.getElementById('ban-modal-target-nick').innerText = nick; 
@@ -848,7 +843,7 @@
             coins = 0; unlockedUpgrades = { fastFire: 0 }; unlockedSkins = { phoenix: false };
             activeSkin = '🚀'; 
             let arr = Array(8).fill(null);
-            arr[2] = 0; arr[3] = 0;
+            arr[1] = 0; arr[2] = 0;
             shipGrid = arr;
             shipInventory = []; waveData = JSON.parse(JSON.stringify(defaultWaves));
             saveProgress();
@@ -991,7 +986,6 @@
                 let s = shipGrid[i];
                 const c = document.createElement('div');
                 c.className = 'cell-ui' + (s===null ? ' locked' : '');
-                // Порожні розблоковані клітинки (s===0) не показують жодного символу
                 c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null ? '🔒' : '');
                 c.title = s >= 1 ? (GUN_TYPES[s]?.name || '') : (s===null ? 'Заблоковано, купіть клітинку' : 'Порожньо');
                 if (s !== null) {
