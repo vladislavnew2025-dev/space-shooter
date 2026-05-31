@@ -152,7 +152,6 @@
         <div class="admin-section">
             <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
         </div>
-        <!-- Кнопка менеджера груп тепер доступна і для тестерів -->
         <div id="owner-only-zone" style="display:none; margin-top:10px;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
         </div>
@@ -361,14 +360,14 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    // Початкові клітинки: індекси 1,2,3 — порожні (0), індекс 0 — заблокований (null)
+    // Початкові клітинки: тільки індекси 2 і 3 порожні (0), решта null
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
         let arr = Array(8).fill(null);
-        arr[1] = 0; arr[2] = 0; arr[3] = 0;
+        arr[2] = 0;
+        arr[3] = 0;
         return arr;
     })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
-    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 3; // 3 клітинки вже відкриті (не null)
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
     let godModeActive = false;
@@ -599,7 +598,7 @@
         if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
         else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
         else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-        // Показуємо кнопку менеджера груп власнику та тестерам
+        // Показуємо менеджер груп для власника та тестерів
         document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
         document.getElementById('owner-full-reset').style.display = ownerAccess ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
@@ -834,9 +833,9 @@
             coins = 0; unlockedUpgrades = { fastFire: 0 }; unlockedSkins = { phoenix: false };
             activeSkin = '🚀'; 
             let arr = Array(8).fill(null);
-            arr[1] = 0; arr[2] = 0; arr[3] = 0;
+            arr[2] = 0; arr[3] = 0;
             shipGrid = arr;
-            shipInventory = []; unlockedCells = 3; waveData = JSON.parse(JSON.stringify(defaultWaves));
+            shipInventory = []; waveData = JSON.parse(JSON.stringify(defaultWaves));
             saveProgress();
             if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
             alert("✅ Прогрес скинуто! Нік збережено.");
@@ -856,7 +855,7 @@
         localStorage.setItem('coins', coins); localStorage.setItem('upgrades', JSON.stringify(unlockedUpgrades));
         localStorage.setItem('skins', JSON.stringify(unlockedSkins)); localStorage.setItem('activeSkin', activeSkin);
         localStorage.setItem('shipGrid', JSON.stringify(shipGrid)); localStorage.setItem('shipInventory', JSON.stringify(shipInventory));
-        localStorage.setItem('unlockedCells', unlockedCells); localStorage.setItem('waveData', JSON.stringify(waveData));
+        localStorage.setItem('waveData', JSON.stringify(waveData));
     }
 
     function playSound(buffer) {
@@ -888,13 +887,7 @@
     function buyGunType(typeId) {
         let gun = GUN_TYPES[typeId];
         if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
-        let freeSlot = -1;
-        for(let i=0; i<shipGrid.length; i++) {
-            if(shipGrid[i] === 0 && i < unlockedCells) {
-                freeSlot = i;
-                break;
-            }
-        }
+        let freeSlot = shipGrid.findIndex(cell => cell === 0);
         if (freeSlot !== -1) {
             shipGrid[freeSlot] = Number(typeId);
         } else {
@@ -909,16 +902,13 @@
     function buyShipItem(type, price) {
         if(coins<price) return;
         if(type==='cell') {
-            let nextIdx = shipGrid.findIndex(cell => cell === null);
+            let nextIdx = shipGrid.findIndex((cell, idx) => cell === null && idx >= 4);
             if (nextIdx === -1) { alert('Всі клітинки вже розблоковано!'); return; }
-            // Ціни для клітинок 0-7: [0,0,0,0, 410,500,620,800]
             let cellPrices = [410, 500, 620, 800];
-            let idx = nextIdx - 4;
-            if (idx < 0 || idx >= cellPrices.length) { alert('Неправильна ціна!'); return; }
-            let required = cellPrices[idx];
+            let priceIdx = nextIdx - 4;
+            let required = cellPrices[priceIdx];
             if (price !== required) { alert('Ціна не відповідає!'); return; }
             shipGrid[nextIdx] = 0;
-            unlockedCells++;
             coins -= price;
         }
         saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship');
@@ -971,11 +961,11 @@
                     </button>`
                 ).join('');
             } else {
-                let nextIdx = shipGrid.findIndex(cell => cell === null);
+                let nextIdx = shipGrid.findIndex((cell, idx) => cell === null && idx >= 4);
                 if (nextIdx !== -1) {
                     let cellPrices = [410, 500, 620, 800];
                     let price = cellPrices[nextIdx - 4] || 0;
-                    ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn" ${nextIdx === -1 ? 'disabled' : ''}>${nextIdx === -1 ? 'ВСІ КЛІТИНКИ ВІДКРИТІ' : `КУПИТИ КЛІТИНКУ ${price}💰 (${unlockedCells}/8)`}</button>`;
+                    ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn">КУПИТИ КЛІТИНКУ ${price}💰 (${shipGrid.filter(c => c !== null).length}/8)</button>`;
                 } else {
                     ll.innerHTML = `<button class="side-shop-btn" disabled>ВСІ КЛІТИНКИ ВІДКРИТІ</button>`;
                 }
