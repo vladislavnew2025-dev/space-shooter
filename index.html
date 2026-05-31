@@ -708,6 +708,10 @@
             document.getElementById('online-total').innerText = onlineNicks.size;
             document.getElementById('total-players').innerText = totalPlayers;
             wrapper.innerHTML = '';
+            // Отримуємо групу поточного користувача для обмеження прав тестерів
+            let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+            let isTesterUser = (!isOwner && currentGroup === 'тестери');
+            
             Object.keys(customGroups).forEach(groupId => {
                 let groupInfo = customGroups[groupId];
                 let playersInGroup = Object.values(globalPlayersDB).filter(p => p.group === groupId);
@@ -733,8 +737,17 @@
                     const row = document.createElement('div'); row.className = 'player-row'; row.style.borderLeftColor = groupInfo.color;
                     let isOwnerEntry = p.isOwner === true;
                     let onlineDot = onlineNicks.has(p.nickname) ? '<span style="color:#0f0;font-size:10px;margin-left:4px;">🟢</span>' : '<span style="color:#555;font-size:10px;margin-left:4px;">⚫</span>';
-                    let actionBtns = isOwnerEntry ? '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>'
-                        : `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button><button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
+                    let actionBtns = '';
+                    if (isOwnerEntry) {
+                        actionBtns = '<span style="color:#ffcc00;font-size:11px;">👑 ВЛАСНИК</span>';
+                    } else {
+                        // Для тестерів показуємо тільки кнопку бану (без редагування)
+                        if (isTesterUser) {
+                            actionBtns = `<button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
+                        } else {
+                            actionBtns = `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button><button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
+                        }
+                    }
                     let banBadge = p.isBanned ? '<span style="color:#f00;font-size:10px;margin-left:4px;">🛑БАН</span>' : '';
                     row.innerHTML = `<div><b>${p.nickname}</b>${onlineDot}${banBadge}<br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div><div class="player-actions">${actionBtns}</div>`;
                     holder.appendChild(row);
@@ -747,7 +760,8 @@
 
     function openPlayerSettingsModal(nick) {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
+        // Тестери не можуть редагувати інших
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick;
         let p = globalPlayersDB[nick] || { godMode: false, activeSkin: '🚀', group: 'ігроки', coins: 0 };
         document.getElementById('modal-target-nick').innerText = nick;
@@ -765,7 +779,7 @@
 
     function saveIndividualPlayerSettings() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); closePlayerModal(); return; }
+        if (!isOwner && currentGroup !== 'читери') { alert('Доступ заборонено!'); closePlayerModal(); return; }
         let nick = currentModalTargetUser; if (!nick) return;
         let targetGroup = document.getElementById('modal-edit-group').value;
         let targetGod = document.getElementById('modal-edit-god').value === "true";
@@ -786,6 +800,7 @@
 
     function openPlayerBanModal(nick) { 
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
+        // Тестерам дозволено бан (як і читерам та власнику)
         if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
         currentModalTargetUser = nick; 
         document.getElementById('ban-modal-target-nick').innerText = nick; 
@@ -976,7 +991,8 @@
                 let s = shipGrid[i];
                 const c = document.createElement('div');
                 c.className = 'cell-ui' + (s===null ? ' locked' : '');
-                c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null ? '🔒' : '⚪');
+                // Порожні розблоковані клітинки (s===0) не показують жодного символу
+                c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null ? '🔒' : '');
                 c.title = s >= 1 ? (GUN_TYPES[s]?.name || '') : (s===null ? 'Заблоковано, купіть клітинку' : 'Порожньо');
                 if (s !== null) {
                     c.onclick = () => {
