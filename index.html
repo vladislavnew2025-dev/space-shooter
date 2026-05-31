@@ -360,11 +360,11 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    // Початкові клітинки: тільки друга та третя верхнього ряду (індекси 1 і 2) порожні, решта заблоковані (null)
+    // Початкові клітинки: тільки друга та третя верхнього ряду (індекси 1,2) порожні (0), решта заблоковані (null)
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
         let arr = Array(8).fill(null);
-        arr[1] = 0;  // клітинка №2 (верхня друга)
-        arr[2] = 0;  // клітинка №3 (верхня третя)
+        arr[1] = 0;
+        arr[2] = 0;
         return arr;
     })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
@@ -912,12 +912,13 @@
     function buyShipItem(type, price) {
         if(coins<price) return;
         if(type==='cell') {
-            let nextIdx = shipGrid.findIndex((cell, idx) => cell === null && idx >= 4);
+            let nextIdx = shipGrid.findIndex(cell => cell === null);
             if (nextIdx === -1) { alert('Всі клітинки вже розблоковано!'); return; }
-            let cellPrices = [410, 500, 620, 800];
-            let priceIdx = nextIdx - 4;
-            let required = cellPrices[priceIdx];
-            if (price !== required) { alert('Ціна не відповідає!'); return; }
+            // Ціни для клітинок у порядку індексів: 0→410, 3→500, 4→620, 5→800, 6→910, 7→1100
+            const pricesMap = { 0:410, 3:500, 4:620, 5:800, 6:910, 7:1100 };
+            let required = pricesMap[nextIdx];
+            if (!required) { alert('Помилка: ціна не визначена!'); return; }
+            if (price !== required) { alert(`Ціна не відповідає! Потрібно ${required} монет.`); return; }
             shipGrid[nextIdx] = 0;
             coins -= price;
         }
@@ -971,10 +972,10 @@
                     </button>`
                 ).join('');
             } else {
-                let nextIdx = shipGrid.findIndex((cell, idx) => cell === null && idx >= 4);
+                let nextIdx = shipGrid.findIndex(cell => cell === null);
                 if (nextIdx !== -1) {
-                    let cellPrices = [410, 500, 620, 800];
-                    let price = cellPrices[nextIdx - 4] || 0;
+                    const pricesMap = { 0:410, 3:500, 4:620, 5:800, 6:910, 7:1100 };
+                    let price = pricesMap[nextIdx] || 0;
                     ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn">КУПИТИ КЛІТИНКУ ${price}💰 (${shipGrid.filter(c => c !== null).length}/8)</button>`;
                 } else {
                     ll.innerHTML = `<button class="side-shop-btn" disabled>ВСІ КЛІТИНКИ ВІДКРИТІ</button>`;
