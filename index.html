@@ -385,6 +385,9 @@
     let currentModalTargetUser = '';
     let sessionStartTime = Date.now();
     let isPaused = false;
+    
+    // Масив для візуальних ефектів блискавки (спалах)
+    let lightningFlashes = []; // {x, y, timer}
 
     setInterval(() => {
         if (myNickname && !isOwner) {
@@ -838,7 +841,6 @@
         let cg = globalPlayersDB[myNickname] ? globalPlayersDB[myNickname].group : 'ігроки';
         openAdminPanelUI(isOwner, cg);
         if (gameActive) {
-            // перезапускаємо інтервали з новою швидкістю тільки для ворогів, стрільба центрального корабля не змінюється
             startIntervals();
         }
     }
@@ -926,7 +928,6 @@
                         bullets.push({x: player.x + offsetX, y: player.y - 45 + offsetY, type: s});
                     }
                 }
-                // Звук стрільби для пушок (можна зробити окремий, але поки залишимо той самий)
                 if (shipGrid.some(s => s >= 1)) playSound(shootBuf);
             }
         }, GUNS_FIRE_RATE);
@@ -983,6 +984,16 @@
         let m=gameSpeedMultiplier;
         player.x+=(player.targetX-player.x)*0.2*m;
         starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
+        
+        // Оновлення таймерів ефектів блискавки
+        for (let i=0; i<lightningFlashes.length; i++) {
+            lightningFlashes[i].timer -= 16; // приблизно на кадр
+            if (lightningFlashes[i].timer <= 0) {
+                lightningFlashes.splice(i,1);
+                i--;
+            }
+        }
+        
         for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
         for(let i=enemyBullets.length-1;i>=0;i--){
             enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
@@ -1031,13 +1042,35 @@
             for(let j=bullets.length-1;j>=0;j--){
                 if(Math.hypot(e.x-bullets[j].x,e.y-bullets[j].y)<e.size/2+15){
                     let bType = bullets[j].type || 1;
-                    bullets.splice(j,1); e.hp--; playSound(crashBuf);
+                    bullets.splice(j,1); 
+                    e.hp--; 
+                    playSound(crashBuf);
+                    
+                    // НОВА МЕХАНІКА БЛИСКАВКИ (тип 2) - AOE радіусом 120
                     if(bType === 2 && Math.random() < 0.35) {
-                        let targets = enemies.filter(en => en !== e).sort((a,b)=>Math.hypot(a.x-e.x,a.y-e.y)-Math.hypot(b.x-e.x,b.y-e.y)).slice(0,3);
-                        targets.forEach(en => { en.hp = Math.max(0, en.hp - 1); });
+                        // Радіус ураження
+                        const LIGHTNING_RADIUS = 120;
+                        // Додаємо візуальний ефект на місці цілі
+                        lightningFlashes.push({x: e.x, y: e.y, timer: 200});
+                        // Знаходимо всіх ворогів, крім поточного, в радіусі
+                        for (let k = 0; k < enemies.length; k++) {
+                            let other = enemies[k];
+                            if (other !== e) {
+                                let dx = other.x - e.x;
+                                let dy = other.y - e.y;
+                                let dist = Math.hypot(dx, dy);
+                                if (dist < LIGHTNING_RADIUS) {
+                                    other.hp--;
+                                    // Якщо ворог помер, додаткових перевірок не робимо, все обробиться далі
+                                }
+                            }
+                        }
                     }
+                    
+                    // Окрема обробка інших типів (отрута, плазма) залишається
                     if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); }
                     if(bType === 4 && Math.random() < 0.25 && !e.slowed) { e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; }
+                    
                     if(e.hp <= 0){
                         enemies.splice(i,1); kills++; document.getElementById('kills').innerText=kills;
                         if(spawnedThisWave>=currentWave.spawnCount&&enemies.length===0&&!currentWave.hasBoss){gameActive=false;endMission();return;}
@@ -1062,7 +1095,7 @@
         ctx.beginPath();ctx.strokeStyle=godModeActive?'#00cc44':'rgba(0,255,255,0.4)';ctx.lineWidth=2;ctx.fillStyle='rgba(0,255,255,0.05)';
         ctx.roundRect(player.x-sW/2,player.y-sH/2,sW,sH,8);ctx.fill();ctx.stroke();ctx.restore();
         
-        // Малюємо іконки зброї на кораблі замість прямокутників
+        // Малюємо іконки зброї на кораблі
         for(let i=0;i<shipGrid.length;i++){
             let s=shipGrid[i];
             if(s>=1){
@@ -1121,6 +1154,20 @@
             ctx.fillRect(b.x-2, b.y, 4, 20);
         });
         ctx.fillStyle='#f00'; enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
+        
+        // Малюємо ефекти блискавки (спалахи)
+        for (let fl of lightningFlashes) {
+            let alpha = Math.min(1, fl.timer / 100);
+            ctx.beginPath();
+            ctx.arc(fl.x, fl.y, 30, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(255, 255, 100, ${alpha*0.6})`;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(fl.x, fl.y, 15, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(255, 255, 200, ${alpha*0.8})`;
+            ctx.fill();
+        }
+        
         ctx.restore();
     }
 
@@ -1315,6 +1362,7 @@
         document.getElementById('required-kills').innerText=w.spawnCount+(w.hasBoss?1:0);
         kills=0; missed=0; spawnedThisWave=0;
         bullets=[]; enemyBullets=[]; enemies=[]; bossInstance=null;
+        lightningFlashes = [];
         init(); updateHpUI(); startIntervals(); requestAnimationFrame(gameLoop);
     }
 
