@@ -152,6 +152,7 @@
         <div class="admin-section">
             <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
         </div>
+        <!-- Кнопка менеджера груп тепер доступна і для тестерів -->
         <div id="owner-only-zone" style="display:none; margin-top:10px;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
         </div>
@@ -360,15 +361,14 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    // Початкові клітинки: відкриті тільки 2-га та 3-тя (індекси 2 і 3)
+    // Початкові клітинки: індекси 1,2,3 — порожні (0), індекс 0 — заблокований (null)
     let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => {
         let arr = Array(8).fill(null);
-        arr[2] = 0;
-        arr[3] = 0;
+        arr[1] = 0; arr[2] = 0; arr[3] = 0;
         return arr;
     })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
-    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 4; // перші 4 клітинки вважаються розблокованими
+    let unlockedCells = Number(localStorage.getItem('unlockedCells')) || 3; // 3 клітинки вже відкриті (не null)
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
     let godModeActive = false;
@@ -599,7 +599,8 @@
         if (ownerAccess) { t.innerText = "Адмінське меню керування"; t.style.color = "#ff0055"; }
         else if (currentGroup === 'читери') { t.innerText = "Меню читів"; t.style.color = "#00ffff"; }
         else { t.innerText = "Меню тестерів"; t.style.color = "#00ffff"; }
-        document.getElementById('owner-only-zone').style.display = (ownerAccess) ? 'block' : 'none';
+        // Показуємо кнопку менеджера груп власнику та тестерам
+        document.getElementById('owner-only-zone').style.display = (ownerAccess || currentGroup === 'тестери') ? 'block' : 'none';
         document.getElementById('owner-full-reset').style.display = ownerAccess ? 'block' : 'none';
         document.getElementById('godmode-btn').style.background = godModeActive ? '#00cc44' : '#444';
         document.getElementById('godmode-btn').innerText = `🤖 БЕЗСМЕРТЯ: ${godModeActive ? 'УВІМК' : 'ВИМК'}`;
@@ -626,7 +627,6 @@
 
     function openPlayerManagementUI() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        // Дозволяємо доступ тестерам
         if (!isOwner && currentGroup !== 'читери' && currentGroup !== 'тестери') { alert('Доступ заборонено!'); return; }
         document.getElementById('admin-screen').style.display = 'none';
         document.getElementById('player-manage-screen').style.display = 'flex';
@@ -834,9 +834,9 @@
             coins = 0; unlockedUpgrades = { fastFire: 0 }; unlockedSkins = { phoenix: false };
             activeSkin = '🚀'; 
             let arr = Array(8).fill(null);
-            arr[2] = 0; arr[3] = 0;
+            arr[1] = 0; arr[2] = 0; arr[3] = 0;
             shipGrid = arr;
-            shipInventory = []; unlockedCells = 4; waveData = JSON.parse(JSON.stringify(defaultWaves));
+            shipInventory = []; unlockedCells = 3; waveData = JSON.parse(JSON.stringify(defaultWaves));
             saveProgress();
             if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins: 0, activeSkin: '🚀' });
             alert("✅ Прогрес скинуто! Нік збережено.");
@@ -909,11 +909,14 @@
     function buyShipItem(type, price) {
         if(coins<price) return;
         if(type==='cell') {
-            let nextIdx = unlockedCells;
-            if(nextIdx >= shipGrid.length) { alert('Всі клітинки вже розблоковано!'); return; }
-            let cellPrices = [410, 500, 620, 800, 910, 1100];
-            let required = cellPrices[nextIdx - 4];
-            if(price !== required) { alert('Ціна не відповідає!'); return; }
+            let nextIdx = shipGrid.findIndex(cell => cell === null);
+            if (nextIdx === -1) { alert('Всі клітинки вже розблоковано!'); return; }
+            // Ціни для клітинок 0-7: [0,0,0,0, 410,500,620,800]
+            let cellPrices = [410, 500, 620, 800];
+            let idx = nextIdx - 4;
+            if (idx < 0 || idx >= cellPrices.length) { alert('Неправильна ціна!'); return; }
+            let required = cellPrices[idx];
+            if (price !== required) { alert('Ціна не відповідає!'); return; }
             shipGrid[nextIdx] = 0;
             unlockedCells++;
             coins -= price;
@@ -968,20 +971,24 @@
                     </button>`
                 ).join('');
             } else {
-                let nextIdx = unlockedCells;
-                let cellPrices = [410, 500, 620, 800, 910, 1100];
-                let price = cellPrices[nextIdx - 4] || 0;
-                ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn" ${unlockedCells>=shipGrid.length?'disabled':''}>${unlockedCells>=shipGrid.length?'ВСІ КЛІТИНКИ ВІДКРИТІ':`КУПИТИ КЛІТИНКУ ${price}💰 (${unlockedCells}/${shipGrid.length})`}</button>`;
+                let nextIdx = shipGrid.findIndex(cell => cell === null);
+                if (nextIdx !== -1) {
+                    let cellPrices = [410, 500, 620, 800];
+                    let price = cellPrices[nextIdx - 4] || 0;
+                    ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn" ${nextIdx === -1 ? 'disabled' : ''}>${nextIdx === -1 ? 'ВСІ КЛІТИНКИ ВІДКРИТІ' : `КУПИТИ КЛІТИНКУ ${price}💰 (${unlockedCells}/8)`}</button>`;
+                } else {
+                    ll.innerHTML = `<button class="side-shop-btn" disabled>ВСІ КЛІТИНКИ ВІДКРИТІ</button>`;
+                }
             }
 
             const gDiv = document.getElementById('g-ui'); gDiv.innerHTML = '';
             for (let i=0; i<shipGrid.length; i++) {
                 let s = shipGrid[i];
                 const c = document.createElement('div');
-                c.className = 'cell-ui' + (s===null ? ' locked' : (i>=unlockedCells ? ' locked' : ''));
-                c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null || i>=unlockedCells ? '🔒' : '⚪');
-                c.title = s >= 1 ? (GUN_TYPES[s]?.name || '') : (i>=unlockedCells ? 'Заблоковано, купіть клітинку' : 'Порожньо');
-                if (i<unlockedCells && s!==null) {
+                c.className = 'cell-ui' + (s===null ? ' locked' : '');
+                c.innerHTML = s >= 1 ? (GUN_TYPES[s]?.icon || '🔫') : (s===null ? '🔒' : '⚪');
+                c.title = s >= 1 ? (GUN_TYPES[s]?.name || '') : (s===null ? 'Заблоковано, купіть клітинку' : 'Порожньо');
+                if (s !== null) {
                     c.onclick = () => {
                         if(selectedGunIdx!==null && s===0) { 
                             shipGrid[i]=shipInventory[selectedGunIdx]; 
