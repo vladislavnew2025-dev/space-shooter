@@ -400,11 +400,6 @@
     let el = document.getElementById('level-display');
     if (el) el.style.display = visible ? 'block' : 'none';
 }
-
-    function setLevelVisibility(visible) {
-    let lvl = document.getElementById('level-display');
-    if (lvl) lvl.style.display = visible ? 'block' : 'none';
-}
     
     function addExperience(amount) {
         if (playerLevel >= maxLevel) return;
@@ -913,7 +908,7 @@
     }
     function updateCoinsUI() { document.getElementById('main-coins').innerText = coins; document.getElementById('shop-coins').innerText = coins; }
     function updateHpUI() { document.getElementById('hp-display').innerText = godModeActive ? '🛡️ INFINITY' : ('❤️'.repeat(playerHp) + '🖤'.repeat(3-playerHp)); }
-    function showWaves() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); setLevelVisibility(true); }
+    function showWaves() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); setLevelVisibility(false); }
     function showShop() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('shop-screen').style.display = 'flex'; switchTab('upgrades'); updateCoinsUI(); setLevelVisibility(false); }
     function showSettings() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('settings-screen').style.display = 'flex'; document.getElementById('volume-control').value = globalVolume; setLevelVisibility(false); }
     function backToMain() { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById('main-menu').style.display = 'flex'; updateLevelUI(); updateCoinsUI(); setLevelVisibility(true); }
