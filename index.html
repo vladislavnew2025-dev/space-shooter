@@ -70,7 +70,32 @@
         .exclusive-manager h3 { color: #ffaa44; margin: 0 0 10px 0; }
         .exclusive-card { background: #111; border-radius: 12px; padding: 12px; margin-bottom: 15px; }
         .exclusive-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 8px 0; }
-        .admin-section { border-bottom: 3px solid #0ff; padding: 12px 0; margin-bottom: 0; }
+        .admin-section {
+    border-bottom: 3px solid #0ff;
+    padding: 12px 0;
+    margin-bottom: 0;
+}
+.admin-section:last-child {
+    border-bottom: none;
+}
+/* Лінія на всю ширину після рядка користувача */
+.user-info-separator {
+    border-bottom: 3px solid #0ff;
+    margin: 10px 0 15px 0;
+    width: 100%;
+}
+/* Лінія перед менеджером груп */
+.manager-separator {
+    border-top: 3px solid #0ff;
+    margin-top: 15px;
+    padding-top: 15px;
+}
+/* Лінія перед повним скидом */
+.reset-separator {
+    border-top: 3px solid #0ff;
+    margin-top: 15px;
+    padding-top: 15px;
+}
         .admin-section:last-child { border-bottom: none; }
         .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 85%; text-align: center; margin-bottom: 8px; font-size: 14px; }
@@ -214,62 +239,75 @@
     <div class="admin-panel-box">
         <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
         <div style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:10px;">Користувач: <span id="admin-active-name">...</span></div>
-        <div class="user-info-separator"></div> <!-- товста синя лінія після рядка користувача -->
+        <div class="user-info-separator"></div>
 
+        <!-- ЄДИНИЙ БЛОК «ЧИТИ ДЛЯ СЕБЕ» -->
         <div class="admin-section">
-            <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px;">🔥 ШВИДКІ ЧИТИ</div>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px; font-size: 16px;">🔥 ЧИТИ ДЛЯ СЕБЕ</div>
+            
+            <!-- Кнопки безсмертя та швидкості -->
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom: 15px;">
                 <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
                 <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
             </div>
-        </div>
 
-        <div class="admin-section">
-            <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
-        </div>
+            <!-- Жирна синя лінія -->
+            <div style="border-bottom: 3px solid #0ff; margin: 10px 0;"></div>
 
-        <div class="admin-section self-change-section" style="background: rgba(0,0,0,0.3); border: 1px solid #00ffcc; border-radius: 12px; margin: 15px 0; padding: 12px; transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);">
-            <div style="font-weight:bold; color:#ffdd44; margin-bottom:10px; font-size:15px; display: flex; justify-content: space-between; align-items: center;">
-                <span>💰 НАРАХУВАННЯ МОНЕТ/ДОСВІДУ</span>
-                <button id="toggleSelfResultPanel" class="admin-btn-action" style="background:#555; padding:4px 12px; font-size:12px;">▼ прокрутіть вниз ▼</button>
-            </div>
-            <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap;">
-                <div style="flex:1; min-width: 150px;">
-                    <div style="color:gold; font-size:13px;">💰 МОНЕТИ</div>
-                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 5px;">
-                        <button class="admin-btn-action self-coin-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfCoinMode()">[+]</button>
-                        <input type="number" id="self-coin-amount" class="admin-input" style="margin:0; width:100px;" value="100" min="1">
+            <!-- Кнопка відкриття всіх місій -->
+            <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff; margin-bottom: 15px;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
+
+            <!-- Жирна синя лінія -->
+            <div style="border-bottom: 3px solid #0ff; margin: 10px 0;"></div>
+
+            <!-- Блок нарахування монет/досвіду -->
+            <div class="self-change-section" style="background: rgba(0,0,0,0.3); border: 1px solid #00ffcc; border-radius: 12px; padding: 12px; transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);">
+                <div style="font-weight:bold; color:#ffdd44; margin-bottom:10px; font-size:15px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>➕ НАРАХУВАННЯ МОНЕТ/ДОСВІДУ</span>
+                    <button id="toggleSelfResultPanel" class="admin-btn-action" style="background:#555; padding:4px 12px; font-size:12px;">▼ прокрутіть вниз ▼</button>
+                </div>
+                <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="flex:1; min-width: 150px;">
+                        <div style="color:gold; font-size:13px;">💰 МОНЕТИ</div>
+                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 5px;">
+                            <button class="admin-btn-action self-coin-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfCoinMode()">[+]</button>
+                            <input type="number" id="self-coin-amount" class="admin-input" style="margin:0; width:100px;" value="100" min="1">
+                        </div>
+                    </div>
+                    <div style="flex:1; min-width: 150px;">
+                        <div style="color:#88ff88; font-size:13px;">💎 ДОСВІД</div>
+                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 5px;">
+                            <button class="admin-btn-action self-exp-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfExpMode()">[+]</button>
+                            <input type="number" id="self-exp-amount" class="admin-input" style="margin:0; width:100px;" value="10" min="1">
+                        </div>
                     </div>
                 </div>
-                <div style="flex:1; min-width: 150px;">
-                    <div style="color:#88ff88; font-size:13px;">💎 ДОСВІД</div>
-                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 5px;">
-                        <button class="admin-btn-action self-exp-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfExpMode()">[+]</button>
-                        <input type="number" id="self-exp-amount" class="admin-input" style="margin:0; width:100px;" value="10" min="1">
+                <button class="admin-btn-action" style="width:100%; background:#ffcc00; color:#000; padding:8px; margin-top:12px; font-size:13px;" onclick="executeSelfChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
+                <div id="selfResultPanel" style="display: none; margin-top: 15px; background: rgba(0,0,0,0.6); border-radius: 12px; padding: 10px; border: 1px solid gold; transition: all 0.4s ease;">
+                    <div style="color:gold; font-weight:bold; margin-bottom:8px;">📊 ПОТОЧНИЙ БАЛАНС</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom:5px;">
+                        <span>💰 МОНЕТИ:</span>
+                        <span id="result-coins" style="color:#ffcc00;">0</span>
                     </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom:5px;">
+                        <span>💎 ДОСВІД:</span>
+                        <span id="result-exp" style="color:#88ff88;">0</span>
+                    </div>
+                    <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">✔️ Зміни застосовано</div>
                 </div>
-            </div>
-            <button class="admin-btn-action" style="width:100%; background:#ffcc00; color:#000; padding:8px; margin-top:12px; font-size:13px;" onclick="executeSelfChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
-            <div id="selfResultPanel" style="display: none; margin-top: 15px; background: rgba(0,0,0,0.6); border-radius: 12px; padding: 10px; border: 1px solid gold; transition: all 0.4s ease;">
-                <div style="color:gold; font-weight:bold; margin-bottom:8px;">📊 РЕЗУЛЬТАТ НАРАХУВАННЯ</div>
-                <div style="display: flex; justify-content: space-between; margin-bottom:5px;">
-                    <span>💰 МОНЕТИ:</span>
-                    <span id="result-coins" style="color:#ffcc00;">0</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom:5px;">
-                    <span>💎 ДОСВІД:</span>
-                    <span id="result-exp" style="color:#88ff88;">0</span>
-                </div>
-                <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">✔️ Зміни застосовано</div>
             </div>
         </div>
 
+        <!-- Лінія перед менеджером груп -->
+        <div class="manager-separator"></div>
         <div id="owner-only-zone" style="display:none;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
             <button class="main-btn" style="width:auto; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px 16px; margin-top:12px; margin-left:10px;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
         </div>
+
+        <!-- Лінія перед повним скидом -->
+        <div class="reset-separator"></div>
         <div id="owner-full-reset" style="display:none; margin-top:8px;">
-            <div class="owner-reset-separator"></div>
             <button class="admin-btn-action" style="width:150px; background:#cc0000; color:#fff; padding:6px; font-size:12px;" onclick="ownerFullReset()">💥 ПОВНИЙ СКИД</button>
         </div>
         <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
@@ -598,7 +636,6 @@
         document.getElementById('volume-control').value = globalVolume;
         updateCoinsUI();
         updateLevelUI();
-        updateSelfCurrentValues();
         // Додаємо обробник кнопки розкриття панелі результатів
         document.getElementById('toggleSelfResultPanel').addEventListener('click', toggleSelfResultPanel);
     };
@@ -651,7 +688,7 @@
                 globalPlayersDB[myNickname] = p;
                 coins = p.coins || 0; godModeActive = p.godMode || false; activeSkin = p.activeSkin || '🚀';
                 if (p.level !== undefined) { playerLevel = p.level; playerExp = p.exp || 0; }
-                saveProgress(); updateCoinsUI(); updateLevelUI(); updateSelfCurrentValues();
+                saveProgress(); updateCoinsUI(); updateLevelUI();
                 if (gameActive) updateHpUI();
             }
             checkBanStatus(p);
@@ -709,13 +746,6 @@
             }
             location.reload();
         });
-    }
-
-    function updateSelfCurrentValues() {
-        let coinSpan = document.getElementById('current-coins-display');
-        let expSpan = document.getElementById('current-exp-display');
-        if (coinSpan) coinSpan.innerText = coins;
-        if (expSpan) expSpan.innerText = playerExp;
     }
 
     function toggleSelfResultPanel() {
@@ -815,50 +845,49 @@
         setTimeout(() => { btn.style.transform = ""; }, 100);
     }
     function executeSelfChange() {
-        let coinAmount = Math.abs(Number(document.getElementById('self-coin-amount').value)) || 0;
-        let finalCoins = coinAmount * selfCoinSign;
-        coins = Math.max(0, coins + finalCoins);
-        saveProgress(); updateCoinsUI();
-        if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins });
-        
-        let expAmount = Math.abs(Number(document.getElementById('self-exp-amount').value)) || 0;
-        let finalExp = expAmount * selfExpSign;
-        if (finalExp !== 0) {
-            if (finalExp > 0) addExperience(finalExp);
-            else {
-                playerExp = Math.max(0, playerExp + finalExp);
-                while (playerLevel > 1 && playerExp < expNeeded[playerLevel-1]) {
-                    playerLevel--;
-                    playerExp += expNeeded[playerLevel];
-                }
-                saveLevelProgress();
-                updateLevelUI();
+    let coinAmount = Math.abs(Number(document.getElementById('self-coin-amount').value)) || 0;
+    let finalCoins = coinAmount * selfCoinSign;
+    coins = Math.max(0, coins + finalCoins);
+    saveProgress(); updateCoinsUI();
+    if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins });
+    
+    let expAmount = Math.abs(Number(document.getElementById('self-exp-amount').value)) || 0;
+    let finalExp = expAmount * selfExpSign;
+    if (finalExp !== 0) {
+        if (finalExp > 0) addExperience(finalExp);
+        else {
+            playerExp = Math.max(0, playerExp + finalExp);
+            while (playerLevel > 1 && playerExp < expNeeded[playerLevel-1]) {
+                playerLevel--;
+                playerExp += expNeeded[playerLevel];
             }
+            saveLevelProgress();
+            updateLevelUI();
         }
-        
-        document.getElementById('result-coins').innerText = (finalCoins >= 0 ? '+' : '') + finalCoins;
-        document.getElementById('result-exp').innerText = (finalExp >= 0 ? '+' : '') + finalExp;
-        
-        let section = document.querySelector('.self-change-section');
-        section.classList.add('active');
-        setTimeout(() => { section.classList.remove('active'); }, 500);
-        
-        let coinBtn = document.querySelector('.self-coin-toggle');
-        let expBtn = document.querySelector('.self-exp-toggle');
-        animateButton(coinBtn);
-        animateButton(expBtn);
-        
-        updateSelfCurrentValues();
-        
-        let panel = document.getElementById('selfResultPanel');
-        if (!panel.classList.contains('show')) {
-            toggleSelfResultPanel();
-        } else {
-            panel.style.backgroundColor = 'rgba(0,0,0,0.8)';
-            setTimeout(() => { panel.style.backgroundColor = ''; }, 300);
-        }
-        alert(`✅ Змінено: монети ${finalCoins}, досвід ${finalExp}`);
     }
+    
+    // ПОТОЧНИЙ БАЛАНС, а не результат нарахувань
+    document.getElementById('result-coins').innerText = coins;
+    document.getElementById('result-exp').innerText = playerExp;
+    
+    let section = document.querySelector('.self-change-section');
+    section.classList.add('active');
+    setTimeout(() => { section.classList.remove('active'); }, 500);
+    
+    let coinBtn = document.querySelector('.self-coin-toggle');
+    let expBtn = document.querySelector('.self-exp-toggle');
+    animateButton(coinBtn);
+    animateButton(expBtn);
+    
+    let panel = document.getElementById('selfResultPanel');
+    if (!panel.classList.contains('show')) {
+        toggleSelfResultPanel();
+    } else {
+        panel.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        setTimeout(() => { panel.style.backgroundColor = ''; }, 300);
+    }
+    alert(`✅ Змінено: монети ${finalCoins}, досвід ${finalExp}`);
+}
     function executePanelCoinChange() {
         let amount = Math.abs(Number(document.getElementById('panel-coin-amount').value)) || 0;
         let finalValue = amount * panelCoinSign;
