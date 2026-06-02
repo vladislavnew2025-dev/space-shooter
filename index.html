@@ -15,33 +15,34 @@
         #hp-display { position: absolute; top: 15px; right: 15px; color: #ff3366; font-size: 20px; font-weight: bold; z-index: 5; pointer-events: none; }
         #level-display {
     position: absolute;
-    top: 65px;
+    top: 15px;
     left: 15px;
     z-index: 999;
-    background: rgba(0,0,0,0.75);
-    border-radius: 16px;
-    padding: 6px 14px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 20px;
+    padding: 5px 12px;
     color: #ffcc00;
     font-size: 14px;
     font-weight: bold;
     font-family: monospace;
     backdrop-filter: blur(4px);
-    border: 1px solid #ffcc44;
-    box-shadow: 0 0 8px rgba(255,200,0,0.3);
-    min-width: 220px;
+    border: 1px solid #ffaa44;
+    box-shadow: 0 0 6px rgba(255,200,0,0.3);
+    white-space: nowrap;
 }
 .level-progress {
-    background: rgba(255,255,255,0.2);
-    border-radius: 12px;
-    height: 8px;
-    margin-top: 6px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 10px;
+    height: 6px;
+    margin-top: 4px;
+    width: 100%;
     overflow: hidden;
 }
 .level-progress-fill {
     background: linear-gradient(90deg, #ffcc44, #ffaa00);
     width: 0%;
     height: 100%;
-    border-radius: 12px;
+    border-radius: 10px;
     transition: width 0.2s;
 }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
@@ -193,7 +194,7 @@
         </div>
         <div id="owner-only-zone" style="display:none; margin-top:10px;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
-            <button class="main-btn" style="width:auto; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px 16px; margin-top:12px; margin-left:10px; text-align:left;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
+            <button class="main-btn" style="width:auto; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px 16px; margin-top:12px; margin-left:10px;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
         </div>
         <div id="owner-full-reset" style="display:none; margin-top:8px;">
             <button class="admin-btn-action" style="width:150px; background:#cc0000; color:#fff; padding:6px; font-size:12px;" onclick="ownerFullReset()">💥 ПОВНИЙ СКИД</button>
@@ -346,7 +347,7 @@
 
     // Ексклюзивна хвиля (без досвіду)
     const exclusiveWavesTemplate = [
-        { id: "ex_vlad", name: "VLAD CARBONAT", bossName: "VLADCarbonat", reward: 100, spawnCount: 30, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 60, bossCooldown: 1800, bossSkin: '🦠', exclusive: true, bossExp: 0 }
+        { id: "ex_vlad", name: "VLAD Carbonat", bossName: "VLADCarbonat", reward: 100, spawnCount: 30, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 60, bossCooldown: 1800, bossSkin: '🦠', exclusive: true, bossExp: 0 }
     ];
 
     const GUN_TYPES = {
@@ -393,6 +394,11 @@
     let levelText = (playerLevel >= maxLevel) ? `⭐ РІВЕНЬ MAX (${playerLevel})` : `⭐ РІВЕНЬ ${playerLevel}  |  ${playerExp}/${nextExp} (${percent}%)`;
     let progressHtml = (playerLevel < maxLevel) ? `<div class="level-progress"><div class="level-progress-fill" style="width: ${percent}%;"></div></div>` : '';
     levelDiv.innerHTML = `<div>${levelText}</div>${progressHtml}`;
+}
+
+    function setLevelVisibility(visible) {
+    let el = document.getElementById('level-display');
+    if (el) el.style.display = visible ? 'block' : 'none';
 }
 
     function setLevelVisibility(visible) {
@@ -708,6 +714,7 @@
         setLevelVisibility(false);
     }
     function backToAdminFromExclusive() {
+        setLevelVisibility(false);
         document.getElementById('exclusive-manager-screen').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
     }
@@ -758,6 +765,7 @@
     function backToAdminFromManage() {
         document.getElementById('player-manage-screen').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'flex';
+        setLevelVisibility(false);
     }
     function addNewCustomGroup() {
         let nameInput = document.getElementById('new-group-name').value.trim();
@@ -909,7 +917,7 @@
     function showShop() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('shop-screen').style.display = 'flex'; switchTab('upgrades'); updateCoinsUI(); setLevelVisibility(false); }
     function showSettings() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('settings-screen').style.display = 'flex'; document.getElementById('volume-control').value = globalVolume; setLevelVisibility(false); }
     function backToMain() { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById('main-menu').style.display = 'flex'; updateLevelUI(); updateCoinsUI(); setLevelVisibility(true); }
-    function backToWaves() { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById('wave-screen').style.display = 'flex'; renderWaves(); setLevelVisibility(true); }
+    function backToWaves() { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById('wave-screen').style.display = 'flex'; setLevelVisibility(false); renderWaves(); }
     function exitGame() { if (confirm("Вийти?")) { setOnlineStatus(false); window.location.href = "https://google.com"; } }
 
     function switchWaveTab(tab) { currentWaveTab = tab; document.querySelectorAll('.wave-tab-btn').forEach(btn => btn.classList.remove('active')); document.querySelector(`.wave-tab-btn[data-tab="${tab}"]`).classList.add('active'); renderWaves(); }
@@ -1045,7 +1053,7 @@
             }
         }
         for(let i=0;i<lightningFlashes.length;i++){ lightningFlashes[i].timer-=16; if(lightningFlashes[i].timer<=0){ lightningFlashes.splice(i,1); i--; } }
-        for(let i=0;i<poisonPuddles.length;i++){ poisonPuddles[i].timer-=16; if(poisonPuddles[i].timer<=0){ poisonPuddles.splice(i,1); i--; } else { if(Math.hypot(player.x-poisonPuddles[i].x, player.y-poisonPuddles[i].y)<35 && !godModeActive && !player.poisoned){ player.poisoned=true; player.poisonTimer=Date.now(); player.poisonTicks=6; takeDamage("ОТРУЄННЯ ВІД VLADCARBONAT!"); if(!gameActive)return; } } }
+        for(let i=0;i<poisonPuddles.length;i++){ poisonPuddles[i].timer-=16; if(poisonPuddles[i].timer<=0){ poisonPuddles.splice(i,1); i--; } else { if(Math.hypot(player.x-poisonPuddles[i].x, player.y-poisonPuddles[i].y)<35 && !godModeActive && !player.poisoned){ player.poisoned=true; player.poisonTimer=Date.now(); player.poisonTicks=6; takeDamage("ОТРУЄННЯ ВІД VLADCarbonat!"); if(!gameActive)return; } } }
         for(let i=bullets.length-1;i>=0;i--){ bullets[i].y-=18*m; if(bullets[i].y<0) bullets.splice(i,1); }
         for(let i=enemyBullets.length-1;i>=0;i--){
             let eb = enemyBullets[i]; eb.x+=(eb.vx||0)*m; eb.y+=(eb.vy||7.5)*m;
