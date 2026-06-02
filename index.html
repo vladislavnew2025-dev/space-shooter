@@ -330,11 +330,13 @@
     const ctx = canvas.getContext('2d');
     const container = document.documentElement;
 
+    // Додано 5-ту хвилю з босом VladCarbonat
     const defaultWaves = [
         { id: 1, name: "ХВИЛЯ 1", reward: 50, stars: 0, unlocked: true, spawnCount: 8, spawnTypes: ['normal'], hasBoss: true, bossHp: 5, bossCooldown: 1200, bossSkin: '👾' },
         { id: 2, name: "ХВИЛЯ 2", reward: 80, stars: 0, unlocked: false, spawnCount: 12, spawnTypes: ['normal', 'fast'], hasBoss: true, bossHp: 8, bossCooldown: 1000, bossSkin: '🛸' },
         { id: 3, name: "ХВИЛЯ 3", reward: 120, stars: 0, unlocked: false, spawnCount: 20, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 25, bossCooldown: 600, bossSkin: '👺' },
-        { id: 4, name: "ХВИЛЯ 4 (ЛАЗЕР)", reward: 145, stars: 0, unlocked: false, spawnCount: 25, spawnTypes: ['fast', 'heavy'], hasBoss: true, bossHp: 45, bossCooldown: 1500, bossSkin: '👁️' }
+        { id: 4, name: "ХВИЛЯ 4 (ЛАЗЕР)", reward: 145, stars: 0, unlocked: false, spawnCount: 25, spawnTypes: ['fast', 'heavy'], hasBoss: true, bossHp: 45, bossCooldown: 1500, bossSkin: '👁️' },
+        { id: 5, name: "VLADCARBONAT (ОТРУТА)", reward: 200, stars: 0, unlocked: false, spawnCount: 30, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 60, bossCooldown: 1800, bossSkin: '🦠' }
     ];
 
     const GUN_TYPES = {
@@ -387,6 +389,7 @@
     let isPaused = false;
     
     let lightningFlashes = []; // {x, y, timer}
+    let poisonPuddles = [];    // {x, y, timer} отруйні калюжі
 
     setInterval(() => {
         if (myNickname && !isOwner) {
@@ -948,7 +951,22 @@
     }
 
     function spawnBoss() {
-        bossInstance={x:canvas.width/2,y:-100,targetY:110,w:130,h:70,hp:currentWave.bossHp,maxHp:currentWave.bossHp,speedX:currentWave.id===4?4:3,lastShot:0,shootCooldown:currentWave.bossCooldown,lastCircleShot:0,circleCooldown:currentWave.id===4?5000:4000,ultCount:0,isUlting:false,i:currentWave.bossSkin,laserTargetX:0,laserWarmupDuration:1000,laserFireDuration:2000,laserTimer:0};
+        let isVlad = (currentWave.id === 5);
+        bossInstance = {
+            x: canvas.width/2, y: -100, targetY: 110,
+            w: 130, h: 70,
+            hp: currentWave.bossHp, maxHp: currentWave.bossHp,
+            speedX: isVlad ? 2.5 : (currentWave.id===4?4:3),
+            lastShot: 0, shootCooldown: currentWave.bossCooldown,
+            lastCircleShot: 0, circleCooldown: isVlad ? 4000 : (currentWave.id===4?5000:4000),
+            ultCount: 0, isUlting: false,
+            i: currentWave.bossSkin,
+            // Для VladCarbonat додаткові параметри отрути
+            lastPoisonShot: 0, poisonCooldown: 2000,
+            isVlad: isVlad,
+            // для лазера (хвиля 4)
+            laserTargetX: 0, laserWarmupDuration: 1000, laserFireDuration: 2000, laserTimer: 0
+        };
     }
 
     function init() {
@@ -974,12 +992,11 @@
         }
     }
 
-    // Функція для ланцюга блискавки (не більше 3 цілей разом з першою)
+    // Ланцюг блискавки (до 3 ворогів)
     function lightningChain(startEnemy, allEnemies, maxChain = 3) {
-        let hitSet = new Set(); // унікальні вороги
+        let hitSet = new Set();
         let hitList = [startEnemy];
         hitSet.add(startEnemy);
-        
         let current = startEnemy;
         for (let step = 1; step < maxChain; step++) {
             let closest = null;
@@ -987,7 +1004,7 @@
             for (let e of allEnemies) {
                 if (!hitSet.has(e) && e !== current) {
                     let dist = Math.hypot(e.x - current.x, e.y - current.y);
-                    if (dist < minDist && dist < 150) { // радіус перестрибування 150
+                    if (dist < minDist && dist < 150) {
                         minDist = dist;
                         closest = e;
                     }
@@ -998,15 +1015,10 @@
             hitList.push(closest);
             current = closest;
         }
-        
-        // Застосовуємо шкоду та візуальні ефекти для всіх, крім першого (йому шкоду вже завдали)
         for (let i = 1; i < hitList.length; i++) {
-            let enemy = hitList[i];
-            enemy.hp--;
-            lightningFlashes.push({x: enemy.x, y: enemy.y, timer: 200});
-            // Якщо ворог помер – kills збільшимо пізніше у видаленні
+            hitList[i].hp--;
+            lightningFlashes.push({x: hitList[i].x, y: hitList[i].y, timer: 200});
         }
-        // Додаємо візуал на першого ворога (затримка 0)
         lightningFlashes.push({x: startEnemy.x, y: startEnemy.y, timer: 200});
     }
 
@@ -1017,54 +1029,167 @@
         player.x+=(player.targetX-player.x)*0.2*m;
         starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
         
+        // Оновлення ефектів
         for (let i=0; i<lightningFlashes.length; i++) {
             lightningFlashes[i].timer -= 16;
-            if (lightningFlashes[i].timer <= 0) {
-                lightningFlashes.splice(i,1);
-                i--;
+            if (lightningFlashes[i].timer <= 0) { lightningFlashes.splice(i,1); i--; }
+        }
+        for (let i=0; i<poisonPuddles.length; i++) {
+            poisonPuddles[i].timer -= 16;
+            if (poisonPuddles[i].timer <= 0) { poisonPuddles.splice(i,1); i--; }
+            else {
+                // Перевірка, чи гравець стоїть на калюжі
+                let puddle = poisonPuddles[i];
+                if (Math.hypot(player.x - puddle.x, player.y - puddle.y) < 35) {
+                    // отруєння гравця
+                    if (!godModeActive) {
+                        // завдаємо 1 шкоди та накладаємо отруту (якщо ще не отруєний)
+                        if (!player.poisoned) {
+                            player.poisoned = true;
+                            player.poisonTimer = Date.now();
+                            player.poisonTicks = 6;
+                            takeDamage("ОТРУЄННЯ ВІД VLADCARBONAT!");
+                            if (!gameActive) return;
+                        }
+                    }
+                }
             }
         }
         
         for(let i=bullets.length-1;i>=0;i--){bullets[i].y-=18*m;if(bullets[i].y<0)bullets.splice(i,1);}
         for(let i=enemyBullets.length-1;i>=0;i--){
-            enemyBullets[i].x+=(enemyBullets[i].vx||0)*m;
-            enemyBullets[i].y+=(enemyBullets[i].vy||7.5)*m;
-            if(enemyBullets[i].y>canvas.height||enemyBullets[i].y<-50||enemyBullets[i].x<-50||enemyBullets[i].x>canvas.width+50){enemyBullets.splice(i,1);continue;}
-            if(Math.hypot(enemyBullets[i].x-player.x,enemyBullets[i].y-player.y)<28){enemyBullets.splice(i,1);takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");if(!gameActive)return;}
+            let eb = enemyBullets[i];
+            eb.x+=(eb.vx||0)*m;
+            eb.y+=(eb.vy||7.5)*m;
+            if(eb.y>canvas.height||eb.y<-50||eb.x<-50||eb.x>canvas.width+50){enemyBullets.splice(i,1);continue;}
+            if(Math.hypot(eb.x-player.x,eb.y-player.y)<28){
+                enemyBullets.splice(i,1);
+                if (eb.isPoison) {
+                    // отруйна куля створює калюжу
+                    poisonPuddles.push({x: eb.x, y: eb.y, timer: 3000});
+                    takeDamage("ОТРУЙНА КУЛЯ!");
+                } else {
+                    takeDamage("ВАС ЗБИВ ВОРОЖИЙ ЛАЗЕР!");
+                }
+                if(!gameActive)return;
+            }
         }
+        
+        // Бос
         if(bossInstance){
             if(bossInstance.y<bossInstance.targetY) bossInstance.y+=2.5*m;
-            if(!(currentWave.id===4&&bossInstance.isUlting)){bossInstance.x+=bossInstance.speedX*m;if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2)bossInstance.speedX*=-1;}
+            if(!(currentWave.id===4 && bossInstance.isUlting) && !bossInstance.isVlad) {
+                bossInstance.x+=bossInstance.speedX*m;
+                if(bossInstance.x>canvas.width-bossInstance.w/2||bossInstance.x<bossInstance.w/2) bossInstance.speedX*=-1;
+            } else if (bossInstance.isVlad) {
+                // VladCarbonat рухається плавно
+                bossInstance.x += bossInstance.speedX * m;
+                if(bossInstance.x > canvas.width - bossInstance.w/2 || bossInstance.x < bossInstance.w/2) bossInstance.speedX *= -1;
+            }
+            
             let ts=Date.now();
-            if(!bossInstance.isUlting&&ts-bossInstance.lastShot>bossInstance.shootCooldown/m&&bossInstance.y>=bossInstance.targetY){
-                enemyBullets.push({x:bossInstance.x-25,y:bossInstance.y+20,vx:0,vy:7.5});
-                enemyBullets.push({x:bossInstance.x+25,y:bossInstance.y+20,vx:0,vy:7.5});
-                playSound(bossBuf);bossInstance.lastShot=ts;
+            
+            // Звичайні постріли (для всіх босів)
+            if(!bossInstance.isUlting && ts-bossInstance.lastShot > bossInstance.shootCooldown/m && bossInstance.y>=bossInstance.targetY){
+                if (bossInstance.isVlad) {
+                    // випускає дві звичайні кулі
+                    enemyBullets.push({x:bossInstance.x-25,y:bossInstance.y+20,vx:0,vy:7.5, isPoison: false});
+                    enemyBullets.push({x:bossInstance.x+25,y:bossInstance.y+20,vx:0,vy:7.5, isPoison: false});
+                } else {
+                    enemyBullets.push({x:bossInstance.x-25,y:bossInstance.y+20,vx:0,vy:7.5});
+                    enemyBullets.push({x:bossInstance.x+25,y:bossInstance.y+20,vx:0,vy:7.5});
+                }
+                playSound(bossBuf);
+                bossInstance.lastShot=ts;
             }
-            if(!bossInstance.isUlting&&ts-bossInstance.lastCircleShot>bossInstance.circleCooldown/m&&bossInstance.y>=bossInstance.targetY){
-                if(currentWave.id===3||currentWave.id===4){bossInstance.isUlting=true;bossInstance.lastCircleShot=ts;if(currentWave.id===4){bossInstance.laserTargetX=player.x;bossInstance.laserTimer=ts;playSound(bossBuf);}else bossInstance.ultCount=0;}
+            
+            // Отруйні постріли тільки для VladCarbonat
+            if(bossInstance.isVlad && !bossInstance.isUlting && ts-bossInstance.lastPoisonShot > bossInstance.poisonCooldown/m && bossInstance.y>=bossInstance.targetY){
+                // випускає 2 отруйні кулі, що летять трохи в сторони
+                let angleOffset = 0.3;
+                enemyBullets.push({x:bossInstance.x-20, y:bossInstance.y+30, vx: -1.5, vy: 6, isPoison: true});
+                enemyBullets.push({x:bossInstance.x+20, y:bossInstance.y+30, vx: 1.5, vy: 6, isPoison: true});
+                playSound(bossBuf);
+                bossInstance.lastPoisonShot = ts;
             }
-            if(bossInstance.isUlting){
-                if(currentWave.id===4){
-                    let tp=ts-bossInstance.laserTimer,tlt=(bossInstance.laserWarmupDuration+bossInstance.laserFireDuration)/m;
-                    if(tp>tlt){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts;}
-                    else if(tp>=bossInstance.laserWarmupDuration/m){if(ts%7===0){if(player.x>bossInstance.laserTargetX-35&&player.x<bossInstance.laserTargetX+35&&player.y>bossInstance.y){takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ!");if(!gameActive)return;}}}
-                } else if(currentWave.id===3){
-                    if(ts-bossInstance.lastCircleShot>350/m){
-                        let ao=(bossInstance.ultCount*Math.PI)/10;
-                        for(let i=0;i<10;i++){let a=((i*2*Math.PI)/10)+ao;enemyBullets.push({x:bossInstance.x,y:bossInstance.y,vx:Math.cos(a)*4.8,vy:Math.sin(a)*4.8});}
-                        playSound(bossBuf);bossInstance.ultCount++;bossInstance.lastCircleShot=ts;
-                        if(bossInstance.ultCount>=2){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts+1000/m;}
+            
+            // Кільцева атака (одне кільце для VladCarbonat, для інших як було)
+            if(!bossInstance.isUlting && ts-bossInstance.lastCircleShot > bossInstance.circleCooldown/m && bossInstance.y>=bossInstance.targetY){
+                if(currentWave.id===3 || currentWave.id===4 || bossInstance.isVlad){
+                    bossInstance.isUlting=true;
+                    bossInstance.lastCircleShot=ts;
+                    if(currentWave.id===4 && !bossInstance.isVlad){
+                        bossInstance.laserTargetX=player.x;
+                        bossInstance.laserTimer=ts;
+                        playSound(bossBuf);
+                    } else if (bossInstance.isVlad) {
+                        bossInstance.ultCount = 0;
+                    } else {
+                        bossInstance.ultCount=0;
                     }
                 }
             }
-            for(let j=bullets.length-1;j>=0;j--){
-                if(bullets[j].x>bossInstance.x-bossInstance.w/2&&bullets[j].x<bossInstance.x+bossInstance.w/2&&bullets[j].y>bossInstance.y-bossInstance.h/2&&bullets[j].y<bossInstance.y+bossInstance.h/2){
-                    bullets.splice(j,1);bossInstance.hp--;playSound(crashBuf);
-                    if(bossInstance.hp<=0){bossInstance=null;kills++;document.getElementById('kills').innerText=kills;gameActive=false;endMission();return;}
+            
+            if(bossInstance.isUlting){
+                if(currentWave.id===4 && !bossInstance.isVlad){
+                    let tp=ts-bossInstance.laserTimer, tlt=(bossInstance.laserWarmupDuration+bossInstance.laserFireDuration)/m;
+                    if(tp>tlt){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts;}
+                    else if(tp>=bossInstance.laserWarmupDuration/m){
+                        if(ts%7===0){
+                            if(player.x>bossInstance.laserTargetX-35 && player.x<bossInstance.laserTargetX+35 && player.y>bossInstance.y){
+                                takeDamage("ВАС СПЕКЛО ГІПЕР-ЛАЗЕРОМ!");
+                                if(!gameActive)return;
+                            }
+                        }
+                    }
+                } else if(currentWave.id===3 && !bossInstance.isVlad){
+                    if(ts-bossInstance.lastCircleShot>350/m){
+                        let ao=(bossInstance.ultCount*Math.PI)/10;
+                        for(let i=0;i<10;i++){
+                            let a=((i*2*Math.PI)/10)+ao;
+                            enemyBullets.push({x:bossInstance.x,y:bossInstance.y,vx:Math.cos(a)*4.8,vy:Math.sin(a)*4.8});
+                        }
+                        playSound(bossBuf);
+                        bossInstance.ultCount++;
+                        bossInstance.lastCircleShot=ts;
+                        if(bossInstance.ultCount>=2){bossInstance.isUlting=false;bossInstance.lastCircleShot=ts+1000/m;}
+                    }
+                } else if(bossInstance.isVlad){
+                    // одне кільце з 12 куль (без отрути, звичайні кулі)
+                    if(ts-bossInstance.lastCircleShot>400/m){
+                        let ao = 0;
+                        for(let i=0;i<12;i++){
+                            let a = ((i*2*Math.PI)/12) + ao;
+                            enemyBullets.push({x:bossInstance.x, y:bossInstance.y, vx: Math.cos(a)*5, vy: Math.sin(a)*5, isPoison: false});
+                        }
+                        playSound(bossBuf);
+                        bossInstance.isUlting = false;
+                        bossInstance.lastCircleShot = ts;
+                    }
                 }
             }
-            if(Math.hypot(bossInstance.x-player.x,bossInstance.y-player.y)<55){takeDamage("БОСС ПРОТАРАНИВ ВАС!");bossInstance.x=canvas.width/2;if(!gameActive)return;}
+            
+            // Обробка влучань у боса
+            for(let j=bullets.length-1;j>=0;j--){
+                if(bullets[j].x>bossInstance.x-bossInstance.w/2 && bullets[j].x<bossInstance.x+bossInstance.w/2 &&
+                   bullets[j].y>bossInstance.y-bossInstance.h/2 && bullets[j].y<bossInstance.y+bossInstance.h/2){
+                    bullets.splice(j,1);
+                    bossInstance.hp--;
+                    playSound(crashBuf);
+                    if(bossInstance.hp<=0){
+                        bossInstance=null;
+                        kills++;
+                        document.getElementById('kills').innerText=kills;
+                        gameActive=false;
+                        endMission();
+                        return;
+                    }
+                }
+            }
+            if(Math.hypot(bossInstance.x-player.x, bossInstance.y-player.y) < 55){
+                takeDamage("БОСС ПРОТАРАНИВ ВАС!");
+                if(!gameActive) return;
+            }
         }
         
         // Основний цикл по ворогах
@@ -1086,19 +1211,15 @@
                     e.hp--;
                     playSound(crashBuf);
                     
-                    // Блискавка (тип 2) – ланцюг до 3 ворогів
                     if(bType === 2 && Math.random() < 0.35) {
                         lightningChain(e, enemies, 3);
                     }
-                    
                     if(bType === 3 && Math.random() < 0.40 && !e.poisoned) { 
                         e.poisoned = true; e.poisonTicks = 6; e.poisonTimer = Date.now(); 
                     }
                     if(bType === 4 && Math.random() < 0.25 && !e.slowed) { 
                         e.slowed = true; e.speed *= 0.5; e.slowEnd = Date.now() + 3000; 
                     }
-                    
-                    hit = true;
                     break;
                 }
             }
@@ -1109,14 +1230,12 @@
                 document.getElementById('kills').innerText = kills;
                 continue;
             }
-            
             if(Math.hypot(e.x-player.x, e.y-player.y) < e.size/2+18){
                 enemies.splice(i,1);
                 takeDamage("ЗІТКНЕННЯ!");
                 if(!gameActive) return;
                 continue;
             }
-            
             if(e.y > canvas.height+50){
                 enemies.splice(i,1);
                 missed++;
@@ -1124,15 +1243,12 @@
             }
         }
         
+        // Перевірка завершення хвилі
         if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && !currentWave.hasBoss){
-            gameActive = false;
-            endMission();
-            return;
+            gameActive = false; endMission(); return;
         }
         if(spawnedThisWave >= currentWave.spawnCount && enemies.length === 0 && !bossInstance && currentWave.hasBoss && kills >= currentWave.spawnCount+1){
-            gameActive = false;
-            endMission();
-            return;
+            gameActive = false; endMission(); return;
         }
     }
 
@@ -1175,25 +1291,54 @@
         });
 
         if(bossInstance){
-            if(currentWave.id===4&&bossInstance.isUlting){
-                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-                let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
-                if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;}
-                else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
-                ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
-                if(la>=w){ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
+            // Малюємо отруйні калюжі
+            for (let p of poisonPuddles) {
+                ctx.save();
+                ctx.globalAlpha = 0.6;
+                ctx.fillStyle = '#88ff44';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 25, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#44ff00';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 15, 0, Math.PI*2);
+                ctx.fill();
                 ctx.restore();
             }
-            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
-            ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
-            let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
-            ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
-            ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
-            ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
-            let bt="КОСМІЧНИЙ ЗАГАРБНИК";
-            if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
-            if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
-            ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
+            
+            // Спеціальна обробка для VladCarbonat (хвиля 5)
+            if(bossInstance.isVlad){
+                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='85px Arial';ctx.fillText('🦠',bossInstance.x,bossInstance.y);ctx.restore();
+                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+                let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
+                ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
+                ctx.fillStyle='#44ff00';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
+                ctx.textAlign='center';ctx.font='bold 14px Segoe UI';ctx.fillStyle='#ccff66';
+                ctx.fillText(`VLADCARBONAT: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-8);
+                ctx.font='12px Segoe UI';ctx.fillStyle='#88ff88';
+                ctx.fillText("⚠️ Уникайте зелених куль! Вони залишають отруйні калюжі!", canvas.width/2, bY+25);
+                ctx.restore();
+            } else {
+                if(currentWave.id===4 && bossInstance.isUlting){
+                    ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+                    let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;
+                    if(la<w){ctx.strokeStyle=(Math.floor(la/100)%2===0)?'rgba(255,0,0,0.7)':'rgba(255,0,0,0.2)';ctx.lineWidth=4;ctx.setLineDash([10,10]);ctx.shadowBlur=0;}
+                    else{ctx.strokeStyle='#ff0055';ctx.lineWidth=60;ctx.shadowBlur=35;ctx.shadowColor='#ff00a0';}
+                    ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();
+                    if(la>=w){ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.strokeStyle='#fff';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(bossInstance.x,bossInstance.y+15);ctx.lineTo(bossInstance.laserTargetX,canvas.height);ctx.stroke();}
+                    ctx.restore();
+                }
+                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='75px Arial';ctx.fillText(bossInstance.i,bossInstance.x,bossInstance.y);ctx.restore();
+                ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
+                let bW=canvas.width*0.6,bX=(canvas.width-bW)/2,bY=60;
+                ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bX,bY,bW,10,4);ctx.fill();
+                ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055';ctx.beginPath();ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4);ctx.fill();
+                ctx.textAlign='center';ctx.font='12px Segoe UI';ctx.fillStyle='#fff';
+                let bt="КОСМІЧНИЙ ЗАГАРБНИК";
+                if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
+                if(currentWave.id===4){let la=Date.now()-bossInstance.laserTimer,w=bossInstance.laserWarmupDuration/gameSpeedMultiplier;bt=bossInstance.isUlting?(la<w?"⚠️ НАВЕДЕННЯ ЛАЗЕРА...":"🔥 ГІПЕР-ЛАЗЕР! 🔥"):"КОСМІЧНЕ ОКО АПОКАЛІПСИСУ";}
+                ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6);ctx.restore();
+            }
         }
 
         ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.setLineDash([]);
@@ -1205,7 +1350,11 @@
             else if(bType===4) ctx.fillStyle='#ff6600';
             ctx.fillRect(b.x-2, b.y, 4, 20);
         });
-        ctx.fillStyle='#f00'; enemyBullets.forEach(eb=>ctx.fillRect(eb.x-4,eb.y-4,8,8));
+        enemyBullets.forEach(eb => {
+            if(eb.isPoison) ctx.fillStyle='#88ff44';
+            else ctx.fillStyle='#f00';
+            ctx.fillRect(eb.x-4,eb.y-4,8,8);
+        });
         
         for (let fl of lightningFlashes) {
             let alpha = Math.min(1, fl.timer / 100);
@@ -1393,8 +1542,9 @@
         waveData.forEach(w => {
             const card = document.createElement('div');
             card.className = `wave-card ${w.unlocked?'':'locked'} ${w.hasBoss?'boss-wave':''}`;
-            card.innerHTML = `<h3 style="margin:0;color:${w.hasBoss?'#f11':'#0ff'}">WAVE ${w.id}</h3>
-                <div style="font-size:11px;color:#ff0;margin:3px 0;">${w.name}</div>
+            if(w.id===5) card.style.borderColor = '#88ff44';
+            card.innerHTML = `<h3 style="margin:0;color:${w.id===5?'#88ff44':(w.hasBoss?'#f11':'#0ff')}">${w.name}</h3>
+                <div style="font-size:11px;color:#ff0;margin:3px 0;">${w.id===5 ? 'ФІНАЛЬНИЙ БОС: VLADCARBONAT' : w.name}</div>
                 <div style="color:gold">${'★'.repeat(w.stars)}${'☆'.repeat(3-w.stars)}</div>
                 <div style="font-size:10px;color:#666;margin-top:2px;">Reward: ${w.reward}💰</div>
                 <button style="font-size:10px;border:1px solid #0ff;background:transparent;color:#0ff;margin-top:5px;padding:3px 10px;border-radius:10px">СТАРТ</button>`;
@@ -1413,7 +1563,7 @@
         document.getElementById('required-kills').innerText=w.spawnCount+(w.hasBoss?1:0);
         kills=0; missed=0; spawnedThisWave=0;
         bullets=[]; enemyBullets=[]; enemies=[]; bossInstance=null;
-        lightningFlashes = [];
+        lightningFlashes = []; poisonPuddles = [];
         init(); updateHpUI(); startIntervals(); requestAnimationFrame(gameLoop);
     }
 
