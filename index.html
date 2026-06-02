@@ -319,10 +319,10 @@
     ];
 
     const GUN_TYPES = {
-        1: { name: 'ЗВИЧАЙНА', icon: '🔫', price: 150, desc: 'Стріляє звичайними кулями. Базова зброя.' },
-        2: { name: 'БЛИСКАВКА', icon: '⚡', price: 320, desc: '35% шанс — ланцюг блискавки (до 3 ворогів).' },
-        3: { name: 'ОТРУТА', icon: '☠️', price: 400, desc: '40% шанс — отруює ворога (2 шкоди за 3 сек).' },
-        4: { name: 'ПЛАЗМА', icon: '🔥', price: 550, desc: '25% шанс — підпалює та сповільнює ворога на 50% на 3 сек.' }
+        1: { name: 'ЗВИЧАЙНА', icon: '🔫', price: 150, desc: 'Стріляє звичайними кулями. Базова зброя.', requiredLevel: 1 },
+        2: { name: 'БЛИСКАВКА', icon: '⚡', price: 320, desc: '35% шанс — ланцюг блискавки (до 3 ворогів).', requiredLevel: 2 },
+        3: { name: 'ОТРУТА', icon: '☠️', price: 400, desc: '40% шанс — отруює ворога (2 шкоди за 3 сек).', requiredLevel: 3 },
+        4: { name: 'ПЛАЗМА', icon: '🔥', price: 550, desc: '25% шанс — підпалює та сповільнює ворога на 50% на 3 сек.', requiredLevel: 4 }
     };
 
     const MASTER_PASSWORD = "Hs27^&)-+5x?~";
@@ -341,19 +341,18 @@
     let unlockedUpgrades = JSON.parse(localStorage.getItem('upgrades')) || { fastFire: 0 };
     let unlockedSkins = JSON.parse(localStorage.getItem('skins')) || { phoenix: false };
     let activeSkin = localStorage.getItem('activeSkin') || '🚀';
-    let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => { let arr = Array(8).fill(null); arr[1] = 0; arr[2] = 0; return arr; })();
+    let shipGrid = JSON.parse(localStorage.getItem('shipGrid')) || (() => { let arr = Array(8).fill(null); arr[1]=0; arr[2]=0; return arr; })();
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
-
     let exclusiveWaves = JSON.parse(localStorage.getItem('exclusiveWaves')) || exclusiveWavesTemplate.map(w => ({ ...w, enabled: true, visibleForGroups: ['ігроки', 'читери', 'тестери'], visibleUntil: null, visibleDuration: 0 }));
     
-    // ---- Система рівнів та досвіду (тільки для звичайних хвиль) ----
+    // ---- Система рівнів та досвіду ----
     let playerLevel = Number(localStorage.getItem('playerLevel')) || 1;
     let playerExp = Number(localStorage.getItem('playerExp')) || 0;
     const expNeeded = [0, 80, 140, 250, 415];
     const maxLevel = 5;
     let expDrops = [];
-    let expGainedThisMission = 0; // накопичувач досвіду за раунд
+    let expGainedThisMission = 0;
 
     function updateLevelUI() {
         let levelDiv = document.getElementById('level-display');
@@ -373,6 +372,9 @@
             playerLevel++;
             if (playerLevel < maxLevel) needed = expNeeded[playerLevel];
             alert(`🎉 ВІТАЄМО! Ви досягли ${playerLevel} рівня!`);
+            updateLevelUI();
+            saveLevelProgress();
+            if (document.getElementById('shop-screen').style.display === 'flex') renderShopItems('ship');
         }
         updateLevelUI();
         saveLevelProgress();
@@ -381,27 +383,28 @@
     function saveLevelProgress() {
         localStorage.setItem('playerLevel', playerLevel);
         localStorage.setItem('playerExp', playerExp);
-        if (!isOwner && myNickname) {
-            db.ref('players/' + myNickname).update({ level: playerLevel, exp: playerExp });
-        }
+        if (!isOwner && myNickname) db.ref('players/' + myNickname).update({ level: playerLevel, exp: playerExp });
     }
 
-    // Ліміт додаткових клітинок (без урахування стандартних двох)
     function getMaxExtraCellsForLevel(level) {
-        if (level >= 5) return 6; // 2 стандартні + 6 куплених = 8
+        if (level >= 5) return 6;
         if (level >= 4) return 4;
         if (level >= 3) return 3;
         if (level >= 2) return 2;
         return 1;
     }
-
-    function getMaxCellsForLevel(level) {
-        return 2 + getMaxExtraCellsForLevel(level);
-    }
+    function getMaxCellsForLevel(level) { return 2 + getMaxExtraCellsForLevel(level); }
 
     function isGunUnlocked(gunId) {
-        if (gunId === 1) return true;
-        if (playerLevel >= 3) return true; // на 3 рівні відкриваються 2,3,4
+        let reqLevel = GUN_TYPES[gunId]?.requiredLevel || 1;
+        return playerLevel >= reqLevel;
+    }
+
+    function isFastFireUnlocked(level) {
+        if (level === 1) return true;
+        if (level === 2) return playerLevel >= 2;
+        if (level === 3) return playerLevel >= 3;
+        if (level === 4) return playerLevel >= 4;
         return false;
     }
 
@@ -422,6 +425,7 @@
     let lightningFlashes = [], poisonPuddles = [];
     let currentWaveTab = 'normal';
 
+    // ---- Функції синхронізації, групи, адмінка ----
     function syncExclusiveSettings() {
         if (isOwner) db.ref('config/exclusiveWaves').set(exclusiveWaves);
         else db.ref('config/exclusiveWaves').on('value', snap => { if (snap.exists()) { exclusiveWaves = snap.val(); localStorage.setItem('exclusiveWaves', JSON.stringify(exclusiveWaves)); if (document.getElementById('wave-screen').style.display === 'flex') renderWaves(); } });
@@ -887,6 +891,10 @@
                 list.appendChild(card);
             });
         } else {
+            if (playerLevel < 5 && !isOwner) {
+                list.innerHTML = '<div style="color:#ffaa44; text-align:center; padding:20px;">🔒 Ексклюзивні хвилі доступні з 5 рівня гравця.</div>';
+                return;
+            }
             let visibleExclusive = exclusiveWaves.filter(w => isExclusiveWaveVisible(w));
             if (visibleExclusive.length === 0) list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">Наразі немає доступних ексклюзивних хвиль.</div>';
             else {
@@ -987,7 +995,6 @@
         let m=gameSpeedMultiplier;
         player.x+=(player.targetX-player.x)*0.2*m;
         starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
-        // Краплі досвіду
         for(let i=0;i<expDrops.length;i++){
             expDrops[i].y += expDrops[i].vy * m;
             if(expDrops[i].y>canvas.height+50 || expDrops[i].y<-50){ expDrops.splice(i,1); i--; continue; }
@@ -1167,13 +1174,10 @@
         document.getElementById('hp-display').style.display='none';
         document.getElementById('pause-btn').style.display='none';
         document.getElementById('pause-menu').style.display='none';
-        
-        let rewardText = `+${currentWave.reward} COINS`;
-        let expText = (currentWave.exclusive || currentWave.id > 4) ? `` : `💎 +${expGainedThisMission} досвіду`;
-        document.getElementById('win-reward-text').innerHTML = rewardText;
-        document.getElementById('win-exp-text').innerHTML = expText;
-        expGainedThisMission = 0; // скидаємо після відображення
-        
+        document.getElementById('win-reward-text').innerHTML = `+${currentWave.reward} COINS`;
+        let expMsg = (currentWave.exclusive || currentWave.id > 4) ? `` : `💎 +${expGainedThisMission} досвіду`;
+        document.getElementById('win-exp-text').innerHTML = expMsg;
+        expGainedThisMission = 0;
         if(!currentWave.exclusive && currentWave.id === waveData.length){
             document.getElementById('final-credits-screen').style.display='flex';
         } else {
@@ -1186,23 +1190,10 @@
     function switchTab(tab) { ['upgrades','skins','ship'].forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===tab)); renderShopItems(tab); }
     function switchSideTab(side, tab) { if(side==='left') currentLeftTab=tab; renderShopItems('ship'); }
 
-    function buyGunType(typeId) {
-        if (!isGunUnlocked(typeId)) { alert(`Ця зброя відкривається з ${typeId===2?3:3} рівня!`); return; }
-        let gun = GUN_TYPES[typeId];
-        if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
-        let freeSlot = shipGrid.findIndex(cell => cell === 0);
-        if (freeSlot !== -1) shipGrid[freeSlot] = Number(typeId);
-        else shipInventory.push(Number(typeId));
-        coins -= gun.price;
-        saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
-        renderShopItems('ship');
-        alert(`✅ Ви придбали ${gun.name}! ${freeSlot !== -1 ? 'Встановлено на вільну клітинку корабля.' : 'Додано в інвентар.'}`);
-    }
-
     function buyShipItem(type, price) {
         if(coins<price) return;
         if(type==='cell') {
-            let boughtExtraCells = shipGrid.filter(c => c !== null).length - 2; // мінус стандартні дві
+            let boughtExtraCells = shipGrid.filter(c => c !== null).length - 2;
             if (boughtExtraCells < 0) boughtExtraCells = 0;
             let maxExtra = getMaxExtraCellsForLevel(playerLevel);
             if (boughtExtraCells >= maxExtra) { alert(`Ви досягли максимальної кількості додаткових клітинок для вашого рівня (${maxExtra})!`); return; }
@@ -1218,21 +1209,54 @@
         saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins}); renderShopItems('ship');
     }
 
+    function buyFastFire(level, price) {
+        if (!isFastFireUnlocked(level)) {
+            alert(`❌ Рівень ${level} FAST FIRE доступний з ${level} рівня гравця! (ваш рівень: ${playerLevel})`);
+            return;
+        }
+        if (coins >= price && (unlockedUpgrades.fastFire || 0) === level - 1) {
+            coins -= price; unlockedUpgrades.fastFire = level;
+            saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
+            switchTab('upgrades');
+        } else { alert('Недостатньо монет або попередній рівень не куплений!'); }
+    }
+
+    function buyGunType(typeId) {
+        if (!isGunUnlocked(typeId)) {
+            alert(`❌ Ця зброя відкривається з ${GUN_TYPES[typeId].requiredLevel} рівня! (ваш рівень: ${playerLevel})`);
+            return;
+        }
+        let gun = GUN_TYPES[typeId];
+        if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
+        let freeSlot = shipGrid.findIndex(cell => cell === 0);
+        if (freeSlot !== -1) shipGrid[freeSlot] = Number(typeId);
+        else shipInventory.push(Number(typeId));
+        coins -= gun.price;
+        saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
+        renderShopItems('ship');
+        alert(`✅ Ви придбали ${gun.name}! ${freeSlot !== -1 ? 'Встановлено на вільну клітинку корабля.' : 'Додано в інвентар.'}`);
+    }
+
     function renderShopItems(tab) {
         const content = document.getElementById('shop-content'); content.innerHTML = '';
         if (tab === 'upgrades') {
             let lvl = unlockedUpgrades.fastFire || 0;
             let levels = [
-                { cost: 100, label: 'FAST FIRE LVL 1', desc: 'Трохи збільшує швидкість стрільби корабля' },
-                { cost: 190, label: 'FAST FIRE LVL 2', desc: 'Ще більше збільшує швидкість' },
-                { cost: 300, label: 'FAST FIRE LVL 3', desc: 'Значне прискорення стрільби' },
-                { cost: 425, label: 'FAST FIRE LVL 4', desc: 'Максимальна швидкість стрільби' }
+                { cost: 100, label: 'FAST FIRE LVL 1', desc: 'Трохи збільшує швидкість стрільби корабля', req: 1 },
+                { cost: 190, label: 'FAST FIRE LVL 2', desc: 'Ще більше збільшує швидкість', req: 2 },
+                { cost: 300, label: 'FAST FIRE LVL 3', desc: 'Значне прискорення стрільби', req: 3 },
+                { cost: 425, label: 'FAST FIRE LVL 4', desc: 'Максимальна швидкість стрільби', req: 4 }
             ];
             if (lvl >= 4) {
                 content.innerHTML = `<div class="shop-item"><div style="color:#0ff;font-weight:bold">⚡ FAST FIRE MAX</div><p style="font-size:11px;color:#777">Максимальний рівень досягнуто</p><button class="main-btn" style="width:160px;font-size:12px" disabled>✅ МАКСИМУМ</button></div>`;
             } else {
                 let cur = levels[lvl];
-                content.innerHTML = `<div class="shop-item"><div style="color:#0ff;font-weight:bold">⚡ ${cur.label}</div><p style="font-size:11px;color:#777;margin:3px 0">${cur.desc}</p><button class="main-btn" style="width:160px;font-size:12px" onclick="buyFastFire(${lvl+1},${cur.cost})">КУПИТИ ${cur.cost}💰</button></div>`;
+                let disabled = !isFastFireUnlocked(lvl+1);
+                content.innerHTML = `<div class="shop-item">
+                    <div style="color:#0ff;font-weight:bold">⚡ ${cur.label}</div>
+                    <p style="font-size:11px;color:#777;margin:3px 0">${cur.desc}</p>
+                    <button class="main-btn" style="width:160px;font-size:12px" onclick="buyFastFire(${lvl+1},${cur.cost})" ${disabled ? 'disabled' : ''}>${disabled ? `🔒 ПОТРІБЕН ${cur.req} РІВЕНЬ` : `КУПИТИ ${cur.cost}💰`}</button>
+                </div>`;
             }
         } else if (tab === 'skins') {
             content.innerHTML = `<div class="shop-item"><div style="color:gold">🐥 PHOENIX</div><button class="main-btn" style="width:160px;font-size:12px" onclick="buySkin('phoenix','🐥',500)">${unlockedSkins.phoenix?(activeSkin==='🐥'?'EQUIPPED':'EQUIP'):'BUY 500💰'}</button></div><div class="shop-item"><div>🚀 DEFAULT</div><button class="main-btn" style="width:160px;font-size:12px" onclick="useDefault()">USE</button></div>`;
@@ -1251,7 +1275,7 @@
                 let gunsHtml = '';
                 for (let [id, g] of Object.entries(GUN_TYPES)) {
                     let unlocked = isGunUnlocked(parseInt(id));
-                    let btnText = unlocked ? `КУПИТИ ${g.price}💰` : `🔒 ВІДКРИВАЄТЬСЯ З 3 РІВНЯ`;
+                    let btnText = unlocked ? `КУПИТИ ${g.price}💰` : `🔒 ВІДКРИВАЄТЬСЯ З ${g.requiredLevel} РІВНЯ`;
                     let disabledAttr = unlocked ? '' : 'disabled style="opacity:0.5"';
                     gunsHtml += `<button onclick="buyGunType(${id})" class="side-shop-btn" style="margin-bottom:4px;height:auto;padding:5px;text-align:left;white-space:normal;" ${disabledAttr}>${g.icon} <b>${g.name}</b><br><span style="font-size:8px;color:#aaa">${g.desc}</span><br><span style="color:#ff0">${btnText}</span></button>`;
                 }
@@ -1299,13 +1323,6 @@
         }
     }
 
-    function buyFastFire(level, price) {
-        if (coins >= price && (unlockedUpgrades.fastFire || 0) === level - 1) {
-            coins -= price; unlockedUpgrades.fastFire = level;
-            saveProgress(); if (!isOwner) db.ref('players/'+myNickname).update({coins});
-            switchTab('upgrades');
-        } else { alert('Недостатньо монет або попередній рівень не куплений!'); }
-    }
     function buySkin(id, icon, price) {
         if (unlockedSkins[id]) { activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({activeSkin:icon}); switchTab('skins'); }
         else if (coins >= price) { coins-=price; unlockedSkins[id]=true; activeSkin=icon; saveProgress(); if(!isOwner) db.ref('players/'+myNickname).update({coins,activeSkin:icon}); switchTab('skins'); }
