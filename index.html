@@ -70,7 +70,7 @@
         .exclusive-manager h3 { color: #ffaa44; margin: 0 0 10px 0; }
         .exclusive-card { background: #111; border-radius: 12px; padding: 12px; margin-bottom: 15px; }
         .exclusive-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 8px 0; }
-        .admin-section { border-bottom: 2px solid #333; margin-bottom: 5px; }
+        .admin-section { border-bottom: 3px solid #0ff; padding: 12px 0; margin-bottom: 0; }
         .admin-section:last-child { border-bottom: none; }
         .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 85%; text-align: center; margin-bottom: 8px; font-size: 14px; }
@@ -116,8 +116,8 @@
             flex-direction: column;
             gap: 10px;
             margin-top: 15px;
-            border-top: 2px solid #ffaa44;
-            padding-top: 10px;
+            border-top: 3px solid #0ff;
+            padding-top: 15px;
         }
         #owner-only-zone .main-btn {
             width: auto;
@@ -140,6 +140,16 @@
             display: block !important;
             transform: scaleY(1);
             opacity: 1;
+        }
+        .user-info-separator {
+            border-bottom: 3px solid #0ff;
+            margin: 10px 0 15px 0;
+            width: 100%;
+        }
+        .owner-reset-separator {
+            border-top: 3px solid #0ff;
+            margin-top: 15px;
+            padding-top: 15px;
         }
     </style>
 </head>
@@ -204,6 +214,8 @@
     <div class="admin-panel-box">
         <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
         <div style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:10px;">Користувач: <span id="admin-active-name">...</span></div>
+        <div class="user-info-separator"></div> <!-- товста синя лінія після рядка користувача -->
+
         <div class="admin-section">
             <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px;">🔥 ШВИДКІ ЧИТИ</div>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -211,9 +223,14 @@
                 <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
             </div>
         </div>
+
+        <div class="admin-section">
+            <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
+        </div>
+
         <div class="admin-section self-change-section" style="background: rgba(0,0,0,0.3); border: 1px solid #00ffcc; border-radius: 12px; margin: 15px 0; padding: 12px; transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);">
             <div style="font-weight:bold; color:#ffdd44; margin-bottom:10px; font-size:15px; display: flex; justify-content: space-between; align-items: center;">
-                <span>💎 НАРАХУВАННЯ (НА СЕБЕ)</span>
+                <span>💰 НАРАХУВАННЯ МОНЕТ/ДОСВІДУ</span>
                 <button id="toggleSelfResultPanel" class="admin-btn-action" style="background:#555; padding:4px 12px; font-size:12px;">▼ прокрутіть вниз ▼</button>
             </div>
             <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap;">
@@ -223,7 +240,6 @@
                         <button class="admin-btn-action self-coin-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfCoinMode()">[+]</button>
                         <input type="number" id="self-coin-amount" class="admin-input" style="margin:0; width:100px;" value="100" min="1">
                     </div>
-                    <div style="font-size:11px; color:#aaa; margin-top:4px;">Поточно: <span id="current-coins-display">0</span> монет</div>
                 </div>
                 <div style="flex:1; min-width: 150px;">
                     <div style="color:#88ff88; font-size:13px;">💎 ДОСВІД</div>
@@ -231,7 +247,6 @@
                         <button class="admin-btn-action self-exp-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfExpMode()">[+]</button>
                         <input type="number" id="self-exp-amount" class="admin-input" style="margin:0; width:100px;" value="10" min="1">
                     </div>
-                    <div style="font-size:11px; color:#aaa; margin-top:4px;">Поточно: <span id="current-exp-display">0</span> досвіду</div>
                 </div>
             </div>
             <button class="admin-btn-action" style="width:100%; background:#ffcc00; color:#000; padding:8px; margin-top:12px; font-size:13px;" onclick="executeSelfChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
@@ -248,14 +263,13 @@
                 <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">✔️ Зміни застосовано</div>
             </div>
         </div>
-        <div class="admin-section">
-            <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
-        </div>
-        <div id="owner-only-zone" style="display:none; margin-top:10px;">
+
+        <div id="owner-only-zone" style="display:none;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
             <button class="main-btn" style="width:auto; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px 16px; margin-top:12px; margin-left:10px;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
         </div>
         <div id="owner-full-reset" style="display:none; margin-top:8px;">
+            <div class="owner-reset-separator"></div>
             <button class="admin-btn-action" style="width:150px; background:#cc0000; color:#fff; padding:6px; font-size:12px;" onclick="ownerFullReset()">💥 ПОВНИЙ СКИД</button>
         </div>
         <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
