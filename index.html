@@ -174,14 +174,6 @@
     <div class="admin-panel-box">
         <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
         <div style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:10px;">Користувач: <span id="admin-active-name">...</span></div>
-        <div class="admin-section" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed #333; margin-bottom: 10px;">
-            <div style="font-weight:bold; color:gold; margin-bottom:8px; font-size:14px;">💰 НАРАХУВАННЯ МОНЕТ (НА СЕБЕ):</div>
-            <div style="display: flex; gap: 6px; justify-content: center; align-items: center; width: 90%; margin: 0 auto 10px auto;">
-                <button id="panel-coin-toggle-btn" class="admin-btn-action" style="background:#00cc44; color:#fff; font-size:16px; width:55px; height:35px;" onclick="togglePanelCoinMode()">[ + ]</button>
-                <input type="number" id="panel-coin-amount" class="admin-input" style="margin:0; height:35px; flex:1;" value="1000" min="1">
-            </div>
-            <button class="admin-btn-action" style="width:90%; background:#ffcc00; color:#000; padding:10px; font-size:13px;" onclick="executePanelCoinChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
-        </div>
         <div class="admin-section">
             <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px;">🔥 ШВИДКІ ЧИТИ</div>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -189,6 +181,27 @@
                 <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
             </div>
         </div>
+        <div class="admin-section" style="background: rgba(0,0,0,0.3); border: 1px solid #00ffcc; border-radius: 12px; margin: 15px 0; padding: 12px;">
+    <div style="font-weight:bold; color:#ffdd44; margin-bottom:10px; font-size:15px;">💎 НАРАХУВАННЯ (НА СЕБЕ)</div>
+    <div style="display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap;">
+        <div style="flex:1; min-width: 150px;">
+            <div style="color:gold; font-size:13px;">💰 МОНЕТИ</div>
+            <div style="display: flex; gap: 6px; align-items: center; margin-top: 5px;">
+                <button class="admin-btn-action self-coin-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfCoinMode()">[+]</button>
+                <input type="number" id="self-coin-amount" class="admin-input" style="margin:0; width:100px;" value="100" min="1">
+            </div>
+        </div>
+        <div style="flex:1; min-width: 150px;">
+            <div style="color:#88ff88; font-size:13px;">💎 ДОСВІД</div>
+            <div style="display: flex; gap: 6px; align-items: center; margin-top: 5px;">
+                <button class="admin-btn-action self-exp-toggle" style="background:#00cc44; width:45px;" onclick="toggleSelfExpMode()">[+]</button>
+                <input type="number" id="self-exp-amount" class="admin-input" style="margin:0; width:100px;" value="10" min="1">
+            </div>
+        </div>
+    </div>
+    <button class="admin-btn-action" style="width:100%; background:#ffcc00; color:#000; padding:8px; margin-top:12px; font-size:13px;" onclick="executeSelfChange()">ЗАСТОСУВАТИ ЗМІНИ</button>
+    <div style="font-size:10px; color:#aaa; margin-top:8px; text-align:center;">▼ прокрутіть вниз ▼</div>
+</div>
         <div class="admin-section">
             <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
         </div>
@@ -238,7 +251,16 @@
     <div class="modal-box">
         <h3 style="color:#ffcc00; margin-top:0;">⚙️ НАЛАШТУВАННЯ: <span id="modal-target-nick" style="color:#fff;"></span></h3>
         <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px;">
-            <div style="border: 1px solid #333; padding: 8px; border-radius: 6px;"><label style="color: gold; font-weight: bold;">💰 Змінити баланс монет:</label><input type="number" id="modal-edit-coins" style="background:#000; border:1px solid #ffcc00; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:4px;" value="0"><small style="color:#666;">Поточний баланс оновиться на вказане число.</small></div>
+            <div style="border: 1px solid #333; padding: 8px; border-radius: 6px;">
+    <label style="color: gold; font-weight: bold;">💰 Змінити баланс монет:</label>
+    <input type="number" id="modal-edit-coins" ...>
+    <small>...</small>
+</div>
+<div style="border: 1px solid #333; padding: 8px; border-radius: 6px;">
+    <label style="color: #88ff88; font-weight: bold;">💎 Змінити досвід:</label>
+    <input type="number" id="modal-edit-exp" ...>
+    <small>...</small>
+</div>
             <div><label>🛡️ Режим Безсмертя:</label><select id="modal-edit-god" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;"><option value="false">ВИМКНЕНO</option><option value="true">УВІМКНЕНO</option></select></div>
             <div><label>🚀 Змінити Скін:</label><select id="modal-edit-skin" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;"><option value="🚀">🚀 Дефолтний</option><option value="🐥">🐥 Фенікс</option><option value="🛸">🛸 НЛО</option><option value="👑">👑 Королівство</option></select></div>
             <div><label>👥 Змінити групу:</label><select id="modal-edit-group" style="background:#000; border:1px solid #0ff; color:#fff; padding:5px; border-radius:4px; width:100%; margin-top:3px;"></select></div>
@@ -450,6 +472,8 @@
     let godModeActive = false;
     let gameSpeedMultiplier = 1;
     let panelCoinSign = 1;
+    let selfCoinSign = 1;   // +1 або -1 для монет
+    let selfExpSign = 1;    // для досвіду
     let globalVolume = Number(localStorage.getItem('gameVolume')) || 80;
     let gameActive = false, currentWave = null, playerHp = 3, kills = 0, missed = 0, spawnedThisWave = 0;
     let player = { x: 0, y: 0, targetX: 0 }, bullets = [], enemyBullets = [], enemies = [], starsBg = [];
@@ -679,12 +703,71 @@
         if (panelCoinSign === 1) { btn.innerText = "[ + ]"; btn.style.background = "#00cc44"; }
         else { btn.innerText = "[ - ]"; btn.style.background = "#cc0000"; }
     }
+    function toggleSelfCoinMode() {
+    selfCoinSign = selfCoinSign === 1 ? -1 : 1;
+    let btn = document.querySelector('.self-coin-toggle');
+    if (btn) {
+        btn.innerText = selfCoinSign === 1 ? "[+]" : "[-]";
+        btn.style.background = selfCoinSign === 1 ? "#00cc44" : "#cc0000";
+        animateButton(btn);
+    }
+}
+function toggleSelfExpMode() {
+    selfExpSign = selfExpSign === 1 ? -1 : 1;
+    let btn = document.querySelector('.self-exp-toggle');
+    if (btn) {
+        btn.innerText = selfExpSign === 1 ? "[+]" : "[-]";
+        btn.style.background = selfExpSign === 1 ? "#00cc44" : "#cc0000";
+        animateButton(btn);
+    }
+}
+function animateButton(btn) {
+    btn.style.transition = "0.1s";
+    btn.style.transform = "scale(0.95)";
+    setTimeout(() => { btn.style.transform = ""; }, 100);
+}
+    function executeSelfChange() {
+    let coinAmount = Math.abs(Number(document.getElementById('self-coin-amount').value)) || 0;
+    let finalCoins = coinAmount * selfCoinSign;
+    coins = Math.max(0, coins + finalCoins);
+    saveProgress(); updateCoinsUI();
+    if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins });
+    
+    let expAmount = Math.abs(Number(document.getElementById('self-exp-amount').value)) || 0;
+    let finalExp = expAmount * selfExpSign;
+    if (finalExp !== 0) {
+        if (finalExp > 0) addExperience(finalExp);
+        else {
+            // віднімання досвіду (не нижче 0)
+            playerExp = Math.max(0, playerExp + finalExp);
+            // перевірка, чи рівень не зменшився занадто
+            while (playerLevel > 1 && playerExp < expNeeded[playerLevel-1]) {
+                playerLevel--;
+                playerExp += expNeeded[playerLevel];
+            }
+            saveLevelProgress();
+            updateLevelUI();
+        }
+    }
+    
+    let coinBtn = document.querySelector('.self-coin-toggle');
+    let expBtn = document.querySelector('.self-exp-toggle');
+    animateButton(coinBtn);
+    animateButton(expBtn);
+    alert(`✅ Змінено: монети ${finalCoins}, досвід ${finalExp}`);
+}
     function executePanelCoinChange() {
         let amount = Math.abs(Number(document.getElementById('panel-coin-amount').value)) || 0;
         let finalValue = amount * panelCoinSign;
         coins = Math.max(0, coins + finalValue);
         saveProgress(); updateCoinsUI();
         if (myNickname && !isOwner) db.ref('players/' + myNickname).update({ coins });
+        let section = document.querySelector('.admin-section[style*="border: 1px solid #00ffcc"]');
+if (section) {
+    section.style.transition = "0.2s";
+    section.style.backgroundColor = "rgba(0,255,0,0.2)";
+    setTimeout(() => { section.style.backgroundColor = ""; }, 300);
+}
         alert(`Ваш баланс змінено на ${finalValue} монет!`);
     }
 
@@ -825,7 +908,7 @@
                         else actionBtns = `<button class="p-btn p-btn-edit" onclick="openPlayerSettingsModal('${p.nickname}')">⚙️</button><button class="p-btn p-btn-ban" onclick="openPlayerBanModal('${p.nickname}')">🗑️</button>`;
                     }
                     let banBadge = p.isBanned ? '<span style="color:#f00;font-size:10px;margin-left:4px;">🛑БАН</span>' : '';
-                    row.innerHTML = `<div><b>${p.nickname}</b>${onlineDot}${banBadge}<br><small>💰 ${p.coins||0} | ⏱️ ${p.timePlayed||0}с</small></div><div class="player-actions">${actionBtns}</div>`;
+                    row.innerHTML = `<div><b>${p.nickname}</b>${onlineDot}${banBadge}<br><small>💰 ${p.coins||0} | 💎 ${p.exp||0} | ⏱️ ${p.timePlayed||0}с</small></div><div class="player-actions">${actionBtns}</div>`;
                     holder.appendChild(row);
                 });
             });
@@ -841,6 +924,7 @@
         document.getElementById('modal-edit-god').value = p.godMode ? "true" : "false";
         document.getElementById('modal-edit-skin').value = p.activeSkin || "🚀";
         document.getElementById('modal-edit-coins').value = p.coins || 0;
+        document.getElementById('modal-edit-exp').value = p.exp || 0;
         const sel = document.getElementById('modal-edit-group'); sel.innerHTML = '';
         Object.keys(customGroups).forEach(gId => { let opt = document.createElement('option'); opt.value = gId; opt.innerText = customGroups[gId].label; if (p.group === gId) opt.selected = true; sel.appendChild(opt); });
         document.getElementById('player-settings-modal').style.display = 'flex';
@@ -855,7 +939,8 @@
         let targetSkin = document.getElementById('modal-edit-skin').value;
         let targetCoins = Number(document.getElementById('modal-edit-coins').value) || 0;
         let prevGroup = globalPlayersDB[nick] ? globalPlayersDB[nick].group : 'ігроки';
-        let updateData = { godMode: targetGod, activeSkin: targetSkin, group: targetGroup, coins: targetCoins, nickname: nick };
+        let targetExp = Number(document.getElementById('modal-edit-exp').value) || 0;
+        let updateData = { godMode: targetGod, activeSkin: targetSkin, group: targetGroup, coins: targetCoins, exp: targetExp, nickname: nick };
         db.ref('players/' + nick).update(updateData).then(() => {
             if (!globalPlayersDB[nick]) globalPlayersDB[nick] = {};
             Object.assign(globalPlayersDB[nick], updateData);
@@ -1193,6 +1278,7 @@
                 if(currentWave.id===2) bt="НЛО-загарбник";
                 if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"Демонічний генерал (ULTRA)";
                 if(currentWave.id===4) bt="Космичне око апокалипсису";
+                if(currentWave.id===5) bt="VLADCarbonat";
                 ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6); ctx.restore();
             }
         }
