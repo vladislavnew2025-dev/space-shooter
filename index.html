@@ -347,7 +347,7 @@
 
     // Ексклюзивна хвиля (без досвіду)
     const exclusiveWavesTemplate = [
-        { id: "ex_vlad", name: "VLAD Carbonat", bossName: "VLADCarbonat", reward: 100, spawnCount: 30, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 60, bossCooldown: 1800, bossSkin: '🦠', exclusive: true, bossExp: 0 }
+        { id: "ex_vlad", name: "VLADCarbonat", bossName: "VLADCarbonat", reward: 100, spawnCount: 30, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 60, bossCooldown: 1800, bossSkin: '🦠', exclusive: true, bossExp: 0 }
     ];
 
     const GUN_TYPES = {
@@ -1189,8 +1189,8 @@
                 ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.beginPath(); ctx.roundRect(bX,bY,bW,10,4); ctx.fill();
                 ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055'; ctx.beginPath(); ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4); ctx.fill();
                 ctx.textAlign='center'; ctx.font='12px Segoe UI'; ctx.fillStyle='#fff';
-                let bt="КОСМІЧНИЙ ЗАГАРБНИК";
-                if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"ГЕНЕРАЛ ОРДИ (ULTRA)";
+                let bt="Космічний монстр";
+                if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"Демонічний генерал (ULTRA)";
                 if(currentWave.id===4) bt="Космичне око апокалипсису";
                 ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6); ctx.restore();
             }
