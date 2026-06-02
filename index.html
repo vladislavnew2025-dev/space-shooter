@@ -1190,6 +1190,7 @@
                 ctx.fillStyle=bossInstance.isUlting?'#ffaa00':'#ff0055'; ctx.beginPath(); ctx.roundRect(bX,bY,bW*(bossInstance.hp/bossInstance.maxHp),10,4); ctx.fill();
                 ctx.textAlign='center'; ctx.font='12px Segoe UI'; ctx.fillStyle='#fff';
                 let bt="Космічний монстр";
+                if(currentWave.id===2) bt="НЛО-загарбник";
                 if(currentWave.id===3) bt=bossInstance.isUlting?"👺 АКТИВАЦІЯ УЛЬТИ! 👺":"Демонічний генерал (ULTRA)";
                 if(currentWave.id===4) bt="Космичне око апокалипсису";
                 ctx.fillText(`${bt}: ${bossInstance.hp}/${bossInstance.maxHp} HP`,canvas.width/2,bY-6); ctx.restore();
