@@ -101,6 +101,19 @@
     margin: 10px 0;
     width: 100%;
 }
+        /* Синя лінія на всю ширину (від краю до краю) */
+.separator-blue-full {
+    border-bottom: 3px solid #00ffff;
+    margin: 10px -20px;  /* розтягуємо на всю ширину контейнера */
+    box-shadow: 0 0 5px #00ffff;
+    width: calc(100% + 40px);
+}
+/* Сіра лінія з відступами (не доходить до країв) */
+.separator-gray-small {
+    border-bottom: 2px solid #555;
+    margin: 10px 0;
+    width: 100%;
+}
         .admin-section:last-child { border-bottom: none; }
         .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .admin-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 8px; border-radius: 5px; width: 85%; text-align: center; margin-bottom: 8px; font-size: 14px; }
@@ -244,7 +257,9 @@
     <div class="admin-panel-box">
         <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
         <div style="font-size:13px; color:#ffcc00; font-weight:bold; margin-bottom:10px;">Користувач: <span id="admin-active-name">...</span></div>
-        <div class="user-info-separator"></div>
+        
+        <!-- синя лінія на всю ширину -->
+        <div class="separator-blue-full"></div>
 
         <!-- БЛОК: ЧИТИ ДЛЯ СЕБЕ -->
         <div class="admin-section">
@@ -255,14 +270,14 @@
             </div>
         </div>
 
-        <!-- Жирна синя лінія (розділювач) -->
-        <div class="full-width-separator"></div>
+        <!-- сіра (тонка) лінія з відступами -->
+        <div class="separator-gray-small"></div>
 
         <!-- Кнопка відкриття всіх місій -->
         <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff; margin-bottom: 15px;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
 
-        <!-- Жирна синя лінія -->
-        <div class="full-width-separator"></div>
+        <!-- синя лінія на всю ширину -->
+        <div class="separator-blue-full"></div>
 
         <!-- БЛОК: НАРАХУВАННЯ МОНЕТ/ДОСВІДУ -->
         <div class="self-change-section" style="background: rgba(0,0,0,0.3); border: 1px solid #00ffcc; border-radius: 12px; margin: 15px 0; padding: 12px; transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);">
@@ -301,8 +316,8 @@
             </div>
         </div>
 
-        <!-- Жирна синя лінія -->
-        <div class="full-width-separator"></div>
+        <!-- синя лінія на всю ширину -->
+        <div class="separator-blue-full"></div>
 
         <!-- БЛОК: МЕНЕДЖЕР ГРУП ТА ЕКСКЛЮЗИВНІ ХВИЛІ -->
         <div id="owner-only-zone" style="display:none;">
@@ -310,16 +325,16 @@
             <button class="main-btn" style="width:auto; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px 16px; margin-top:12px; margin-left:10px;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
         </div>
 
-        <!-- Жирна синя лінія -->
-        <div class="full-width-separator"></div>
+        <!-- синя лінія на всю ширину -->
+        <div class="separator-blue-full"></div>
 
         <!-- БЛОК: ПОВНИЙ СКИД -->
         <div id="owner-full-reset" style="display:none; margin-top:8px;">
             <button class="admin-btn-action" style="width:150px; background:#cc0000; color:#fff; padding:6px; font-size:12px;" onclick="ownerFullReset()">💥 ПОВНИЙ СКИД</button>
         </div>
 
-        <!-- Жирна синя лінія перед закриттям -->
-        <div class="full-width-separator"></div>
+        <!-- синя лінія на всю ширину -->
+        <div class="separator-blue-full"></div>
 
         <button onclick="backToMain()" class="main-btn" style="border-color:#fff; color:#fff; font-size:14px; width:150px; padding:6px; margin-top:15px;">ЗАКРИТИ</button>
     </div>
