@@ -83,12 +83,6 @@
     margin: 10px 0 15px 0;
     width: 100%;
 }
-/* Лінія перед менеджером груп */
-.manager-separator {
-    border-top: 3px solid #0ff;
-    margin-top: 15px;
-    padding-top: 15px;
-}
 /* Лінія перед повним скидом */
 .reset-separator {
     border-top: 3px solid #0ff;
@@ -109,10 +103,10 @@
 }
 /* Сіра лінія з відступами (трохи світиться) */
 .separator-gray-glow {
-    border-bottom: 3px solid #666;
-    margin: 10px 0;
+    border-bottom: 3px solid #aaa;
+    margin: 5px 0;
     width: 100%;
-    box-shadow: 0 0 4px #888;
+    box-shadow: 0 0 6px #ccc;
 }
         .admin-section:last-child { border-bottom: none; }
         .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
@@ -264,7 +258,7 @@
         <!-- БЛОК: ЧИТИ ДЛЯ СЕБЕ -->
         <div class="admin-section">
             <div style="font-weight: bold; color: #ffcc00; margin-bottom: 10px; font-size: 16px;">🔥 ЧИТИ ДЛЯ СЕБЕ</div>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom: 15px;">
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom: 5px;">
                 <button class="admin-btn-action" id="godmode-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGodMode()">🤖 БЕЗСМЕРТЯ: ВИМК</button>
                 <button class="admin-btn-action" id="speed-btn" style="background:#444; color:#fff; min-width:180px;" onclick="toggleGameSpeed()">⚡ ШВИДКІСТЬ ГРИ: x1</button>
             </div>
