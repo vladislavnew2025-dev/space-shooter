@@ -101,18 +101,19 @@
     margin: 10px 0;
     width: 100%;
 }
-        /* Синя лінія на всю ширину (від краю до краю) */
+        /* Синя лінія на всю ширину (яскрава) */
 .separator-blue-full {
     border-bottom: 3px solid #00ffff;
-    margin: 10px -20px;  /* розтягуємо на всю ширину контейнера */
-    box-shadow: 0 0 5px #00ffff;
+    margin: 10px -20px;
+    box-shadow: 0 0 6px #00ffff;
     width: calc(100% + 40px);
 }
-/* Сіра лінія з відступами (не доходить до країв) */
-.separator-gray-small {
-    border-bottom: 2px solid #555;
+/* Сіра лінія з відступами (трохи світиться) */
+.separator-gray-glow {
+    border-bottom: 3px solid #666;
     margin: 10px 0;
     width: 100%;
+    box-shadow: 0 0 4px #888;
 }
         .admin-section:last-child { border-bottom: none; }
         .admin-btn-action { background: #00e5ff; border: none; color: black; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
@@ -270,14 +271,14 @@
             </div>
         </div>
 
-        <!-- сіра (тонка) лінія з відступами -->
-        <div class="separator-gray-small"></div>
+        <!-- сіра лінія з відступами -->
+        <div class="separator-gray-glow"></div>
 
         <!-- Кнопка відкриття всіх місій -->
         <button class="admin-btn-action" style="width:100%; background:#00aaee; color:#fff; margin-bottom: 15px;" onclick="unlockAllAdminWaves()">ВІДКРИТИ ВСІ МІСІЇ</button>
 
-        <!-- синя лінія на всю ширину -->
-        <div class="separator-blue-full"></div>
+        <!-- сіра лінія з відступами -->
+        <div class="separator-gray-glow"></div>
 
         <!-- БЛОК: НАРАХУВАННЯ МОНЕТ/ДОСВІДУ -->
         <div class="self-change-section" style="background: rgba(0,0,0,0.3); border: 1px solid #00ffcc; border-radius: 12px; margin: 15px 0; padding: 12px; transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);">
@@ -316,7 +317,7 @@
             </div>
         </div>
 
-        <!-- синя лінія на всю ширину -->
+        <!-- ОДНА синя лінія на всю ширину (після блоку нарахувань) -->
         <div class="separator-blue-full"></div>
 
         <!-- БЛОК: МЕНЕДЖЕР ГРУП ТА ЕКСКЛЮЗИВНІ ХВИЛІ -->
