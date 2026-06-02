@@ -87,7 +87,6 @@
 <div id="hp-display" style="display:none;">❤️❤️❤️</div>
 <div id="level-display" style="display:none;"></div>
 
-<!-- Реєстрація -->
 <div id="register-screen" class="screen" style="display:none; background: radial-gradient(circle, #0a0a20 0%, #000 100%);">
     <div style="background: rgba(7,7,16,0.95); border: 2px solid #0ff; border-radius: 20px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 35px rgba(0,255,255,0.35);">
         <h1 style="color: #0ff; font-size: 28px; margin-top: 0; letter-spacing: 2px;">🌌 ЛАСКАВО ПРОСИМО!</h1>
@@ -97,7 +96,6 @@
     </div>
 </div>
 
-<!-- Бан -->
 <div id="banned-screen" class="screen" style="display:none; background: #100000;">
     <div style="text-align: center; padding: 20px; max-width: 500px;">
         <h1 style="color: #ff3366; font-size: 45px; margin-bottom: 10px;">🛑 ВАС ЗАБЛОКОВАНО!</h1>
@@ -110,7 +108,6 @@
     </div>
 </div>
 
-<!-- Головне меню -->
 <div id="main-menu" class="screen">
     <h1 style="color:#0ff; font-size: 38px; margin-bottom: 20px; text-align:center;">SPACE SHOOTER</h1>
     <div class="coins-display">💰 COINS: <span id="main-coins">0</span></div>
@@ -123,7 +120,6 @@
     <div class="dev-dot" id="dot-br" onclick="tryOpenAdminPanel()">•</div>
 </div>
 
-<!-- Налаштування -->
 <div id="settings-screen" class="screen" style="display:none;">
     <div class="settings-box">
         <h2 style="color:#0ff; margin-top:0;">⚙️ SETTINGS</h2>
@@ -142,7 +138,6 @@
     </div>
 </div>
 
-<!-- Адмін панель -->
 <div id="admin-screen" class="screen" style="display:none;">
     <div class="admin-panel-box">
         <h2 id="admin-panel-title" style="color:#ff0055; margin:0 0 5px 0; font-size:22px; text-shadow: 0 0 10px #ff0055;">Адмінське меню керування</h2>
@@ -167,7 +162,7 @@
         </div>
         <div id="owner-only-zone" style="display:none; margin-top:10px;">
             <button class="main-btn" style="width:100%; border-color:#ffcc00; color:#ffcc00; font-size:14px; padding:8px; margin:0;" onclick="openPlayerManagementUI()">👑 МЕНЕДЖЕР ГРУП</button>
-            <button class="main-btn" style="width:100%; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px; margin-top:8px;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
+            <button class="main-btn" style="width:100%; border-color:#ffaa44; color:#ffaa44; font-size:14px; padding:8px; margin-top:12px;" onclick="openExclusiveManagerUI()">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</button>
         </div>
         <div id="owner-full-reset" style="display:none; margin-top:8px;">
             <button class="admin-btn-action" style="width:150px; background:#cc0000; color:#fff; padding:6px; font-size:12px;" onclick="ownerFullReset()">💥 ПОВНИЙ СКИД</button>
@@ -176,7 +171,6 @@
     </div>
 </div>
 
-<!-- Менеджер ексклюзивних хвиль -->
 <div id="exclusive-manager-screen" class="screen" style="display:none;">
     <div class="admin-panel-box" style="max-width: 600px;">
         <h2 style="color:#ffaa44;">👾 КЕРУВАННЯ ЕКСКЛЮЗИВНИМИ ХВИЛЯМИ</h2>
@@ -185,7 +179,6 @@
     </div>
 </div>
 
-<!-- Менеджер груп -->
 <div id="player-manage-screen" class="screen" style="display:none;">
     <div class="admin-panel-box" style="max-width: 550px;">
         <h2 style="color:#ffcc00; margin:0 0 5px 0;">👑 КЕРУВАННЯ ГРУПАМИ ТА ГРАВЦЯМИ</h2>
@@ -209,7 +202,6 @@
     </div>
 </div>
 
-<!-- Модальні вікна налаштувань гравця -->
 <div id="player-settings-modal" class="modal-overlay">
     <div class="modal-box">
         <h3 style="color:#ffcc00; margin-top:0;">⚙️ НАЛАШТУВАННЯ: <span id="modal-target-nick" style="color:#fff;"></span></h3>
@@ -235,7 +227,6 @@
     </div>
 </div>
 
-<!-- Екран вибору місій (з вкладками) -->
 <div id="wave-screen" class="screen" style="display:none;">
     <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
     <div class="wave-list-container">
@@ -247,7 +238,6 @@
     </div>
 </div>
 
-<!-- Магазин -->
 <div id="shop-screen" class="screen" style="display:none;">
     <button onclick="backToMain()" style="position:absolute; top:20px; right:20px; padding:5px 15px; background:transparent; border:1px solid #0ff; color:#0ff;">BACK</button>
     <h1 style="color:gold; margin-bottom: 5px;">SPACE SHOP</h1>
@@ -260,13 +250,14 @@
     <div id="shop-content"></div>
 </div>
 
-<!-- Екрани перемоги/поразки/титри -->
 <div id="win-screen" class="screen" style="display:none;">
     <h1 style="color:gold; font-size: 32px; margin:0; text-transform:uppercase;" id="win-title">MISSION COMPLETE</h1>
     <div id="win-stars" style="font-size: 45px; color: gold; margin-bottom: 5px;"></div>
     <div id="win-reward-text" style="color:gold; font-size:24px; font-weight:bold; margin-bottom: 20px;"></div>
+    <div id="win-exp-text" style="color:#88ff88; font-size:20px; font-weight:bold; margin-bottom: 10px;"></div>
     <button onclick="backToWaves()" class="main-btn" style="border-color: #0f0; color: #0f0;">CONTINUE</button>
 </div>
+
 <div id="final-credits-screen" class="screen" style="display:none; background: radial-gradient(circle, #000515 0%, #000 100%);">
     <h1 style="color:gold; font-size: 32px; margin:0 0 10px 0; text-align:center;">🏆 ГРУ ПОВНІСТЮ ПРОЙДЕНО! 🏆</h1>
     <div class="credits-box">
@@ -277,15 +268,16 @@
     </div>
     <button onclick="backToWaves()" class="main-btn" style="margin-top:15px; border-color: gold; color: gold; font-weight: bold;">НА ГОЛОВНУ</button>
 </div>
+
 <div id="fail-screen" class="screen" style="display:none;">
     <h1 style="color:#f00; font-size: 40px;" id="fail-title">MISSION FAILED</h1>
     <button onclick="backToWaves()" class="main-btn" style="border-color:#f00; color:#f00;">TRY AGAIN</button>
 </div>
 
-<!-- Пауза -->
 <div id="pause-btn" style="display:none; position:absolute; top:15px; left:50%; transform:translateX(-50%); z-index:6;">
     <button onclick="togglePause()" style="background:rgba(0,0,0,0.7); border:2px solid #0ff; color:#0ff; padding:6px 18px; border-radius:20px; font-size:14px; cursor:pointer;">⏸ ПАУЗА</button>
 </div>
+
 <div id="pause-menu" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:8; flex-direction:column; justify-content:center; align-items:center;">
     <div style="background:#070710; border:2px solid #0ff; border-radius:20px; padding:30px; text-align:center; min-width:260px; max-height:90vh; overflow-y:auto;">
         <h2 style="color:#0ff; margin:0 0 20px 0;">⏸ ПАУЗА</h2>
@@ -321,7 +313,7 @@
         { id: 4, name: "ХВИЛЯ 4", bossName: "Космичне око апокалипсису", reward: 145, stars: 0, unlocked: false, spawnCount: 25, spawnTypes: ['fast', 'heavy'], hasBoss: true, bossHp: 45, bossCooldown: 1500, bossSkin: '👁️', bossExp: 49 }
     ];
 
-    // Ексклюзивні хвилі (VLAD Carbonat, без досвіду)
+    // Ексклюзивна хвиля (без досвіду)
     const exclusiveWavesTemplate = [
         { id: "ex_vlad", name: "VLAD CARBONAT", bossName: "VLADCarbonat", reward: 100, spawnCount: 30, spawnTypes: ['normal', 'fast', 'heavy'], hasBoss: true, bossHp: 60, bossCooldown: 1800, bossSkin: '🦠', exclusive: true, bossExp: 0 }
     ];
@@ -353,15 +345,15 @@
     let shipInventory = JSON.parse(localStorage.getItem('shipInventory')) || [];
     let waveData = JSON.parse(localStorage.getItem('waveData')) || defaultWaves;
 
-    // Ексклюзивні хвилі з налаштуваннями видимості
     let exclusiveWaves = JSON.parse(localStorage.getItem('exclusiveWaves')) || exclusiveWavesTemplate.map(w => ({ ...w, enabled: true, visibleForGroups: ['ігроки', 'читери', 'тестери'], visibleUntil: null, visibleDuration: 0 }));
     
     // ---- Система рівнів та досвіду (тільки для звичайних хвиль) ----
     let playerLevel = Number(localStorage.getItem('playerLevel')) || 1;
     let playerExp = Number(localStorage.getItem('playerExp')) || 0;
-    const expNeeded = [0, 80, 140, 250, 415]; // для рівнів 1->2,2->3,3->4,4->5
+    const expNeeded = [0, 80, 140, 250, 415];
     const maxLevel = 5;
-    let expDrops = []; // {x, y, value, vy}
+    let expDrops = [];
+    let expGainedThisMission = 0; // накопичувач досвіду за раунд
 
     function updateLevelUI() {
         let levelDiv = document.getElementById('level-display');
@@ -394,12 +386,23 @@
         }
     }
 
-    // Максимальна кількість клітинок залежно від рівня
-    function getMaxCellsForLevel(level) {
-        if (level >= 5) return 5;
+    // Ліміт додаткових клітинок (без урахування стандартних двох)
+    function getMaxExtraCellsForLevel(level) {
+        if (level >= 5) return 6; // 2 стандартні + 6 куплених = 8
         if (level >= 4) return 4;
         if (level >= 3) return 3;
-        return 2;
+        if (level >= 2) return 2;
+        return 1;
+    }
+
+    function getMaxCellsForLevel(level) {
+        return 2 + getMaxExtraCellsForLevel(level);
+    }
+
+    function isGunUnlocked(gunId) {
+        if (gunId === 1) return true;
+        if (playerLevel >= 3) return true; // на 3 рівні відкриваються 2,3,4
+        return false;
     }
 
     // ---- Інші глобальні змінні ----
@@ -419,19 +422,9 @@
     let lightningFlashes = [], poisonPuddles = [];
     let currentWaveTab = 'normal';
 
-    // ---- Функції синхронізації ексклюзивних хвиль ----
     function syncExclusiveSettings() {
-        if (isOwner) {
-            db.ref('config/exclusiveWaves').set(exclusiveWaves);
-        } else {
-            db.ref('config/exclusiveWaves').on('value', snap => {
-                if (snap.exists()) {
-                    exclusiveWaves = snap.val();
-                    localStorage.setItem('exclusiveWaves', JSON.stringify(exclusiveWaves));
-                    if (document.getElementById('wave-screen').style.display === 'flex') renderWaves();
-                }
-            });
-        }
+        if (isOwner) db.ref('config/exclusiveWaves').set(exclusiveWaves);
+        else db.ref('config/exclusiveWaves').on('value', snap => { if (snap.exists()) { exclusiveWaves = snap.val(); localStorage.setItem('exclusiveWaves', JSON.stringify(exclusiveWaves)); if (document.getElementById('wave-screen').style.display === 'flex') renderWaves(); } });
     }
 
     setInterval(() => {
@@ -473,10 +466,7 @@
                 });
                 syncExclusiveSettings();
             } else {
-                db.ref('config/exclusiveWaves').once('value', snap => {
-                    if (snap.exists()) exclusiveWaves = snap.val();
-                    localStorage.setItem('exclusiveWaves', JSON.stringify(exclusiveWaves));
-                });
+                db.ref('config/exclusiveWaves').once('value', snap => { if (snap.exists()) exclusiveWaves = snap.val(); localStorage.setItem('exclusiveWaves', JSON.stringify(exclusiveWaves)); });
             }
         }
         document.getElementById('volume-control').value = globalVolume;
@@ -486,7 +476,6 @@
 
     window.addEventListener('beforeunload', () => setOnlineStatus(false));
 
-    // ---- Базові функції ----
     function togglePause() {
         isPaused = !isPaused;
         document.getElementById('pause-menu').style.display = isPaused ? 'flex' : 'none';
@@ -502,11 +491,7 @@
         if (!newNick) { alert('Введіть нікнейм!'); return; }
         if (newNick === myNickname) { alert('Це вже ваш нік!'); return; }
         let allPerfect = waveData.every(w => w.stars === 3);
-        if (!allPerfect) {
-            let notDone = waveData.filter(w => w.stars < 3).map(w => w.name).join(', ');
-            alert(`❌ Зміна ніку заблокована!\nТреба пройти всі хвилі на ⭐⭐⭐\nНе пройдено: ${notDone}`);
-            return;
-        }
+        if (!allPerfect) { let notDone = waveData.filter(w => w.stars < 3).map(w => w.name).join(', '); alert(`❌ Зміна ніку заблокована!\nТреба пройти всі хвилі на ⭐⭐⭐\nНе пройдено: ${notDone}`); return; }
         if (!confirm(`Змінити нік з "${myNickname}" на "${newNick}"?`)) return;
         db.ref('players/' + myNickname).once('value').then(snap => {
             let oldData = snap.exists() ? snap.val() : {};
@@ -602,11 +587,7 @@
         if (!newNick) { alert('Введіть нікнейм!'); return; }
         if (newNick === myNickname) { alert('Це вже ваш нік!'); return; }
         let allPerfect = waveData.every(w => w.stars === 3);
-        if (!allPerfect) {
-            let notDone = waveData.filter(w => w.stars < 3).map(w => w.name).join(', ');
-            alert(`❌ Зміна ніку заблокована!\nТреба пройти всі хвилі на ⭐⭐⭐\nНе пройдено: ${notDone}`);
-            return;
-        }
+        if (!allPerfect) { let notDone = waveData.filter(w => w.stars < 3).map(w => w.name).join(', '); alert(`❌ Зміна ніку заблокована!\nТреба пройти всі хвилі на ⭐⭐⭐\nНе пройдено: ${notDone}`); return; }
         if (!confirm(`Змінити нік з "${myNickname}" на "${newNick}"?`)) return;
         db.ref('players/' + myNickname).once('value').then(snap => {
             let oldData = snap.exists() ? snap.val() : {};
@@ -623,8 +604,8 @@
 
     function tryOpenAdminPanel() {
         let currentGroup = (myNickname && globalPlayersDB[myNickname]) ? globalPlayersDB[myNickname].group : 'ігроки';
-        if (isOwner) { openAdminPanelUI(true, currentGroup); }
-        else if (currentGroup === 'читери' || currentGroup === 'тестери') { openAdminPanelUI(false, currentGroup); }
+        if (isOwner) openAdminPanelUI(true, currentGroup);
+        else if (currentGroup === 'читери' || currentGroup === 'тестери') openAdminPanelUI(false, currentGroup);
     }
 
     function ownerFullReset() {
@@ -1006,12 +987,13 @@
         let m=gameSpeedMultiplier;
         player.x+=(player.targetX-player.x)*0.2*m;
         starsBg.forEach(s=>{s.y+=3*m;if(s.y>canvas.height)s.y=0;});
-        // Краплі досвіду (тільки для звичайних хвиль, не для ексклюзивних)
+        // Краплі досвіду
         for(let i=0;i<expDrops.length;i++){
             expDrops[i].y += expDrops[i].vy * m;
             if(expDrops[i].y>canvas.height+50 || expDrops[i].y<-50){ expDrops.splice(i,1); i--; continue; }
             if(Math.hypot(expDrops[i].x - player.x, expDrops[i].y - player.y) < 30){
                 addExperience(expDrops[i].value);
+                expGainedThisMission += expDrops[i].value;
                 expDrops.splice(i,1); i--;
             }
         }
@@ -1074,7 +1056,10 @@
                 if(bullets[j].x>bossInstance.x-bossInstance.w/2 && bullets[j].x<bossInstance.x+bossInstance.w/2 && bullets[j].y>bossInstance.y-bossInstance.h/2 && bullets[j].y<bossInstance.y+bossInstance.h/2){
                     bullets.splice(j,1); bossInstance.hp--; playSound(crashBuf);
                     if(bossInstance.hp<=0){
-                        if(!currentWave.exclusive) addExperience(bossInstance.expValue);
+                        if(!currentWave.exclusive) {
+                            addExperience(bossInstance.expValue);
+                            expGainedThisMission += bossInstance.expValue;
+                        }
                         bossInstance=null; kills++; document.getElementById('kills').innerText=kills; gameActive=false; endMission(); return;
                     }
                 }
@@ -1096,7 +1081,9 @@
                 }
             }
             if(e.hp<=0){
-                if(!currentWave.exclusive) expDrops.push({x:e.x, y:e.y, value:e.exp, vy:1.5});
+                if(!currentWave.exclusive) {
+                    expDrops.push({x:e.x, y:e.y, value:e.exp, vy:1.5});
+                }
                 enemies.splice(i,1);
                 kills++; document.getElementById('kills').innerText=kills;
                 continue;
@@ -1180,12 +1167,18 @@
         document.getElementById('hp-display').style.display='none';
         document.getElementById('pause-btn').style.display='none';
         document.getElementById('pause-menu').style.display='none';
+        
+        let rewardText = `+${currentWave.reward} COINS`;
+        let expText = (currentWave.exclusive || currentWave.id > 4) ? `` : `💎 +${expGainedThisMission} досвіду`;
+        document.getElementById('win-reward-text').innerHTML = rewardText;
+        document.getElementById('win-exp-text').innerHTML = expText;
+        expGainedThisMission = 0; // скидаємо після відображення
+        
         if(!currentWave.exclusive && currentWave.id === waveData.length){
             document.getElementById('final-credits-screen').style.display='flex';
         } else {
             document.getElementById('win-title').innerText=currentWave.hasBoss?"БОССА ЗНИЩЕНО!":"МІСІЯ ВИКОНАНА";
             document.getElementById('win-stars').innerText='★'.repeat(sc)+'☆'.repeat(3-sc);
-            document.getElementById('win-reward-text').innerText=`+${currentWave.reward} COINS`;
             document.getElementById('win-screen').style.display='flex';
         }
     }
@@ -1194,6 +1187,7 @@
     function switchSideTab(side, tab) { if(side==='left') currentLeftTab=tab; renderShopItems('ship'); }
 
     function buyGunType(typeId) {
+        if (!isGunUnlocked(typeId)) { alert(`Ця зброя відкривається з ${typeId===2?3:3} рівня!`); return; }
         let gun = GUN_TYPES[typeId];
         if (!gun || coins < gun.price) { alert('Недостатньо монет!'); return; }
         let freeSlot = shipGrid.findIndex(cell => cell === 0);
@@ -1208,9 +1202,10 @@
     function buyShipItem(type, price) {
         if(coins<price) return;
         if(type==='cell') {
-            let boughtCells = shipGrid.filter(c => c !== null).length;
-            let maxCells = getMaxCellsForLevel(playerLevel);
-            if (boughtCells >= maxCells) { alert(`Ви досягли максимальної кількості клітинок для вашого рівня (${maxCells})!`); return; }
+            let boughtExtraCells = shipGrid.filter(c => c !== null).length - 2; // мінус стандартні дві
+            if (boughtExtraCells < 0) boughtExtraCells = 0;
+            let maxExtra = getMaxExtraCellsForLevel(playerLevel);
+            if (boughtExtraCells >= maxExtra) { alert(`Ви досягли максимальної кількості додаткових клітинок для вашого рівня (${maxExtra})!`); return; }
             let nextIdx = shipGrid.findIndex(cell => cell === null);
             if (nextIdx === -1) { alert('Всі клітинки вже розблоковано!'); return; }
             const pricesMap = { 0:410, 3:500, 4:620, 5:800, 6:910, 7:1100 };
@@ -1253,16 +1248,26 @@
             <div style="margin-top:10px; font-size:12px; color:#aaa;">Клітинок: ${boughtCells}/${maxCells} (максимум для ${playerLevel} рівня)</div>`;
             const ll = document.getElementById('left-side-list');
             if (currentLeftTab === 'guns') {
-                ll.innerHTML = Object.entries(GUN_TYPES).map(([id, g]) => `<button onclick="buyGunType(${id})" class="side-shop-btn" style="margin-bottom:4px;height:auto;padding:5px;text-align:left;white-space:normal;">${g.icon} <b>${g.name}</b><br><span style="font-size:8px;color:#aaa">${g.desc}</span><br><span style="color:#ff0">${g.price}💰</span></button>`).join('');
+                let gunsHtml = '';
+                for (let [id, g] of Object.entries(GUN_TYPES)) {
+                    let unlocked = isGunUnlocked(parseInt(id));
+                    let btnText = unlocked ? `КУПИТИ ${g.price}💰` : `🔒 ВІДКРИВАЄТЬСЯ З 3 РІВНЯ`;
+                    let disabledAttr = unlocked ? '' : 'disabled style="opacity:0.5"';
+                    gunsHtml += `<button onclick="buyGunType(${id})" class="side-shop-btn" style="margin-bottom:4px;height:auto;padding:5px;text-align:left;white-space:normal;" ${disabledAttr}>${g.icon} <b>${g.name}</b><br><span style="font-size:8px;color:#aaa">${g.desc}</span><br><span style="color:#ff0">${btnText}</span></button>`;
+                }
+                ll.innerHTML = gunsHtml;
             } else {
-                if (boughtCells < maxCells) {
+                let boughtExtraCells = shipGrid.filter(c => c !== null).length - 2;
+                if (boughtExtraCells < 0) boughtExtraCells = 0;
+                let maxExtra = getMaxExtraCellsForLevel(playerLevel);
+                if (boughtExtraCells < maxExtra) {
                     let nextIdx = shipGrid.findIndex(cell => cell === null);
                     if (nextIdx !== -1) {
                         const pricesMap = { 0:410, 3:500, 4:620, 5:800, 6:910, 7:1100 };
                         let price = pricesMap[nextIdx] || 0;
-                        ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn">КУПИТИ КЛІТИНКУ ${price}💰 (${boughtCells}/${maxCells})</button>`;
+                        ll.innerHTML = `<button onclick="buyShipItem('cell',${price})" class="side-shop-btn">КУПИТИ КЛІТИНКУ ${price}💰 (${boughtExtraCells}/${maxExtra})</button>`;
                     } else { ll.innerHTML = `<button class="side-shop-btn" disabled>ВСІ КЛІТИНКИ ВІДКРИТІ</button>`; }
-                } else { ll.innerHTML = `<button class="side-shop-btn" disabled>ДОСТУПНО ${maxCells} КЛІТИНОК (РІВЕНЬ ${playerLevel})</button>`; }
+                } else { ll.innerHTML = `<button class="side-shop-btn" disabled>ДОСТУПНО ${maxExtra} ДОДАТКОВИХ КЛІТИНОК (РІВЕНЬ ${playerLevel})</button>`; }
             }
             const gDiv = document.getElementById('g-ui'); gDiv.innerHTML = '';
             for (let i=0; i<shipGrid.length; i++) {
@@ -1317,7 +1322,7 @@
         document.getElementById('required-kills').innerText=w.spawnCount+(w.hasBoss?1:0);
         kills=0; missed=0; spawnedThisWave=0;
         bullets=[]; enemyBullets=[]; enemies=[]; bossInstance=null;
-        lightningFlashes = []; poisonPuddles = []; expDrops = [];
+        lightningFlashes = []; poisonPuddles = []; expDrops = []; expGainedThisMission = 0;
         init(); updateHpUI(); startIntervals(); requestAnimationFrame(gameLoop);
     }
 
